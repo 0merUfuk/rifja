@@ -58,6 +58,10 @@ Numeric PASS/FAIL/SKIP summaries in document test-output blocks can be retained 
 quoted, unverified claims. Embedded commands, intent markers, quoted prompts and
 example blocks remain inert. Result qualifications are matched within the same
 worktree, document and section; another worktree cannot supply the claimed scope.
+When a paragraph combines pending work and an approval prohibition, status
+detection ignores imperative policy clauses but retains independent pending
+clauses in either order. The candidate keeps the complete source wording, so its
+authorization boundary remains visible beside the unfinished work.
 JSON exports share identical document observation fields in
 `document_observations`. Each document excerpt's `evidence.observation_ref` points
 to its observation time, working-tree scope, Git revision, modification status

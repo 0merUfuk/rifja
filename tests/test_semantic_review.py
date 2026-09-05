@@ -209,6 +209,7 @@ def test_different_conditions_with_shared_subject_all_survive_the_brief():
     [
         "Do not call the release completed without explicit approval.",
         "Never treat rebuilt package output as verified without approval.",
+        "Do not run package verification without owner approval.",
     ],
 )
 def test_approval_prohibitions_survive_result_claim_and_constraint_budgets(policy: str):
@@ -281,6 +282,42 @@ def test_claim_qualification_pairing_keeps_worktree_scope():
     assert brief["limitations"][0]["record_id"] == "same-tree"
     assert brief["limitations"][0]["text"] == qualifier
     assert brief["limitations"][0]["worktree_id"] == "tree-a"
+
+
+@pytest.mark.parametrize(
+    "paragraph",
+    [
+        (
+            "Recorded command output cannot establish interactive behavior. "
+            "Browser checks remain unverified. Publication is not authorized."
+        ),
+        "Browser verification is unavailable on this runner. Publication is not authorized.",
+        "Do not publish this release without approval. Browser validation remains pending.",
+        "Do not call this blocked without evidence. Browser validation remains pending.",
+        "Do not state that no pending checks remain. Browser validation remains pending.",
+        "Do not describe this as deferred. Browser validation remains pending.",
+        "Do not label Windows support unverified. Deployment validation remains pending.",
+    ],
+)
+def test_pending_work_and_authorization_policy_survive_the_same_paragraph(fixture, paragraph):
+    root, store, app, project, _ = fixture
+    (root / "STATUS.md").write_text("# Current status\n\n" + paragraph + "\n")
+    assert Ingestor(store).refresh()["failed"] == 0
+    resume = app.resume(project, observe=False, limit=1)
+    pending = resume["continuity"]["pending"]
+    assert any(item["text"] == paragraph and item["status"] == "pending" for item in pending)
+    assert any(
+        item["text"] == paragraph and item["category"] == "documented_pending"
+        for item in resume["next_actions"]
+    )
+    assert paragraph in bounded_export(resume, "markdown", 24000)
+    exported = json.loads(bounded_export(resume, "json", 24000))
+    assert any(
+        item["text"] == paragraph
+        and item["category"] == "documented_pending"
+        and item["status"] == "pending"
+        for item in exported["context"]
+    )
 
 
 def test_soft_wrapped_condition_retains_its_complete_qualification():

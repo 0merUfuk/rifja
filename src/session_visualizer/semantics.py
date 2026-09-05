@@ -329,34 +329,42 @@ def document_candidates(record: Record, lines: list[str]) -> list[Candidate]:
             )
         ):
             continue
-        pending = bool(PENDING.search(text))
+        # A prohibition can contain status words ("do not run", "never call it
+        # unverified"). Exclude its clause from status detection, while keeping
+        # independent pending clauses and the complete original wording.
+        status_text = " ".join(
+            part
+            for part in re.split(r"(?<=[.!?;])\s+", text)
+            if not re.match(r"(?i)^(?:do not|never|must not)\b", part)
+        )
+        pending = bool(PENDING.search(status_text))
         if re.search(r"(?i)architecture|changelog", name) and not re.search(
-            r"(?i)\b(?:pending|unfinished|unverified|still|not yet)\b", text
+            r"(?i)\b(?:pending|unfinished|unverified|still|not yet)\b", status_text
         ):
             pending = False
         # Negative availability phrasing describes a verification gap but never
         # proves broken software. Keep its original wording intact.
         gap = bool(
-            re.search(r"(?i)\b(?:checks?|verification|QA|test|doğrulama)\b", text)
-            and re.search(r"(?i)\b(?:unavailable|not available|yapılamadı)\b", text)
+            re.search(r"(?i)\b(?:checks?|verification|QA|test|doğrulama)\b", status_text)
+            and re.search(r"(?i)\b(?:unavailable|not available|yapılamadı)\b", status_text)
         )
-        if deferred_section or DEFERRED.search(text):
+        if deferred_section or DEFERRED.search(status_text):
             kind, status, category = "context", "deferred", "documented_deferred"
-        elif NEGATIVE_PENDING.search(text):
+        elif NEGATIVE_PENDING.search(status_text):
             kind, status, category = "claim", "unverified", "documented_claim"
         elif historical_section or re.match(r"(?i)historical\b|earlier\b", text):
             kind, status, category = "context", "historical", "documented_history"
-        elif re.match(
-            r"(?i)(?:if|when|in case|should .* fail|eğer)\b", text
-        ) or AUTHORIZATION_CONSTRAINT.search(text):
+        elif re.match(r"(?i)(?:if|when|in case|should .* fail|eğer)\b", text) or (
+            AUTHORIZATION_CONSTRAINT.search(text) and not (pending or gap)
+        ):
             kind, status, category = "constraint", "documented", "documented_constraint"
         elif pending or gap:
-            if LIMITATION.search(text) and not re.search(
-                r"(?i)\b(?:release|browser|visual|interactive|sürüm|tarayıcı)\b", text
+            if LIMITATION.search(status_text) and not re.search(
+                r"(?i)\b(?:release|browser|visual|interactive|sürüm|tarayıcı)\b", status_text
             ):
                 kind, status, category = "limitation", "documented", "documented_limitation"
             else:
-                kind = "blocker" if blocked(text) else "task"
+                kind = "blocker" if blocked(status_text) else "task"
                 status, category = (
                     ("blocked" if kind == "blocker" else "pending"),
                     "documented_pending",

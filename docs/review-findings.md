@@ -1,8 +1,8 @@
 # Independent local review findings
 
-Checkpoint: **2026-09-05 20:16:35 UTC**, shared `main` working tree. No commit/HEAD was available at the initial review. Scope is the runtime application, storage, ingestion, privacy, adapters, context, rendering and CLI. This reviewer did not independently certify their own `git.py` or `compressed.py`; those were assigned to another reviewer. All reproductions use synthetic temporary state.
+Checkpoint: **2026-09-05 20:23:26 UTC**, shared `main` working tree. No commit/HEAD was available at the initial review. Scope is the runtime application, storage, ingestion, privacy, adapters, context, rendering and CLI. This reviewer did not independently certify their own `git.py` or `compressed.py`; those were assigned to another reviewer. All reproductions use synthetic temporary state.
 
-**Source result: all 14 review regressions and 32 resilience cases pass; a follow-up run including three lead regression cases passed all 49.** Eleven findings below have reviewed source fixes. The older wheel identified below contains reproduced failures. This source checkpoint does not assert a final package result; authoritative final installation and immutable-artifact outcomes are recorded separately in the external local `RELEASE-EVIDENCE` report. Passing source tests do not approve an older distribution.
+**Latest source result: all 15 review regressions and three lead cases pass (18 total).** Twelve findings below have reviewed source fixes. Earlier 46/49-case runs remain recorded below; those runs preceded the final crowded-project regression. The older wheel identified below contains reproduced failures. This source checkpoint does not assert a final package result; authoritative final installation and immutable-artifact outcomes are recorded separately in the external local `RELEASE-EVIDENCE` report. Passing source tests do not approve an older distribution.
 
 The security-threat-model skill and its reference template were applied using the operator-supplied local/offline/single-user context. No additional permission questions were needed. CodeRabbit was unavailable and external upload was outside scope, so this was a local manual and executable review. The only `.local` content read during final review was the expressly authorized synthetic `.local/install-candidate-1/report.json`; private transcripts and other private reports were excluded.
 
@@ -23,12 +23,13 @@ Severity describes the original defect with its realistic prerequisite, not an o
 | RF-009 | Medium | A concurrent connection committed during fresh repository observation after a read snapshot began. The snapshot-to-write upgrade escaped as raw `sqlite3.OperationalError`. | `Store.transaction` translates SQLite busy/locked errors in outer transactions and nested savepoints into `BusyError` with retry guidance; rollback remains intact. Controlled second-connection regression passes. This is a safe retry outcome, not a claim that every concurrent command succeeds. |
 | RF-010 | Medium | An observed filename containing newlines, Markdown headings and HTML was inserted literally into ordinary resume output. Requires imported/repository metadata plus a reader that interprets Markdown. No command execution was shown. | `render.resume_markdown` escapes dynamic metadata, paths, diagnostics and evidence locations. Filename-markup regression passes. The separate bounded-export renderer already had escaping controls. |
 | RF-011 | Medium | A Hermes `messages` view exposed the expected columns but evaluated a nonterminating recursive scalar. Actual refresh held its writer lock beyond the test harness's three-second timeout. Requires a hostile selected producer database, not transcript prose alone. | `adapters._columns` rejects views/virtual definitions before evaluation. `_open_db` adds `trusted_schema=OFF`, an 8 MiB page-cache target and a cooperative 100 million SQLite-operation / 30-second budget. The reader emits partial coverage on interruption. The actual App/Ingestor child-process regression now finishes with partial status and zero imported records. |
+| RF-012 | Medium | A crowded project had 50 active blockers and 50 explicit next actions. Blocker-first ordering filled the default 50-item window and resume returned no next action. A later export budget could repeat the loss. The lead found this during final benchmark validation; an independent two-session native-ingestion/real-Git fixture reproduced it. | `App.items` reserves up to five action slots before filling the remaining priority window. `render.bounded_export` preserves the recommended action selection before other candidates. The same regression verifies blockers and current supported actions in live resume, both default 24,000-character export formats, and exact/disclosed omissions. It passes without expanding either bound. |
 
 Source anchors: [application](../src/session_visualizer/app.py), [storage](../src/session_visualizer/store.py), [ingestion](../src/session_visualizer/ingest.py), [privacy](../src/session_visualizer/privacy.py), [context](../src/session_visualizer/context.py), [rendering](../src/session_visualizer/render.py), [adapters](../src/session_visualizer/adapters.py). Exact independent cases are in [test_review_regressions.py](../tests/test_review_regressions.py).
 
 ## Verification evidence
 
-No production code was edited by this reviewer during this review. No failing expectation was removed, softened or marked as expected failure.
+No production code was edited by this reviewer during this review. No failing expectation was removed, softened or marked as expected failure. The RF-012 fixture is one additional case, extended through both render formats rather than counted repeatedly.
 
 ```text
 Initial review, 19:53 UTC:
@@ -59,6 +60,25 @@ The final source run contains all original seven cases, seven new cases, and 32 
 
 The final lead-owned coverage correction was also inspected: `App.source_add` locks the configuration read/modify/write; `Ingestor.refresh` records its exact source/exclusion scope; `App.coverage` marks a changed scope `refresh_required` and a disappeared configured root `partial`. Its regression passed in the 49-case follow-up. Newer decision-freshness and principle-exception rendering changes are covered by the separate acceptance reviewer; no independent duplicate certification is implied.
 
+## Final crowded-project correction (RF-012)
+
+The previous installed-artifact review of wheel `a9fce2c0414e4022e990968d7cd2b92f3f80ec664722adc15803f6a63ecda626` passed its then-existing 14 review cases plus three lead cases. That readiness result was superseded after the lead's final benchmark exposed the full-blocker-window defect. Earlier private review reports are preserved; their passing counts do not include the new case. The frozen threat model describes the preceding checkpoint; this section supplements its context-priority threat with the newly reproduced boundary.
+
+```text
+Before correction:
+.venv/bin/python -m pytest tests/test_review_regressions.py::test_many_active_blockers_preserve_supported_actions_and_honest_omissions -q
+1 failed in 0.62s; exit 1. Live resume.next_actions was empty.
+
+After correction and extension through JSON/Markdown exports:
+.venv/bin/python -m pytest tests/test_review_regressions.py tests/test_lead_regressions.py -q
+18 passed in 0.89s; exit 0; 0 failed; 0 skipped.
+
+.venv/bin/python -m ruff check tests/test_review_regressions.py
+All checks passed!; exit 0.
+```
+
+The fixture uses two temporary native Claude sessions, an actual temporary Git repository and live App/Ingestor calls. It verifies 50 extracted blockers and 50 extracted explicit actions before testing the limited view. It requires both kinds to survive, the complete total to remain 100, omitted count to equal total minus retained items, and omission notices to remain visible. JSON and Markdown exports must include the recommended action and a blocker within the unchanged default character bound. This tests the application contract; it does not independently certify the reviewer's Git collector implementation.
+
 ## Distribution evidence at this source checkpoint
 
 The reviewed older wheel is `dist/session_visualizer-0.1.0rc1-py3-none-any.whl`, SHA-256 `b75183d0ad09e30729e9abea27f4a3e4324da56db202967fc08147e82817d954`. Its corresponding sdist SHA-256 is `82fe1fcb40ca8b283924dbba9e43d1ba6944337c3ae2fb3870472bfebe3c8046`.
@@ -76,23 +96,23 @@ PYTHONPATH=/path/to/isolated/site-packages /path/to/checkout/.venv/bin/python -m
 
 The four failures were obsolete task/goal projection, critical blocker omission and concurrent observation error handling. Two harmless pytest-cache warnings arose from using `/dev/null` as the configuration location; subsequent external runs should disable `cacheprovider`. Later filename/view regressions were not part of that old-package run.
 
-Final artifact acceptance requires installation outside the checkout, all 14 review regressions against that exact installation, and reconciliation with the immutable-package acceptance/large benchmark. The external local `RELEASE-EVIDENCE` report records those final outcomes; this packaged source-review checkpoint remains immutable and is not a claim that a later artifact is unverified. Earlier benchmark failures must remain documented alongside any later executed replacement result. This reviewer has not read or certified private benchmark reports. Platform support beyond the executed macOS/Python environment is not established.
+Final artifact acceptance requires installation outside the checkout, all 15 review regressions against that exact installation, and reconciliation with the immutable-package acceptance/large benchmark. The external local `RELEASE-EVIDENCE` report records those final outcomes; this packaged source-review checkpoint remains immutable and is not a claim that a later artifact is unverified. Earlier benchmark failures must remain documented alongside any later executed replacement result. This reviewer has not read or certified private benchmark reports. Platform support beyond the executed macOS/Python environment is not established.
 
 ## Source fingerprints
 
-SHA-256 sampled at **20:16:35 UTC**. The working tree remains mutable; later changes require a new fingerprint and relevant rerun.
+SHA-256 sampled at **20:23:26 UTC**. The working tree remains mutable; later changes require a new fingerprint and relevant rerun.
 
 | File | SHA-256 |
 |---|---|
-| `src/session_visualizer/app.py` | `10d70ab5ec71e68ad2a2294bca414d80d100f04f0149c949d9304448726e627c` |
+| `src/session_visualizer/app.py` | `77a58ab7db28ac3850c845724beea8eacf065c9365d96de5e675026707d57571` |
 | `src/session_visualizer/store.py` | `0d9a86d315f2665ca3754b8626d219cb604e022fc5fcb3e340aafcb41690ee17` |
 | `src/session_visualizer/ingest.py` | `55a117180b38cad14e9bccacfd2f6c8649bd88411bdec50343f3dab36faab92c` |
 | `src/session_visualizer/privacy.py` | `249d02777849d1acbdf49ca623a7cfce6f232a4267a2b24caefc8787fae08a17` |
 | `src/session_visualizer/context.py` | `8fe60e99fec2c029d39dab1e4d47ae81d0855eefe2d2bc44313f4f8ba537607e` |
-| `src/session_visualizer/render.py` | `066dd742e9954eabf4776cb68b56f5e1dcceb95b6e416dfe9d69e3bd5aa74c5b` |
+| `src/session_visualizer/render.py` | `337d6c33f42c22962cb4d851d842168f4c631cbf7558cce2eb1b99b87e02ef17` |
 | `src/session_visualizer/cli.py` | `e16f97b207ba2c8a03077f2ed37afddc0a7bf3b8603bada41aade1d4a0abf88d` |
 | `src/session_visualizer/adapters.py` | `563dc9efbd19dc5a905f8090febf46f0ad54c18acc406b04e1b7968f99717ac3` |
-| `tests/test_review_regressions.py` | `4401c12423c5a12232b2eb2f01550d2fa21a32973e59e664436ce090ba9be54e` |
+| `tests/test_review_regressions.py` | `9e7e7de26e8b960356a6b7b76d35551440b00051702fa2812326a3bcdee42c46` |
 
 ## Residual boundaries
 

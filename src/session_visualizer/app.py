@@ -434,6 +434,16 @@ class App:
                     else 5
                 )
             )
+            # A busy project can have more blockers than the entire window. Reserve
+            # a few action slots so the bounded view still supports continuation.
+            actions = [
+                item
+                for item in filtered
+                if item["kind"] in {"next_action", "task"}
+                and item["status"] in {"active", "pending", "blocked"}
+            ][: min(5, (limit + 1) // 2)]
+            action_ids = {item["id"] for item in actions}
+            filtered = actions + [item for item in filtered if item["id"] not in action_ids]
         return {
             "items": filtered[:limit],
             "total": len(filtered),
@@ -638,7 +648,7 @@ class App:
             )
         if items["omitted"]:
             uncertainties.append(
-                f"{items['omitted']} older derived items omitted; inspect items for more context."
+                f"{items['omitted']} derived items omitted; current work may be among them. Inspect items with a larger --limit for more context."
             )
         if result["coverage"]["status"] != "passed":
             uncertainties.append("Source coverage is incomplete or has not been refreshed.")

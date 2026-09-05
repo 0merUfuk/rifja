@@ -325,6 +325,71 @@ def test_recent_claims_do_not_hide_an_older_critical_blocker(app: App, tmp_path:
     ), "Default resume must retain an unresolved critical blocker even after many newer claims."
 
 
+def test_many_active_blockers_preserve_supported_actions_and_honest_omissions(
+    app: App, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The bounded view must retain both kinds of continuity evidence under load."""
+    from session_visualizer.render import bounded_export
+
+    for name in list(os.environ):
+        if name.startswith("GIT_"):
+            monkeypatch.delenv(name)
+    monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "1")
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", os.devnull)
+    repo = tmp_path / "busy synthetic repository"
+    subprocess.run(["git", "init", "-q", str(repo)], check=True, capture_output=True)
+    project = app.register(repo)["project"]["id"]
+    sources = tmp_path / "native-sessions"
+    sources.mkdir()
+    for session, marker in (("blockers", "BLOCKER:"), ("actions", "NEXT:")):
+        records = []
+        for index in range(50):
+            record = json.loads(
+                transcript(f"{marker} synthetic {session} item {index}.", f"{session}-{index}")
+            )
+            record.update(
+                sessionId=f"busy-{session}-session",
+                cwd=str(repo),
+                timestamp=f"2025-01-02T12:00:{index:02d}Z",
+            )
+            records.append(record)
+        (sources / f"{session}.jsonl").write_text(
+            "".join(json.dumps(record) + "\n" for record in records)
+        )
+    app.source_add("claude", sources)
+    refresh = Ingestor(app.store).refresh()
+    assert refresh["status"] == "passed"
+    assert len(app.store.rows("SELECT id FROM sessions")) == 2
+    complete = app.items(project, limit=1000)
+    assert len([item for item in complete["items"] if item["kind"] == "blocker"]) == 50
+    assert len([item for item in complete["items"] if item["kind"] == "next_action"]) == 50
+
+    data = app.resume(project)
+    assert data["worktrees"][0]["active"]
+    assert any(item["kind"] == "blocker" for item in data["unfinished"])
+    assert data["next_actions"], "A full blocker window must not hide every supported next action."
+    assert all(action["availability"] == "current" for action in data["next_actions"])
+    window = data["items"]
+    assert window["total"] == complete["total"] == 100
+    assert len(window["items"]) <= 50
+    assert window["omitted"] == window["total"] - len(window["items"]) > 0
+    assert any(
+        str(window["omitted"]) in note and "omitted" in note for note in data["uncertainties"]
+    )
+    recommended = data["next_actions"][0]
+    json_output = bounded_export(data, "json")
+    exported = json.loads(json_output)
+    assert len(json_output) <= 24000
+    assert any(item["kind"] == "blocker" for item in exported["items"])
+    assert any(item["record_id"] == recommended["record_id"] for item in exported["items"])
+    assert exported["omissions"]["items"] == complete["total"] - len(exported["items"]) > 0
+    markdown = bounded_export(data, "markdown")
+    assert len(markdown) <= 24000
+    assert recommended["text"] in markdown
+    assert any(item["text"] in markdown for item in data["unfinished"] if item["kind"] == "blocker")
+    assert "Omissions:" in markdown and exported["omission_notice"] in markdown
+
+
 def test_concurrent_commit_during_observation_has_controlled_busy_result(
     app: App, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

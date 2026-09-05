@@ -280,9 +280,11 @@ def bounded_export(data: dict[str, Any], format: str = "markdown", max_chars: in
         "claim": 5,
         "principle": 6,
     }
+    recommended = {(item["record_id"], item["text"]) for item in data["next_actions"]}
     for item in sorted(
         data["items"]["items"],
         key=lambda i: (
+            (i["record_id"], i["text"]) not in recommended,
             priority.get(i["kind"], 7),
             i["status"] not in {"active", "blocked", "pending"},
             i["id"],

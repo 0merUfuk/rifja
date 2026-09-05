@@ -182,3 +182,11 @@ Only the final installed candidate's stable runtime fingerprint and completed
 large-run evidence can certify this extended workload. A tiny harness self-check
 establishes count/output wiring only; it does not replace a large measurement or
 certify performance while application files are changing.
+
+Large refreshes use a 16 MiB SQLite page-cache target and a 4,096-page automatic
+WAL checkpoint threshold (about 16 MiB with the normal 4 KiB page size). This
+amortizes page reuse and checkpoints across source transactions. It does not
+relax commit synchronization, remove source-level rollback, defer ingestion to a
+background job, or omit the final connection close from measured CLI wall time.
+Long-lived external readers can delay WAL recycling; the threshold is not a hard
+file-size limit. See [SQLite's WAL performance and checkpoint documentation](https://sqlite.org/wal.html).

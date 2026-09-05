@@ -239,14 +239,15 @@ def execute(args: argparse.Namespace, store: Store) -> tuple[Any, int]:
         ), 0
     if cmd in {"tasks", "decisions", "items"}:
         result = app.items(
-            args.project, "decision" if cmd == "decisions" else None, args.limit, args.all
+            args.project,
+            "decision" if cmd == "decisions" else None,
+            args.limit,
+            args.all,
+            prioritize_active=cmd == "tasks",
+            kinds=frozenset({"task", "next_action", "blocker", "claim", "correction"})
+            if cmd == "tasks"
+            else None,
         )
-        if cmd == "tasks":
-            result["items"] = [
-                i
-                for i in result["items"]
-                if i["kind"] in {"task", "next_action", "blocker", "claim", "correction"}
-            ]
         return result, 0
     if cmd == "search":
         return app.search(args.query, args.project, args.provider, args.actor, args.limit), 0

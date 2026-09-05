@@ -607,3 +607,20 @@ def test_retention_confirm_applies_previewed_removal(cli):
     removed = cli.data("retention", "--before", "2026-09-06", "--confirm")
     assert removed["sessions_forgotten"] == 1 and removed["records_removed"] == 6
     assert cli.data("session")["sessions"] == []
+
+
+def test_tasks_keeps_unfinished_work_before_newer_claims_and_filters_before_limit(cli):
+    repo = cli.repo()
+    cli.data("project", "add", str(repo), "--name", "harbor")
+    source = cli.source_dir / "busy.jsonl"
+    events = [("old-task", "user", "TASK: Check the recovery boundary.")]
+    events += [(f"claim-{i}", "assistant", "The diagnostic check passed.") for i in range(25)]
+    events += [(f"choice-{i}", "user", "DECISION: Keep the evidence local.") for i in range(25)]
+    cli.source(source, repo, events=events)
+    cli.data("source", "add", "codex", str(source))
+    cli.data("refresh")
+    tasks = cli.data("tasks", "--project", "harbor", "--limit", "2")
+    assert tasks["items"][0]["text"] == "Check the recovery boundary."
+    assert len(tasks["items"]) == 2
+    assert tasks["total"] == 26 and tasks["omitted"] == 24
+    assert {item["kind"] for item in tasks["items"]} == {"task", "claim"}

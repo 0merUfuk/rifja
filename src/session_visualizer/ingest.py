@@ -6,6 +6,7 @@ import os
 import sqlite3
 from collections.abc import Iterator
 from dataclasses import asdict
+from dataclasses import fields as dataclass_fields
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -14,7 +15,7 @@ from . import __version__, adapters
 from .compressed import iter_zstd_lines
 from .extract import ExtractionLimitError, extract
 from .git import resolve_repository
-from .models import Diagnostic, Record
+from .models import Candidate, Diagnostic, Record
 from .privacy import (
     MAX_EXCERPT,
     MAX_RECORD_BYTES,
@@ -29,6 +30,16 @@ from .privacy import (
 )
 from .store import Store
 from .timeutil import normalize, now
+
+_RECORD_FIELDS = tuple(field.name for field in dataclass_fields(Record))
+_CANDIDATE_FIELDS = tuple(field.name for field in dataclass_fields(Candidate))
+
+
+def _clean_fields(value: Record | Candidate, names: tuple[str, ...]) -> dict[str, Any]:
+    # These keys are fixed application schema, not imported text. Clean every
+    # value at the same depth as clean(asdict(value)), including nested keys.
+    # Avoid deep-copying then scanning the same fixed keys for every record.
+    return {name: clean(getattr(value, name), depth=1) for name in names}
 
 
 def source_signature(path: Path) -> str:
@@ -157,7 +168,7 @@ class Ingestor:
     def record(
         self, raw: Record, generation: int, locator: str, migrate_legacy: bool = False
     ) -> None:
-        value = clean(asdict(raw))
+        value = _clean_fields(raw, _RECORD_FIELDS)
         # Classification sees the bounded, redacted record, not only its display
         # excerpt. Hash the complete redacted text so edits beyond the excerpt
         # still get distinct source evidence identities.
@@ -261,7 +272,7 @@ class Ingestor:
             if self.rebuild:
                 self.store.db.execute("DELETE FROM items WHERE record_id=?", (rid,))
             for i, candidate in enumerate(candidates):
-                item = clean(asdict(candidate))
+                item = _clean_fields(candidate, _CANDIDATE_FIELDS)
                 item_id = digest(rid, i, item)
                 self.store.db.execute(
                     "INSERT OR IGNORE INTO items VALUES(?,?,?,?,?,?,?,?,?,?,?)",

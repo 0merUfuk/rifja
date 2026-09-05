@@ -353,6 +353,7 @@ class App:
         prioritize_active: bool = False,
         include_evidence: bool = True,
         provider: str | None = None,
+        kinds: frozenset[str] | None = None,
     ) -> dict[str, Any]:
         args: list[Any] = []
         where = []
@@ -442,6 +443,7 @@ class App:
             for item in by_id.values()
             if (include_archived or item["status"] not in {"archived", "rejected"})
             and (not kind or item["kind"] == kind)
+            and (kinds is None or item["kind"] in kinds)
             and (not provider or item["provider"] == provider)
         ]
         # Most recent first, stable IDs for ties. Explicit resolutions stay in the view.

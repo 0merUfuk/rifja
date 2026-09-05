@@ -11,12 +11,14 @@ from pathlib import Path
 import pytest
 
 from session_visualizer import documents
+from session_visualizer import ingest as ingest_module
 from session_visualizer.adapters import normalize
 from session_visualizer.app import App
 from session_visualizer.briefing import build_brief
 from session_visualizer.extract import extract
 from session_visualizer.ingest import Ingestor
 from session_visualizer.models import Record
+from session_visualizer.privacy import MAX_DEPTH, MAX_EXCERPT, clean
 from session_visualizer.render import bounded_export, resume_markdown
 from session_visualizer.store import Store, restore
 
@@ -84,6 +86,86 @@ def test_native_tool_proposal_code_with_pending_is_context_not_active_work():
     assert [(item.kind, item.status, item.category, item.text) for item in extracted] == [
         ("context", "proposed", "agent_proposal", code)
     ]
+
+
+def test_field_cleaning_preserves_redaction_limits_and_persisted_content_ids(tmp_path, monkeypatch):
+    secret = "sk-" + "synthetic" + "123456789"
+    deep: object = secret
+    for _ in range(MAX_DEPTH + 2):
+        deep = {"child": deep}
+    metadata = {
+        secret: secret,
+        "\x1b[31mvisible\x1b[0m": "control\u202esafe",
+        "deep": deep,
+        "wide": {f"field-{index}": index for index in range(105)},
+        "sequence": list(range(105)),
+        "k" * 205: "long metadata key",
+    }
+    dependencies = ",".join(f"dependency-{index}" for index in range(105))
+    text = (
+        "TASK: Verify nested redaction.\n"
+        f"RATIONALE: password={secret}\nDEPENDENCIES: {dependencies}\n" + "x" * (MAX_EXCERPT + 100)
+    )
+    raw = Record(
+        "codex",
+        "cleaning-session",
+        "cleaning-record",
+        "user",
+        "user_intent",
+        text,
+        "2026-01-01T00:00:00Z",
+        metadata=metadata,
+    )
+    original = asdict(raw)
+    snapshots = []
+    for legacy in (False, True):
+        with monkeypatch.context() as patch:
+            if legacy:
+                patch.setattr(
+                    ingest_module, "_clean_fields", lambda value, names: clean(asdict(value))
+                )
+            with Store(tmp_path / ("legacy" if legacy else "current")) as store:
+                store.db.execute(
+                    "INSERT INTO sources(id,provider,path,status) VALUES('source','codex',?,'ready')",
+                    (str(tmp_path / "synthetic.jsonl"),),
+                )
+                store.db.execute(
+                    "INSERT INTO generations(id,source_id,number,status,created_at) "
+                    "VALUES(1,'source',1,'current','2026-01-01T00:00:00Z')"
+                )
+                ingestor = Ingestor(store)
+                ingestor.stats = {"inserted_records": 0}
+                for number, suffix in enumerate(("tail-alpha", "tail-beta"), 1):
+                    variant = Record(**{**asdict(raw), "text": text + suffix})
+                    ingestor.record(variant, 1, f"line:{number}")
+                records = store.rows("SELECT * FROM records ORDER BY id")
+                items = store.rows("SELECT * FROM items ORDER BY id")
+                assert len(records) == 2 and len({row["id"] for row in records}) == 2
+                assert records[0]["text"] == records[1]["text"]
+                assert all(len(row["text"]) <= MAX_EXCERPT for row in records)
+                for record in records:
+                    captured = json.loads(record["metadata"])
+                    assert captured["[REDACTED]"] == "[REDACTED]"
+                    assert captured["visible"] == "controlsafe"
+                    assert len(captured["wide"]) == len(captured["sequence"]) == 100
+                    assert max(map(len, captured)) <= 200
+                    assert "[depth limit]" in json.dumps(captured["deep"])
+                assert len(items) == 2
+                assert all(len(json.loads(item["dependencies"])) == 100 for item in items)
+                assert all(item["rationale"] == "[REDACTED]" for item in items)
+                persisted = {
+                    "records": [
+                        {key: value for key, value in row.items() if key != "imported_at"}
+                        for row in records
+                    ],
+                    "items": items,
+                    "fts": store.rows("SELECT text FROM records_fts ORDER BY rowid"),
+                    "occurrences": store.rows("SELECT * FROM occurrences ORDER BY locator"),
+                }
+                assert secret not in json.dumps(persisted)
+                snapshots.append(persisted)
+    assert snapshots[0] == snapshots[1]
+    assert asdict(raw) == original
 
 
 def test_user_negated_completion_is_not_a_completion_correction():

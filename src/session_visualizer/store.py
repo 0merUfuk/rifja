@@ -91,6 +91,11 @@ class Store:
                     self.db.execute(MIGRATION_V3)
                     self.db.execute("PRAGMA user_version=3")
             self.db.execute("PRAGMA journal_mode=WAL")
+            # Bounded local cache and checkpoint batching reduce repeated page
+            # churn during large refreshes. FULL commit synchronization and
+            # per-source transactions remain unchanged; close includes cleanup.
+            self.db.execute("PRAGMA cache_size=-16384")
+            self.db.execute("PRAGMA wal_autocheckpoint=4096")
             os.chmod(self.path, 0o600)
         except BaseException:
             self.db.close()

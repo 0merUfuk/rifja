@@ -80,6 +80,9 @@ def _brief_lines(data: dict[str, Any]) -> list[str]:
         lines.append(
             "Current user objective: unknown; documented purpose is not a user instruction."
         )
+    for operation in brief.get("identity", {}).get("observed_operations", [])[-1:]:
+        if operation != data.get("where_work_stopped"):
+            lines.append("Recorded project identity change: " + _context_entry(operation))
     if data.get("latest_user_instruction"):
         lines.append("Latest substantive user instruction:")
         lines.append(_context_entry(data["latest_user_instruction"]))
@@ -93,9 +96,6 @@ def _brief_lines(data: dict[str, Any]) -> list[str]:
                 + _inline(stop.get("text", "")[:700])
                 + f" (ref {stop.get('id', '')[:12]})"
             )
-    for operation in brief.get("identity", {}).get("observed_operations", [])[-1:]:
-        if operation != stop:
-            lines.append("Recent concrete action: " + _context_entry(operation))
     for result in data.get("recent_recorded_results", []):
         lines.append(_context_entry(result))
     for update in data.get("recent_agent_updates", []):
@@ -396,6 +396,11 @@ def bounded_export(data: dict[str, Any], format: str = "markdown", max_chars: in
     context_entries = []
     if data.get("purpose"):
         context_entries.append({"kind": "project_purpose", **data["purpose"]})
+    # Establish which project this history belongs to before presenting its
+    # instructions and claims. Identity operations retain their historical scope.
+    for operation in brief.get("identity", {}).get("observed_operations", [])[-1:]:
+        if operation != data.get("where_work_stopped"):
+            context_entries.append({**operation, "kind": "recent_concrete_action"})
     if data.get("latest_user_instruction"):
         context_entries.append(
             {**data["latest_user_instruction"], "kind": "latest_user_instruction"}
@@ -419,9 +424,6 @@ def bounded_export(data: dict[str, Any], format: str = "markdown", max_chars: in
     for update in data.get("recent_agent_updates", []):
         if not stop or update["record_id"] != stop.get("id"):
             context_entries.append({**update, "kind": "recent_agent_update"})
-    for operation in brief.get("identity", {}).get("observed_operations", [])[-1:]:
-        if operation != stop:
-            context_entries.append({**operation, "kind": "recent_concrete_action"})
     for mapping in brief.get("identity", {}).get("explicit_mappings", []):
         context_entries.append(
             {

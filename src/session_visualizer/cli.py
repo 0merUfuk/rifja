@@ -13,7 +13,7 @@ from . import __version__
 from .app import App
 from .ingest import Ingestor
 from .render import bounded_export, readable, safe_output
-from .store import BusyError, Store, restore
+from .store import SCHEMA_VERSION, BusyError, Store, restore
 
 
 def default_home() -> Path:
@@ -48,6 +48,16 @@ def parser() -> argparse.ArgumentParser:
     sa = ss.add_parser("add")
     sa.add_argument("provider", choices=["codex", "claude", "hermes"])
     sa.add_argument("path", type=Path)
+    document = sub.add_parser("document", help="Opt in to bounded registered-project documents")
+    ds = document.add_subparsers(dest="action", required=True)
+    ds.add_parser("list")
+    da = ds.add_parser("add")
+    da.add_argument("project")
+    da.add_argument("--worktree")
+    da.add_argument("--include", action="append", dest="patterns")
+    da.add_argument("--max-files", type=int, default=24)
+    da.add_argument("--max-bytes", type=int, default=131072)
+    da.add_argument("--max-depth", type=int, default=2)
     refresh = sub.add_parser("refresh", help="Incrementally import configured sources")
     refresh.add_argument(
         "--verify", action="store_true", help="Rehash inputs even when metadata is unchanged"
@@ -186,6 +196,25 @@ def execute(args: argparse.Namespace, store: Store) -> tuple[Any, int]:
     if cmd == "refresh":
         result = Ingestor(store).refresh(args.verify, args.rebuild)
         return result, 0 if result["status"] == "passed" else 3
+    if cmd == "document":
+        if args.action == "list":
+            return {
+                "configured": store.config("project_documents", []),
+                "coverage": app.coverage(limit=None),
+            }, 0
+        from .documents import configure
+
+        pid = app.find_project(args.project)["id"]
+        if args.worktree:
+            wid = app.find_worktree(args.worktree, pid)
+        else:
+            trees = store.rows("SELECT id FROM worktrees WHERE project_id=? AND active=1", (pid,))
+            if len(trees) != 1:
+                raise ValueError("select_document_worktree_explicitly")
+            wid = trees[0]["id"]
+        return configure(
+            store, pid, wid, args.patterns, args.max_files, args.max_bytes, args.max_depth
+        ), 0
     if cmd == "project":
         if args.action == "add":
             return app.register(args.path, args.name), 0
@@ -275,7 +304,7 @@ def execute(args: argparse.Namespace, store: Store) -> tuple[Any, int]:
         return result, 0 if result["status"] == "passed" else 2
     if cmd == "backup":
         store.backup(args.destination)
-        return {"backup": str(args.destination), "schema_version": 2}, 0
+        return {"backup": str(args.destination), "schema_version": SCHEMA_VERSION}, 0
     if cmd == "forget":
         return app.forget(args.session, args.confirm), 0
     if cmd == "retention":

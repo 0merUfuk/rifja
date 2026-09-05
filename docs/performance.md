@@ -115,3 +115,70 @@ The baseline is additionally provisional because checkout fingerprints changed d
 Read-only profiling of the same isolated large database attributed 2.107 of a profiled 2.307 seconds to SQLite execution, with 0.109 seconds in output sanitization. The existing FTS query ordered all matches by rank, timestamp and ID before limiting. `EXPLAIN QUERY PLAN` showed `VIRTUAL TABLE INDEX 0:M1` and `USE TEMP B-TREE FOR ORDER BY`. A rank-only comparison used `VIRTUAL TABLE INDEX 32:M1` and removed that temporary sort. With one warmup and seven direct SQLite samples, query-only p95 changed from 0.216 to 0.131 seconds; both returned 20 stable record IDs within their own repeated executions. These microbenchmarks exclude startup/rendering and are profiling evidence, not replacement CLI acceptance results. Details are retained in `.local/benchmark-search-profile/`.
 
 Final delivery measurements and artifact reconciliation are recorded in the local release evidence report. This document preserves the first installed reference and failed baseline; it does not certify runtime changes made afterward.
+
+## RC3 document-inclusive measurement method
+
+The additional workload and measurements below are declared before the RC3 large
+run. The established provider targets and all existing budgets remain unchanged:
+the large preset still generates exactly 1,000 provider sessions, 250,000 provider
+records and 262,144,000 provider source bytes across 20 repositories and five linked
+worktrees. Documents are additional inputs and are counted separately; they never
+replace provider records or provider source bytes.
+
+Every registered checkout receives a synthetic maintained `README.md` and
+`STATUS.md`. The README contains three bounded prose sections covering purpose,
+architecture and the state boundary. The status document contains six sections
+covering pending work, its conditions, limitations, a decision, a historical claim
+and a fenced command example. These inputs are committed as part of the existing
+three-commit repository setup. Linked worktrees inherit the documents and receive
+a controlled status edit identifying their working context. Collection is enabled
+through the installed public `document add` command with an explicit worktree and
+two relative filename allowlists before the cold refresh.
+
+| Preset | Registered checkouts with documents | Additional documents/sessions | Additional initial document records | Additional document bytes |
+|---|---:|---:|---:|---:|
+| Tiny | 3 | 6 | 27 | 4,981 |
+| Small | 25 | 50 | 225 | 41,505 |
+| Large | 25 | 50 | 225 | 41,505 |
+
+The independent generator declares these paragraph counts without importing the
+application parser. `documents.json` records every input's exact byte count,
+SHA-256, relative path and expected normalized count, plus aggregate document bytes
+and a content manifest hash. The original `corpus.json` retains the provider-only
+counts and byte target. The copied generator and its SHA-256 identify the exact
+combined fixture definition. This extends the existing harness arguments and
+preserves prior evidence directories without modifying them.
+
+The cold refresh, unchanged refresh samples and exactly 100 appended provider
+records all run with document collection enabled. SQLite checks independently
+assert exact provider/document session, record and occurrence counts. Unchanged
+refresh must parse and insert zero records and retain the complete document
+source/generation snapshot and record-ID fingerprints. The provider append must
+insert exactly 100 records while preserving all document identities. All existing
+cold, unchanged, append, query and peak ingestion thresholds continue to apply.
+
+After those original measurements, exactly one status paragraph is changed. The
+changed-document refresh is a single report-only time sample, as declared in
+[the continuity design](continuity-design.md). It must parse and insert exactly six
+new document section records, preserve all prior evidence, advance only the changed
+document's generation and leave provider counts unchanged. Subsequent unchanged
+refresh samples again require zero parsing/insertion, stable document identities
+and the existing five-second unchanged-refresh limit. Expected historical document
+versions are recorded separately from the still-forbidden duplicate provider
+records. Peak ingestion RSS includes the added document refresh samples and keeps
+the original 512 MiB limit.
+
+Git status, current project observation and complete resume retain their separate
+measurements. Full bounded handoff construction adds separate JSON and Markdown
+export samples through the installed CLI, including current Git observation,
+normal startup and rendering. Both formats must produce substantive output within
+24,000 characters; the JSON handoff must include documented project purpose.
+Handoff time is reported independently and is not substituted for the indexed
+query budget. RC3 ingestion now performs bounded Git identity/blob metadata reads
+for configured documents; the earlier statement about ingestion avoiding Git
+observations describes the preserved pre-document reference workload.
+
+Only the final installed candidate's stable runtime fingerprint and completed
+large-run evidence can certify this extended workload. A tiny harness self-check
+establishes count/output wiring only; it does not replace a large measurement or
+certify performance while application files are changing.

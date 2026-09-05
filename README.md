@@ -2,7 +2,7 @@
 
 Session Visualizer is a local CLI for resuming engineering work across agent sessions, projects and Git worktrees. It imports explicitly selected Codex, Claude Code and Hermes sources, preserves evidence references, and keeps user instructions, agent claims, recorded results and current Git observations separate.
 
-Version **0.1.0rc2** is a private local release candidate. Runtime collection and queries need no network, model service or paid account. No public redistribution license is granted.
+Version **0.1.0rc3** is a private local release candidate. Runtime collection and queries need no network, model service or paid account. No public redistribution license is granted.
 
 ## Install the local release
 
@@ -10,12 +10,12 @@ Requirements: Python 3.14 or newer, Git, and Python's SQLite with FTS5. Python 3
 
 ```sh
 python3.14 -m venv "$HOME/.local/venvs/session-visualizer"
-"$HOME/.local/venvs/session-visualizer/bin/python" -m pip install --no-index --no-deps "./dist/session_visualizer-0.1.0rc2-py3-none-any.whl"
+"$HOME/.local/venvs/session-visualizer/bin/python" -m pip install --no-index --no-deps "./dist/session_visualizer-0.1.0rc3-py3-none-any.whl"
 export PATH="$HOME/.local/venvs/session-visualizer/bin:$PATH"
 session-visualizer --version
 ```
 
-The final command should print `0.1.0rc2`. Installation uses the local wheel; it does not fetch dependencies. Platform compatibility beyond recorded release verification should be treated as unverified.
+The final command should print `0.1.0rc3`. Installation uses the local wheel; it does not fetch dependencies. Platform compatibility beyond recorded release verification should be treated as unverified.
 
 ## Start with one project
 
@@ -24,6 +24,7 @@ Replace the example repository and transcript paths with directories you intend 
 ```sh
 session-visualizer setup --timezone Europe/Istanbul
 session-visualizer project add "/path/to/project" --name harbor
+session-visualizer document add harbor
 session-visualizer source discover
 session-visualizer source add codex "/path/to/codex/sessions"
 session-visualizer refresh
@@ -32,7 +33,7 @@ session-visualizer daily --project harbor
 session-visualizer resume harbor
 ```
 
-`resume` observes current Git state and shows unfinished work, explicit next actions, decisions, accepted local memory, historical results and uncertainty. Active blockers and actions receive priority over historical items. It does not run tests or certify a fix. Use `resume harbor --cached` when you intentionally want the stored Git observation.
+`document add` opts one registered worktree into bounded README, status, verification and architecture documents. `resume` combines purpose, current Git state, pending work and its conditions, decisions, accepted memory and uncertainty. Documented purpose is separate from a current user objective. Recorded results and document claims do not certify current code. Use `resume harbor --cached` for stored Git observations; documents change only through explicit `refresh`.
 
 ```sh
 session-visualizer search "parser fixture" --project harbor --json
@@ -48,6 +49,7 @@ Output files must not already exist. Exports include accepted project/global mem
 - [Supported provider formats and known gaps](docs/providers.md)
 - [Semantic acceptance corpus and release gates](docs/acceptance.md)
 - [Design and privacy boundaries](docs/design.md)
+- [Project documents, identity and continuity limits](docs/project-context.md)
 - [Release changes and upgrade boundaries](docs/releases.md)
 - [Development checks and private release procedure](docs/development.md)
 

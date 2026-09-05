@@ -271,6 +271,10 @@ def _codex(d: dict, ctx: dict, loc: str) -> ParseResult:
                     ]
                 )
             meta = _observed(item)
+            if item.get("type") in {"CommandExecution", "command_execution"}:
+                meta["execution_source"] = "native_command_execution"
+                if isinstance(ctx.get("cwd"), str):
+                    meta["context_cwd"] = ctx["cwd"]
             event = dict(d)
             if isinstance(item.get("cwd"), str):
                 event["cwd"] = item["cwd"]

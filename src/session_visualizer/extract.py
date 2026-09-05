@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 
 from .models import Candidate, Record
+from .semantics import conversational, document_candidates, natural
 
 MAX_CANDIDATES = 256
 
@@ -109,7 +110,14 @@ def _lines(text: str) -> list[str]:
     fence_char: str | None = None
     fence_length = 0
     quoted_paragraph = False
+    comment = False
     for raw in text.splitlines():
+        if "<!--" in raw:
+            comment = True
+        if comment:
+            if "-->" in raw:
+                comment = False
+            continue
         listed = _LIST_RE.match(raw)
         fence_input = raw[listed.end() :] if listed else raw
         fence = _FENCE_RE.match(fence_input)
@@ -204,8 +212,17 @@ def extract(record: Record) -> list[Candidate]:
     if record.kind in {"metadata", "source_status", "revision"}:
         return []
     actor = record.actor.lower()
+    if record.provider == "project_document" and record.kind == "document_section":
+        if record.metadata.get("source_context") in {"code", "quote"}:
+            return []
+        result = document_candidates(record, _lines(record.text))
+        if len(result) > MAX_CANDIDATES:
+            raise ExtractionLimitError("record_extraction_limit")
+        return result
     if actor == "tool" or record.kind in {"tool_result", "tool_output", "recorded_tool_result"}:
         return [Candidate("claim", record.text.strip(), "recorded", "recorded_tool_result")]
+    if record.kind == "agent_proposal" and record.metadata.get("tool"):
+        return [Candidate("context", record.text.strip(), "proposed", "agent_proposal")]
 
     candidates: list[Candidate] = []
     for line in _lines(record.text):
@@ -265,12 +282,18 @@ def extract(record: Record) -> list[Candidate]:
                 )
             _attributes(candidate)
             candidates.append(candidate)
+        elif actor == "user" and conversational(line):
+            candidates.extend(natural(line, actor))
         elif actor == "user" and _REQUEST_RE.match(line):
             candidate = Candidate("next_action", line, "active", "user_intent")
             _attributes(candidate)
             candidates.append(candidate)
-        elif actor == "assistant" and _SUCCESS_RE.search(_INLINE_CODE_RE.sub(" ", line)):
-            candidates.append(Candidate("claim", line, "unverified", "agent_claim"))
+        else:
+            ordinary = natural(line, actor)
+            if ordinary:
+                candidates.extend(ordinary)
+            elif actor == "assistant" and _SUCCESS_RE.search(_INLINE_CODE_RE.sub(" ", line)):
+                candidates.append(Candidate("claim", line, "unverified", "agent_claim"))
     if len(candidates) > MAX_CANDIDATES:
         raise ExtractionLimitError("record_extraction_limit")
     return candidates

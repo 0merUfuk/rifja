@@ -1,5 +1,23 @@
 # Local release notes
 
+## 0.1.0rc3
+
+Forward local candidate for useful continuity from registered repository documents
+and supported native history. Adds opt-in bounded document refresh, separately
+labeled purpose/status/constraints, conservative recorded-move inference, ordinary
+pending-work and unique-subject resolution, conversation-management filtering, and
+compact evidence excerpts in both export formats. Schema remains 3; refresh
+rebuilds derived extraction and preserves explicit memory/association overrides.
+
+Independent challenges reproduced additional negation, cancellation, condition
+omission and path-alias failures before repair. Their synthetic regressions remain
+in the distribution. Real private inputs, oracle and acceptance outputs remain
+outside the package. See [context limits](project-context.md); the accompanying
+local release evidence decides acceptance for the actual installed artifact.
+
+Rc1/rc2 artifacts and evidence remain preserved. This candidate does not select a
+public license, publish a package or claim general language understanding.
+
 ## 0.1.0rc2
 
 This private local candidate repairs six independently reproduced continuity

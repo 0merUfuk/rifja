@@ -11,7 +11,7 @@ uv run ruff format --check src tests tools
 uv run mypy
 uv run pytest -q
 uv build
-uv run python tools/verify_install.py --wheel dist/session_visualizer-0.1.0rc2-py3-none-any.whl --evidence .local/development-install
+uv run python tools/verify_install.py --wheel dist/session_visualizer-0.1.0rc3-py3-none-any.whl --evidence .local/development-install
 uv run python tools/audit_release.py --output .local/development-audit.json
 ```
 

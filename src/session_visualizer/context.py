@@ -4,7 +4,50 @@ import json
 import re
 from typing import Any
 
+from .semantics import conversational
 from .store import Store
+
+
+def _substantive(record: dict[str, Any]) -> bool:
+    return (
+        bool(record["text"].strip())
+        and not conversational(record["text"])
+        and not bool(
+            re.search(r"(?m)^Message Type:.*", record["text"])
+            and re.search(r"Payload:\s*$", record["text"])
+        )
+    )
+
+
+def _result_excerpt(text: str) -> str:
+    """Select bounded status lines from recorded output, without executing it."""
+    lines = text.splitlines()
+    expanded = []
+    for line in lines[-100:]:
+        if line.startswith("{"):
+            try:
+                value = json.loads(line)
+                if isinstance(value, dict):
+                    value = value.get("value", value)
+                    if isinstance(value, dict) and isinstance(value.get("output"), str):
+                        expanded.extend(value["output"].splitlines()[-80:])
+            except ValueError, RecursionError:
+                pass
+        elif len(line) <= 500:
+            expanded.append(line)
+    selected = [
+        line
+        for line in expanded
+        if re.search(
+            r"(?i)\b(?:attempt=|generation_limit=|generation_runs=|preflight=|verified=|result=|Successfully installed|downloaded to|version_output|\d+ passed|\d+ failed)",
+            line,
+        )
+        and len(line) <= 500
+        and not re.search(
+            r"\.(?:Logf|Printf|log)\(|\b(?:assert|return|def|function)\b|=>|\$\(|\|\|", line
+        )
+    ]
+    return "\n".join(selected[-6:])
 
 
 def details(
@@ -20,6 +63,8 @@ def details(
     records = store.rows(
         "SELECT id,native_id,session_id,actor,kind,text,event_time,original_time,time_status,metadata,worktree_id FROM records WHERE "
         + scope
+        + " AND provider!='project_document'"
+        + " AND (actor IN ('user','tool') OR (actor='assistant' AND kind!='agent_proposal') OR json_extract(metadata,'$.event_type') IN ('turn_aborted','error','warning','context_compacted','compacted'))"
         + " ORDER BY event_time DESC,id LIMIT 60",
         args,
     )
@@ -38,6 +83,7 @@ def details(
         )
         base = {
             "record_ids": [record["id"]],
+            "event_time": record["event_time"],
             "source_ids": [record["native_id"]],
             "project_id": pid,
             "worktree_id": record["worktree_id"],
@@ -169,10 +215,66 @@ def details(
         "SELECT * FROM memory WHERE scope IN ('global',?) AND status='accepted' AND kind!='principle' ORDER BY updated_at DESC,id",
         (pid,),
     )
+    user_records = store.rows(
+        "SELECT id,text,event_time,worktree_id FROM records WHERE "
+        + scope
+        + " AND actor='user' AND EXISTS (SELECT 1 FROM occurrences o JOIN generations g ON g.id=o.generation_id WHERE o.record_id=records.id AND g.status='current') ORDER BY event_time DESC,id LIMIT 20",
+        args,
+    )
+    latest_instruction = next((r for r in user_records if _substantive(r)), None)
+    if latest_instruction:
+        latest_instruction = {
+            **latest_instruction,
+            "record_id": latest_instruction["id"],
+            "category": "recorded_user_instruction",
+            "status": "recorded",
+            "excerpt_omitted_chars": max(0, len(latest_instruction["text"]) - 4000),
+            "text": latest_instruction["text"][:4000],
+        }
+    progress = []
+    for captured in evidence:
+        excerpt = _result_excerpt(captured["text"])
+        if excerpt:
+            progress.append(
+                {
+                    **{k: v for k, v in captured.items() if k not in {"text", "metadata"}},
+                    "text": excerpt,
+                    "exit_status": captured["metadata"].get("exit_status"),
+                    "excerpt_only": True,
+                }
+            )
+        if len(progress) == 3:
+            break
     return {
+        "latest_user_instruction": latest_instruction,
+        "recent_recorded_results": progress,
+        "recent_agent_updates": [
+            {
+                "text": r["text"][:900],
+                "record_id": r["id"],
+                "event_time": r["event_time"],
+                "category": "agent_claim",
+                "status": "unverified",
+                "excerpt_omitted_chars": max(0, len(r["text"]) - 900),
+            }
+            for r in records
+            if r["actor"] == "assistant"
+            and _substantive(r)
+            and (
+                not latest_instruction
+                or (r["event_time"] or "") >= (latest_instruction["event_time"] or "")
+            )
+        ][:3],
         "recent_context": records,
         "where_work_stopped": next(
-            (r for r in records if r["text"] and r["actor"] in {"user", "assistant"}), None
+            (
+                r
+                for r in records
+                if _substantive(r)
+                and r["actor"] in {"user", "assistant"}
+                and r["kind"] not in {"agent_proposal", "metadata"}
+            ),
+            None,
         ),
         "historical_facts": facts,
         "recorded_evidence": evidence,

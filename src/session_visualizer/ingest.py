@@ -24,6 +24,7 @@ from .privacy import (
     excluded,
     open_regular,
     parse_json,
+    symlink_component,
     within,
 )
 from .store import Store
@@ -110,7 +111,14 @@ class Ingestor:
             return None, None, "missing_working_context"
         if cwd in self.association_cache:
             return self.association_cache[cwd]
-        path = Path(cwd).expanduser()
+        from .identity import local_recorded_path
+
+        normalized = local_recorded_path(cwd) if cwd.startswith("file:") else cwd
+        if normalized is None:
+            return None, None, "invalid_local_working_context"
+        path = Path(normalized).expanduser()
+        if cwd.startswith("file:") and symlink_component(path):
+            return None, None, "symlink_working_context"
         if not path.is_absolute():
             return None, None, "relative_working_context"
         if not path.is_dir():
@@ -180,19 +188,36 @@ class Ingestor:
         ]
         rid = digest(*identity)
         legacy_id = rid
+        legacy_ids = []
+        if (
+            migrate_legacy
+            and value["metadata"].get("execution_source") == "native_command_execution"
+        ):
+            old_identity = list(identity)
+            old_identity[-1] = {
+                k: v
+                for k, v in value["metadata"].items()
+                if k not in {"execution_source", "context_cwd"}
+            }
+            legacy_ids.append(digest(*old_identity))
+            if extraction_text != value["text"]:
+                old_identity[6] = value["text"]
+                legacy_ids.append(digest(*old_identity))
         if extraction_text != value["text"]:
             identity[6] = value["text"]
-            legacy_id = digest(*identity)
-        migrate_legacy = (
-            migrate_legacy
-            and legacy_id != rid
-            and bool(
-                self.store.db.execute(
-                    "SELECT 1 FROM occurrences o JOIN generations old ON old.id=o.generation_id JOIN generations current ON current.source_id=old.source_id WHERE o.record_id=? AND current.id=? LIMIT 1",
-                    (legacy_id, generation),
-                ).fetchone()
-            )
-        )
+            legacy_ids.append(digest(*identity))
+        if migrate_legacy:
+            for candidate_id in legacy_ids:
+                if (
+                    candidate_id != rid
+                    and self.store.db.execute(
+                        "SELECT 1 FROM occurrences o JOIN generations old ON old.id=o.generation_id JOIN generations current ON current.source_id=old.source_id WHERE o.record_id=? AND current.id=? LIMIT 1",
+                        (candidate_id, generation),
+                    ).fetchone()
+                ):
+                    legacy_id = candidate_id
+                    break
+        migrate_legacy = migrate_legacy and legacy_id != rid
         if migrate_legacy:
             self._copy_overrides(legacy_id, rid)
         event_time, time_status = normalize(value["timestamp"])
@@ -228,6 +253,11 @@ class Ingestor:
             extracted_record = Record(**value)
             extracted_record.text = extraction_text
             candidates = extract(extracted_record)
+            old_candidates = (
+                self.store.rows("SELECT id,text FROM items WHERE record_id=?", (rid,))
+                if self.rebuild
+                else []
+            )
             if self.rebuild:
                 self.store.db.execute("DELETE FROM items WHERE record_id=?", (rid,))
             for i, candidate in enumerate(candidates):
@@ -249,6 +279,9 @@ class Ingestor:
                         item["method"],
                     ),
                 )
+                same_text = [old for old in old_candidates if old["text"] == item["text"]]
+                if len(same_text) == 1 and same_text[0]["id"] != item_id:
+                    self._copy_overrides(same_text[0]["id"], item_id)
                 if migrate_legacy:
                     # Only transfer item-specific edits when the old derived
                     # item is identical; newly recovered intent has no prior approval.
@@ -289,7 +322,7 @@ class Ingestor:
                     )
 
     def refresh(self, verify: bool = False, rebuild: bool = False) -> dict[str, Any]:
-        pipeline = __version__ + ":explicit-v1:redaction-v1"
+        pipeline = __version__ + ":prose-v1:documents-v1:redaction-v1"
         previous = self.store.config("pipeline_version")
         rebuild = rebuild or (previous is not None and previous != pipeline)
         self.rebuild = rebuild
@@ -341,6 +374,10 @@ class Ingestor:
                     except (OSError, ValueError, sqlite3.Error) as exc:
                         self.stats["failed"] += 1
                         errors.append({"code": type(exc).__name__, "provider": spec["provider"]})
+                from .documents import refresh_documents
+                from .identity import reconcile_moves
+
+                errors.extend(refresh_documents(self, seen, verify, rebuild))
                 for source in self.store.rows("SELECT * FROM sources"):
                     if source["provider"] + ":" + source["path"] not in seen:
                         state = (
@@ -352,6 +389,8 @@ class Ingestor:
                             "UPDATE sources SET status=? WHERE id=?", (state, source["id"])
                         )
                         self.stats["missing"] += 1
+                with self.store.transaction():
+                    identity_report = reconcile_moves(self.store)
                 status = (
                     "partial"
                     if any(self.stats[k] for k in ("partial", "failed", "missing"))
@@ -363,15 +402,21 @@ class Ingestor:
                     "started_at": started,
                     "finished_at": now(),
                     "status": status,
+                    "identity": identity_report,
                 }
                 self.store.db.execute(
                     "UPDATE refresh_runs SET ended_at=?,status=?,stats=? WHERE id=?",
                     (report["finished_at"], status, json.dumps(report), run),
                 )
                 self.store.set_config(
-                    "last_refreshed_scope", {"sources": configured, "exclusions": exclusions}
+                    "last_refreshed_scope",
+                    {
+                        "sources": configured,
+                        "exclusions": exclusions,
+                        "project_documents": self.store.config("project_documents", []),
+                    },
                 )
-                if status == "passed":
+                if not self.stats["failed"] and not self.stats["missing"]:
                     self.store.set_config("pipeline_version", pipeline)
                 return report
             except BaseException:

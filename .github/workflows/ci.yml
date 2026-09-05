@@ -28,4 +28,4 @@ jobs:
       - run: uv run mypy
       - run: uv run pytest -q
       - run: uv build
-      - run: uv run python tools/verify_install.py --wheel dist/session_visualizer-0.1.0rc2-py3-none-any.whl --evidence .local/ci-install
+      - run: uv run python tools/verify_install.py --wheel dist/session_visualizer-0.1.0rc3-py3-none-any.whl --evidence .local/ci-install

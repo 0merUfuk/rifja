@@ -64,6 +64,51 @@ PHRASES = [
     "The output includes a small sample of the operation history. ",
 ]
 NAMESPACE = uuid.UUID("0d1a54cd-79bb-4c74-998d-a0c2a79d59ad")
+DOCUMENT_RECORDS = {"README.md": 3, "STATUS.md": 6}
+DOCUMENT_CHANGE_OLD = "Inspect the synthetic document retry boundary before accepting this fixture."
+DOCUMENT_CHANGE_NEW = (
+    "Inspect the documentchangeanchor recovery boundary before accepting this fixture."
+)
+
+
+def project_document_texts(repository: int, scope: str = "main") -> dict[str, str]:
+    """Known paragraph counts are an independent input contract, not parser output."""
+    return {
+        "README.md": (
+            f"# Synthetic continuity project {repository:02d}\n\n"
+            "## Purpose\n\n"
+            "This project preserves engineering continuity for a local fixture. It connects "
+            "recorded intent, maintained verification notes and repository observations while "
+            "keeping source evidence separate from a claim of current correctness.\n\n"
+            "## Architecture\n\n"
+            "The fixture has a bounded native transcript reader, an immutable evidence index "
+            "and a query layer. Registered worktree identity scopes all observations. "
+            "A linked worktree shares repository history but keeps its own working context.\n\n"
+            "## State boundary\n\n"
+            "Inputs are synthetic and local. A source generation preserves the content "
+            "observed at ingestion; a later document edit retains the earlier evidence. "
+            "No quoted command is executed by collection or handoff construction.\n"
+        ),
+        "STATUS.md": (
+            f"# Verification status for synthetic project {repository:02d}, {scope}\n\n"
+            "## Pending\n\n"
+            f"NEXT: {DOCUMENT_CHANGE_OLD}\n\n"
+            "## Conditions\n\n"
+            "Only after the synthetic dependency is available may the acceptance probe run. "
+            "The probe must use this registered worktree and its current revision.\n\n"
+            "## Known limitations\n\n"
+            "Deferred: Live-provider replay is outside this synthetic benchmark. "
+            "The fixture does not establish remote service behavior or deployment readiness.\n\n"
+            "## Decisions\n\n"
+            "DECISION: Keep document observation separate from controlled verification, "
+            "and retain the source generation when a maintained status paragraph changes.\n\n"
+            "## Historical evidence\n\n"
+            "CLAIM: An earlier synthetic smoke check passed. That recorded statement "
+            "does not verify the current working tree or remove the pending acceptance probe.\n\n"
+            "## Command example\n\n"
+            "```sh\nprintf synthetic-document-example\n```\n"
+        ),
+    }
 
 
 def synthetic_uuid(label: str) -> str:
@@ -213,12 +258,16 @@ class Harness:
             self.git(path, "init", "--quiet")
             for commit in range(3):
                 (path / "example.txt").write_text(f"Synthetic repository {i}; revision {commit}.\n")
-                self.git(path, "add", "example.txt")
+                if commit == 0:
+                    for name, text in project_document_texts(i).items():
+                        (path / name).write_text(text)
+                self.git(path, "add", "example.txt", *DOCUMENT_RECORDS)
                 self.git(path, "commit", "--quiet", "-m", f"Fixture revision {commit}")
             if i < linked:
                 worktree = self.root / "worktrees" / f"repo-{i:02d}-topic"
                 self.git(path, "worktree", "add", "--quiet", "-b", "topic", str(worktree))
                 (worktree / "example.txt").write_text("Synthetic uncommitted worktree change.\n")
+                (worktree / "STATUS.md").write_text(project_document_texts(i, "topic")["STATUS.md"])
                 worktrees.append(worktree)
             if i % 4 == 0:
                 (path / "untracked.txt").write_text("A controlled untracked file.\n")
@@ -240,9 +289,95 @@ class Harness:
             result["duplicate_native_records"] = conn.execute(
                 "SELECT count(*) FROM (SELECT session_id,native_id,actor,kind,count(*) n FROM records GROUP BY session_id,native_id,actor,kind HAVING n>1)"
             ).fetchone()[0]
+            result["sessions_by_provider"] = dict(
+                conn.execute("SELECT provider,count(*) FROM sessions GROUP BY provider")
+            )
+            result["records_by_provider"] = dict(
+                conn.execute("SELECT provider,count(*) FROM records GROUP BY provider")
+            )
+            result["occurrences_by_provider"] = dict(
+                conn.execute(
+                    "SELECT r.provider,count(*) FROM occurrences o JOIN records r "
+                    "ON r.id=o.record_id GROUP BY r.provider"
+                )
+            )
+            result["provider_duplicate_native_records"] = conn.execute(
+                "SELECT count(*) FROM (SELECT session_id,native_id,actor,kind,count(*) n "
+                "FROM records WHERE provider!='project_document' "
+                "GROUP BY session_id,native_id,actor,kind HAVING n>1)"
+            ).fetchone()[0]
             return result
         finally:
             conn.close()
+
+    def document_snapshot(self) -> dict:
+        """Independent read-only snapshot of document identity and current coverage."""
+        path = self.root / "state" / "state.sqlite3"
+        with sqlite3.connect(path.as_uri() + "?mode=ro", uri=True) as conn:
+            conn.execute("PRAGMA query_only=ON")
+            sources = [
+                dict(zip(("id", "path", "generation", "status", "context"), row))
+                for row in conn.execute(
+                    "SELECT id,path,generation,status,context FROM sources "
+                    "WHERE provider='project_document' ORDER BY path"
+                )
+            ]
+            for source in sources:
+                source["fingerprint"] = json.loads(source.pop("context"))["fingerprint"]
+            ids = [
+                row[0]
+                for row in conn.execute(
+                    "SELECT id FROM records WHERE provider='project_document' ORDER BY id"
+                )
+            ]
+            current = list(
+                conn.execute(
+                    "SELECT r.id,g.source_id FROM records r JOIN occurrences o ON o.record_id=r.id "
+                    "JOIN generations g ON g.id=o.generation_id "
+                    "WHERE r.provider='project_document' AND g.status='current' ORDER BY r.id"
+                )
+            )
+            return {
+                "sources": sources,
+                "records": len(ids),
+                "current_records": len(current),
+                "record_ids_sha256": hashlib.sha256(json.dumps(ids).encode()).hexdigest(),
+                "current_ids_sha256": hashlib.sha256(json.dumps(current).encode()).hexdigest(),
+            }
+
+
+def document_corpus(harness: Harness, repos: list[Path], worktrees: list[Path]) -> dict:
+    files = []
+    digest = hashlib.sha256()
+    for root in [*repos, *worktrees]:
+        for name, records in DOCUMENT_RECORDS.items():
+            path = root / name
+            data = path.read_bytes()
+            relative = str(path.relative_to(harness.root))
+            digest.update(relative.encode() + b"\0" + data)
+            files.append(
+                {
+                    "path": str(path),
+                    "relative_path": relative,
+                    "cwd": str(root),
+                    "bytes": len(data),
+                    "sha256": hashlib.sha256(data).hexdigest(),
+                    "expected_normalized_records": records,
+                }
+            )
+    result = {
+        "worktrees": len(repos) + len(worktrees),
+        "files": files,
+        "source_documents": len(files),
+        "actual_bytes": sum(f["bytes"] for f in files),
+        "expected_normalized_records": sum(f["expected_normalized_records"] for f in files),
+        "source_sha256": digest.hexdigest(),
+        "patterns": list(DOCUMENT_RECORDS),
+        "formats": "UTF-8 Markdown with prose, conditions, limitations, a claim and fenced code",
+        "changed_document_expected_new_records": DOCUMENT_RECORDS["STATUS.md"],
+    }
+    (harness.root / "documents.json").write_text(json.dumps(result, indent=2) + "\n")
+    return result
 
 
 def native_record(
@@ -428,6 +563,7 @@ def run_benchmark(harness: Harness, preset: str) -> dict:
     start = time.perf_counter()
     repos, worktrees = harness.repositories(spec["repositories"], spec["worktrees"])
     dataset = corpus(harness, spec, repos, worktrees)
+    documents = document_corpus(harness, repos, worktrees)
     generation_seconds = time.perf_counter() - start
     print(
         json.dumps(
@@ -436,6 +572,8 @@ def run_benchmark(harness: Harness, preset: str) -> dict:
                 "preset": preset,
                 "bytes": dataset["actual_bytes"],
                 "records": dataset["source_records"],
+                "document_bytes": documents["actual_bytes"],
+                "document_records": documents["expected_normalized_records"],
                 "seconds": generation_seconds,
             }
         ),
@@ -450,13 +588,35 @@ def run_benchmark(harness: Harness, preset: str) -> dict:
     ]
     harness.run("setup", ["setup", "--timezone", "UTC"])
     registration_start = time.perf_counter()
+    registered_worktrees = []
     for i, repo in enumerate(repos):
-        harness.run(
+        registered = harness.run(
             f"register-{i:02d}",
             ["project", "add", str(repo), "--name", f"bench-{i:02d}"],
             quiet=True,
         )
+        registered_worktrees.extend(
+            (f"bench-{i:02d}", tree) for tree in registered["data"]["worktrees"]
+        )
     registration_seconds = time.perf_counter() - registration_start
+    document_configuration_start = time.perf_counter()
+    for index, (project, tree) in enumerate(registered_worktrees):
+        harness.run(
+            f"document-register-{index:02d}",
+            [
+                "document",
+                "add",
+                project,
+                "--worktree",
+                tree["id"],
+                "--include",
+                "README.md",
+                "--include",
+                "STATUS.md",
+            ],
+            quiet=True,
+        )
+    document_configuration_seconds = time.perf_counter() - document_configuration_start
     for provider in ("codex", "claude"):
         harness.run(
             "source-" + provider,
@@ -464,22 +624,48 @@ def run_benchmark(harness: Harness, preset: str) -> dict:
         )
     cold = harness.run("cold-refresh", ["refresh"])
     cold_counts = harness.counts()
-    assert cold["data"]["parsed_records"] == dataset["source_records"], "cold parsed count"
-    assert cold_counts["records"] == dataset["expected_normalized_records"], (
-        "normalized record count"
+    document_cold = harness.document_snapshot()
+    expected_records = (
+        dataset["expected_normalized_records"] + documents["expected_normalized_records"]
     )
-    assert cold_counts["sessions"] == spec["sessions"], "session count"
+    assert cold["data"]["parsed_records"] == expected_records, "cold parsed count"
+    assert cold_counts["records"] == expected_records, "normalized record count"
+    assert cold_counts["records_by_provider"] == {
+        **dataset["provider_records"],
+        "project_document": documents["expected_normalized_records"],
+    }, "exact provider/document records"
+    assert cold_counts["occurrences_by_provider"] == cold_counts["records_by_provider"], (
+        "cold occurrences"
+    )
+    expected_sessions = dict(Counter(file["provider"] for file in dataset["files"]))
+    expected_sessions["project_document"] = documents["source_documents"]
+    assert cold_counts["sessions_by_provider"] == expected_sessions, (
+        "exact provider/document sessions"
+    )
+    assert cold_counts["sessions"] == spec["sessions"] + documents["source_documents"], (
+        "session count"
+    )
     assert cold_counts["projects"] == spec["repositories"], "repository count"
     assert cold_counts["worktrees"] == spec["repositories"] + spec["worktrees"], (
         "linked worktree count"
     )
     assert cold_counts["duplicate_native_records"] == 0, "duplicate initial records"
+    assert len(document_cold["sources"]) == documents["source_documents"], "document source count"
+    assert document_cold["current_records"] == documents["expected_normalized_records"], (
+        "document current records"
+    )
+    assert {s["path"]: s["fingerprint"] for s in document_cold["sources"]} == {
+        f["path"]: f["sha256"] for f in documents["files"]
+    }, "document content fingerprints"
     unchanged = [harness.run("unchanged-refresh", ["refresh"]) for _ in range(harness.repetitions)]
     assert all(
         row["data"]["parsed_records"] == 0 and row["data"]["inserted_records"] == 0
         for row in unchanged
     ), "unchanged refresh reparsed"
     assert harness.counts() == cold_counts, "unchanged refresh altered record counts"
+    assert harness.document_snapshot() == document_cold, (
+        "unchanged documents changed identity or generations"
+    )
     append_count = 100
     append_file = dataset["files"][0]
     with Path(append_file["path"]).open("ab") as output:
@@ -499,6 +685,10 @@ def run_benchmark(harness: Harness, preset: str) -> dict:
     assert appended["data"]["parsed_records"] == append_count, "append parsed more than 100"
     assert appended["data"]["inserted_records"] == append_count, "append inserted count"
     assert after["records"] == cold_counts["records"] + append_count, "append database count"
+    expected_after_providers = dict(cold_counts["records_by_provider"])
+    expected_after_providers[append_file["provider"]] += append_count
+    assert after["records_by_provider"] == expected_after_providers, "provider append count"
+    assert harness.document_snapshot() == document_cold, "provider append changed documents"
     assert after["occurrences"] == after["records"] and after["duplicate_native_records"] == 0, (
         "duplicate appended records"
     )
@@ -564,10 +754,100 @@ def run_benchmark(harness: Harness, preset: str) -> dict:
             "resume omitted controlled blockers"
         )
         resume.append(measured["seconds"])
+    # Added document measurement is report-only; the established append/query
+    # samples above remain directly comparable and keep their original gates.
+    changed_path = repos[0] / "STATUS.md"
+    original_document = changed_path.read_text()
+    assert original_document.count(DOCUMENT_CHANGE_OLD) == 1, "controlled document edit target"
+    changed_path.write_text(original_document.replace(DOCUMENT_CHANGE_OLD, DOCUMENT_CHANGE_NEW))
+    changed_fingerprint = hashlib.sha256(changed_path.read_bytes()).hexdigest()
+    changed = harness.run("changed-document-refresh", ["refresh"])
+    after_document_change = harness.counts()
+    document_after = harness.document_snapshot()
+    added_document_records = documents["changed_document_expected_new_records"]
+    assert changed["data"]["parsed_records"] == added_document_records, (
+        "changed document parse count"
+    )
+    assert changed["data"]["inserted_records"] == added_document_records, (
+        "changed document insert count"
+    )
+    expected_document_counts = dict(after["records_by_provider"])
+    expected_document_counts["project_document"] += added_document_records
+    assert after_document_change["records_by_provider"] == expected_document_counts, (
+        "document-only record change"
+    )
+    assert after_document_change["occurrences_by_provider"] == expected_document_counts, (
+        "document occurrence count"
+    )
+    assert after_document_change["sessions_by_provider"] == after["sessions_by_provider"], (
+        "document session identity"
+    )
+    assert after_document_change["provider_duplicate_native_records"] == 0, (
+        "provider duplicate after document edit"
+    )
+    assert after_document_change["duplicate_native_records"] == added_document_records, (
+        "expected historical document versions"
+    )
+    assert document_after["records"] == document_cold["records"] + added_document_records, (
+        "historical document retention"
+    )
+    assert document_after["current_records"] == document_cold["current_records"], (
+        "current document section count"
+    )
+    prior_sources = {s["path"]: s for s in document_cold["sources"]}
+    for source in document_after["sources"]:
+        before = prior_sources[source["path"]]
+        if source["path"] == str(changed_path):
+            assert source["id"] == before["id"], "changed document lost logical identity"
+            assert source["generation"] == before["generation"] + 1, "changed document generation"
+            assert source["fingerprint"] == changed_fingerprint, "changed content fingerprint"
+        else:
+            assert source == before, "unrelated document changed"
+    post_change_unchanged = [
+        harness.run("unchanged-documents-after-edit", ["refresh"])
+        for _ in range(harness.repetitions)
+    ]
+    assert all(
+        row["data"]["parsed_records"] == 0 and row["data"]["inserted_records"] == 0
+        for row in post_change_unchanged
+    ), "post-edit unchanged documents reparsed"
+    assert harness.document_snapshot() == document_after, "post-edit document identity changed"
+    handoff = {}
+    for format_name in ("json", "markdown"):
+        samples = []
+        for _ in range(harness.repetitions):
+            measured = harness.run(
+                "full-handoff-" + format_name,
+                [
+                    "export",
+                    "bench-00",
+                    "--worktree",
+                    str(repos[0]),
+                    "--format",
+                    format_name,
+                    "--max-chars",
+                    "24000",
+                ],
+                quiet=True,
+            )
+            text = measured["data"]
+            assert isinstance(text, str) and 0 < len(text) <= 24000, "bounded handoff output"
+            if format_name == "json":
+                exported = json.loads(text)
+                assert exported["kind"] == "context_export" and exported["items"], (
+                    "substantive handoff"
+                )
+                assert any(entry["kind"] == "project_purpose" for entry in exported["context"]), (
+                    "handoff omitted document purpose"
+                )
+            samples.append(measured["seconds"])
+        handoff[format_name] = {"seconds": samples, "p95_seconds": p95(samples)}
     ingestion_peak = max(
         cold["peak_rss_bytes"],
         appended["peak_rss_bytes"],
         *(r["peak_rss_bytes"] for r in unchanged),
+        changed["peak_rss_bytes"],
+        *(r["peak_rss_bytes"] for r in post_change_unchanged),
     )
     gates = {
         "cold": cold["seconds"] <= BUDGETS["cold_seconds"],
@@ -578,6 +858,10 @@ def run_benchmark(harness: Harness, preset: str) -> dict:
         "unchanged_parsed_zero": True,
         "append_only_100": True,
         "no_duplicates": True,
+        "documents_unchanged": True,
+        "document_edit_only_expected_generation": True,
+        "post_edit_unchanged": max(r["seconds"] for r in post_change_unchanged)
+        <= BUDGETS["unchanged_seconds"],
     }
     result = {
         "preset": preset,
@@ -595,9 +879,11 @@ def run_benchmark(harness: Harness, preset: str) -> dict:
             "cli": (harness.root / version["stdout"]).read_text().strip(),
         },
         "dataset": {k: v for k, v in dataset.items() if k != "files"},
+        "document_dataset": {k: v for k, v in documents.items() if k != "files"},
         "repetitions": harness.repetitions,
         "generation_seconds": generation_seconds,
         "registration_seconds": registration_seconds,
+        "document_configuration_seconds": document_configuration_seconds,
         "startup_seconds": startup,
         "startup_p95_seconds": p95(startup),
         "cold_seconds": cold["seconds"],
@@ -606,6 +892,20 @@ def run_benchmark(harness: Harness, preset: str) -> dict:
         "peak_ingestion_bytes": ingestion_peak,
         "cold_counts": cold_counts,
         "after_append_counts": after,
+        "after_document_change_counts": after_document_change,
+        "document_identity_before": document_cold,
+        "document_identity_after": document_after,
+        "changed_document": {
+            "path": str(changed_path.relative_to(harness.root)),
+            "bytes_after": changed_path.stat().st_size,
+            "sha256_after": changed_fingerprint,
+            "seconds": changed["seconds"],
+            "peak_rss_bytes": changed["peak_rss_bytes"],
+            "parsed_records": changed["data"]["parsed_records"],
+            "inserted_records": changed["data"]["inserted_records"],
+            "timing_budget": "report-only; existing ingestion peak memory budget applies",
+        },
+        "unchanged_documents_after_edit_seconds": [r["seconds"] for r in post_change_unchanged],
         "queries": query_stats,
         "git_status_seconds": git_values,
         "git_status_p95_seconds": p95(git_values),
@@ -613,6 +913,7 @@ def run_benchmark(harness: Harness, preset: str) -> dict:
         "project_observe_p95_seconds": p95(observe),
         "complete_resume_seconds": resume,
         "complete_resume_p95_seconds": p95(resume),
+        "full_handoff": handoff,
         "measurement": "Wall time via perf_counter; child peak RSS via wait4. Darwin ru_maxrss bytes; Linux KiB converted to bytes. Includes CLI startup and JSON rendering. OS filesystem caches were not flushed; cold means empty application index.",
         "checkout_fingerprints": sorted(
             {

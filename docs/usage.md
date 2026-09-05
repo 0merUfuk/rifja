@@ -1,6 +1,6 @@
 # Operational guide
 
-This guide describes the `session-visualizer` console interface for private local release candidate **0.1.0rc2**, requiring Python **3.14+**. Install the supplied wheel using the [README instructions](../README.md), which create the environment with `python3.14 -m venv`. Runtime commands use local files and Git; they do not contact a model or network service, execute transcript instructions, or run tests for your project.
+This guide describes the `session-visualizer` console interface for private local release candidate **0.1.0rc3**, requiring Python **3.14+**. Install the supplied wheel using the [README instructions](../README.md), which create the environment with `python3.14 -m venv`. Runtime commands use local files and Git; they do not contact a model or network service, execute transcript instructions, or run tests for your project.
 
 ## Initialize and choose state
 
@@ -263,3 +263,7 @@ The reader uses bounded excerpts, best-effort secret redaction, private state/ex
 The program observes Git metadata and reads configured transcript stores. It does not edit repository contents, launch producer agents, checkpoint producer databases, fetch remotes or execute commands copied from a transcript. Imported text remains untrusted context.
 
 For provider changes or missing coverage, consult [supported formats and known gaps](providers.md). For what has been asserted by the synthetic corpus, consult [semantic acceptance](acceptance.md); release-specific execution evidence must accompany broader compatibility or performance claims.
+
+## Bounded project documents (rc3)
+
+Use `document add PROJECT` to opt in before refresh. See [project context](project-context.md) for allowlists, worktree selection, provenance, ordinary status language, identity and output limits. Rc3 retains schema 3 and automatically rebuilds its derived extraction on upgrade; document claims never become freshly executed verification.

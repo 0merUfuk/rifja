@@ -204,6 +204,85 @@ def test_different_conditions_with_shared_subject_all_survive_the_brief():
     assert all(text in kept for text in texts[1:])
 
 
+@pytest.mark.parametrize(
+    "policy",
+    [
+        "Do not call the release completed without explicit approval.",
+        "Never treat rebuilt package output as verified without approval.",
+    ],
+)
+def test_approval_prohibitions_survive_result_claim_and_constraint_budgets(policy: str):
+    policies = candidates(policy)
+    assert [(item["kind"], item["category"], item["status"]) for item in policies] == [
+        ("constraint", "documented_constraint", "documented")
+    ]
+    texts = [f"Environment {index} requires a local cache." for index in range(6)]
+    texts += [f"Check {index} passed at revision candidate-{index}." for index in range(4)]
+    texts.append(policy)
+    items = [
+        {
+            **candidate,
+            "id": f"item-{index}-{number}",
+            "record_id": f"record-{index}",
+            "source_current": True,
+            "worktree_id": "tree",
+        }
+        for index, text in enumerate(texts)
+        for number, candidate in enumerate(candidates(text))
+    ]
+    brief = build_brief(
+        items,
+        lambda ref: {
+            "status": "current",
+            "metadata": {"relative_path": "STATUS.md", "section": "Current status"},
+        },
+        {},
+        "project",
+        "tree",
+    )
+    assert len(brief["claims"]) == 4
+    assert brief["constraints"][0]["text"] == policy
+    assert not any(item["text"] == policy for item in brief["claims"])
+
+
+def test_claim_qualification_pairing_keeps_worktree_scope():
+    rows = [("claim", "tree-a", "The package was rebuilt at revision candidate-a.")]
+    rows += [
+        (f"other-{index}", "tree-b", f"This is not proof of result {index}.") for index in range(5)
+    ]
+    qualifier = (
+        "The captured package result is not evidence of compatibility with the currently "
+        "selected deployment environment."
+    )
+    rows.append(("same-tree", "tree-a", qualifier))
+    items = [
+        {
+            **candidate,
+            "id": f"{record_id}-{number}",
+            "record_id": record_id,
+            "worktree_id": worktree,
+            "source_current": True,
+        }
+        for record_id, worktree, text in rows
+        for number, candidate in enumerate(candidates(text))
+    ]
+    brief = build_brief(
+        items,
+        lambda ref: {
+            "status": "current",
+            "metadata": {"relative_path": "STATUS.md", "section": "Validation"},
+        },
+        {},
+        "project",
+        None,
+    )
+    assert len(brief["claims"]) == 1 and brief["claims"][0]["worktree_id"] == "tree-a"
+    assert len(brief["limitations"]) == 5
+    assert brief["limitations"][0]["record_id"] == "same-tree"
+    assert brief["limitations"][0]["text"] == qualifier
+    assert brief["limitations"][0]["worktree_id"] == "tree-a"
+
+
 def test_soft_wrapped_condition_retains_its_complete_qualification():
     text = (
         "Browser validation remains pending and requires\n"

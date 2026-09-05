@@ -132,6 +132,113 @@ def test_greeting_and_repeat_request_are_not_latest_work_instructions(independen
             assert "**latest user instruction**" not in result
 
 
+def test_rebuilt_result_retains_commit_scope_despite_incidental_only_clause(independent_cli):
+    cli = independent_cli
+    (cli.project_path / "STATUS.md").write_text(
+        "# Release evidence\n\n"
+        "The command-line binary and four target packages were rebuilt from clean commit d41ac79. "
+        "Later edits affect only this record and the temporary diagnostic helper; "
+        "production assets were unchanged.\n\n"
+        "## Publication gate\n"
+        "Do not publish any packages without explicit owner approval.\n"
+    )
+    register_documents(cli)
+    cli.data("refresh")
+    for format in ("markdown", "json"):
+        result = exported(cli, format)
+        assert "rebuilt from clean commit d41ac79" in result
+        assert "owner approval" in result
+        if format == "json":
+            data = json.loads(result)
+            claims = [
+                item
+                for item in data["context"] + data["items"]
+                if "commit d41ac79" in item.get("text", "")
+            ]
+            assert claims
+            assert all(item.get("category") == "documented_claim" for item in claims)
+            assert all(item.get("status") != "verified" for item in claims)
+
+
+def test_qa_claim_keeps_changed_input_and_negative_verification_scope(independent_cli):
+    cli = independent_cli
+    (cli.project_path / "VERIFICATION.md").write_text(
+        "# Validation memo\n\n## Captured visual checks\n"
+        "Reported browser checks passed 37 assertions with three screenshots.\n\n"
+        "The source report used for validation is real data from changing attempt 6; "
+        "it is not an equality-verified report.\n\n"
+        "## Historical notes\n"
+        "Old parser smoke checks passed.\n\n"
+        "Old formatting checks passed.\n\n"
+        "Old temporary-file checks passed.\n"
+    )
+    register_documents(cli)
+    cli.data("refresh")
+    for format in ("markdown", "json"):
+        result = exported(cli, format)
+        assert "37 assertions" in result and "three screenshots" in result
+        assert "changing attempt 6" in result
+        assert "not an equality-verified report" in result
+        if format == "json":
+            data = json.loads(result)
+            scopes = [
+                item
+                for item in data["context"] + data["items"]
+                if "changing attempt 6" in item.get("text", "")
+            ]
+            assert scopes
+            assert all(item.get("category", "").startswith("documented") for item in scopes)
+            assert all(item.get("status") != "verified" for item in scopes)
+
+
+def test_tight_json_keeps_document_limits_before_verbose_agent_updates(independent_cli):
+    cli = independent_cli
+    (cli.project_path / "STATUS.md").write_text(
+        "# Continuation record\n\n## Constraints\n"
+        "Original stores must remain read-only. Temporary artifacts must stay outside "
+        "all protected source directories.\n\n"
+        "No package publication is authorized without explicit owner approval.\n\n"
+        "## Limitations\n"
+        "Solaris runtime behavior remains unverified. A cross-compiled artifact is not "
+        "evidence of execution on Solaris.\n\n"
+        "## Decisions\n"
+        "Decision: retain the manually approved distribution queue.\n"
+    )
+    register_documents(cli)
+    cli.data("refresh")
+    baseline = cli.run(
+        "export", "notebook", "--format", "json", "--max-chars", "24000", json_output=False
+    ).stdout
+    phrases = ["owner approval", "Solaris runtime", "manually approved distribution queue"]
+    assert all(phrase in baseline for phrase in phrases)
+    assert any(item["kind"] == "decisions" for item in json.loads(baseline)["context"])
+    # The baseline fits the critical document context. Reserve additional space
+    # for a bounded stopping point, but not several optional long status updates.
+    budget = len(baseline) + 1000
+    register_events(
+        cli,
+        [
+            (
+                "assistant",
+                f"I implemented diagnostic stage {stage}. "
+                + "The local helper now reports its progress and preserves temporary observations. "
+                * 13,
+            )
+            for stage in range(3)
+        ],
+    )
+    cli.data("refresh")
+    result = cli.run(
+        "export", "notebook", "--format", "json", "--max-chars", str(budget), json_output=False
+    ).stdout
+    assert len(result) <= budget
+    assert all(phrase in result for phrase in phrases)
+    data = json.loads(result)
+    assert any(item["kind"] == "decisions" for item in data["context"])
+    updates = [item for item in data["context"] if item["kind"] == "recent_agent_update"]
+    assert all(item.get("status") == "unverified" for item in updates)
+
+
 def test_ordinary_verification_gap_survives_chat_noise_and_exports(independent_cli):
     cli = independent_cli
     (cli.project_path / "STATUS.md").write_text(

@@ -30,7 +30,7 @@ BLOCKED = re.compile(
     r"unavailable because|no .{0,25}window|engel|önkoşul|beklemek)\b"
 )
 CONDITION = re.compile(
-    r"(?i)\b(?:requires?|required|must|only|before|until|within|unless|precondition|"
+    r"(?i)\b(?:do not|never|not authorized|without .{0,30}approval|requires?|required|must|only|before|until|within|unless|precondition|"
     r"preflight|continuous|deadline|allowance|separate|distinct|guarantee|read.only|"
     r"not a prerequisite|does not depend|never a prerequisite|normal runtime|"
     r"concurrent|unavailable is not|sadece|gerekir|gerekiyor|önce|boyunca|koşul|"
@@ -56,6 +56,45 @@ EXAMPLE = re.compile(r"(?i)\b(?:example|hypothetical|for instance|imagine|örnek
 NEGATIVE_PENDING = re.compile(
     r"(?i)\b(?:no\s+(?:pending|unfinished|remaining|outstanding)\s+(?:work|checks?|tasks?)|no longer\s+(?:pending|blocked)|all\s+(?:previously\s+)?pending\s+.{0,45}(?:passed|completed)|bekleyen\s+.{0,30}yok)\b"
 )
+RESULT_QUALIFICATION = re.compile(
+    r"(?i)\b(?:not|never)\b.{0,80}\b(?:verified|verification|proof|evidence|certified)\b"
+)
+VERSION_CHANGE = re.compile(
+    r"(?i)\b(?:version|schema)\s+\d+\b.{0,60}\b(?:removes|adds|replaces|retains|uses)\b"
+)
+AUTHORIZATION_CONSTRAINT = re.compile(
+    r"(?i)^(?:do not|never|must not)\b|\b(?:not authorized|without .{0,30}approval)\b"
+)
+REPORTED_RESULT = re.compile(
+    r"(?i)^\d+\s+(?:tests?(?:/subtests?)?|subtests?|checks?|assertions?|scenarios?|packages?)\s+(?:PASS(?:ED)?|FAIL(?:ED)?|SKIP(?:PED)?)\b"
+)
+
+
+def document_reported_results(record: Record) -> list[Candidate]:
+    """Keep numeric output summaries as document claims, never code instructions."""
+    section = str(record.metadata.get("section", ""))
+    name = PurePosixPath(str(record.metadata.get("relative_path", ""))).name.lower()
+    if (
+        EXAMPLE.search(section)
+        or EXAMPLE.search(record.text)
+        or not re.search(r"(?i)\b(?:tests?|verification|validation|checks?|results?)\b", section)
+    ):
+        return []
+    historical = bool(
+        HISTORICAL.search(section) or re.search(r"master.prompt|draft|archive|plan", name)
+    )
+    return [
+        Candidate(
+            "claim",
+            line,
+            "historical" if historical else "unverified",
+            "documented_history" if historical else "documented_claim",
+            rationale="Quoted document result summary; not executed or independently verified.",
+            method="document-reported-result-v1",
+        )
+        for line in dict.fromkeys(prose(line) for line in record.text.splitlines())
+        if REPORTED_RESULT.match(line)
+    ]
 
 
 def prose(text: str) -> str:
@@ -307,7 +346,9 @@ def document_candidates(record: Record, lines: list[str]) -> list[Candidate]:
             kind, status, category = "claim", "unverified", "documented_claim"
         elif historical_section or re.match(r"(?i)historical\b|earlier\b", text):
             kind, status, category = "context", "historical", "documented_history"
-        elif re.match(r"(?i)(?:if|when|in case|should .* fail|eğer)\b", text):
+        elif re.match(
+            r"(?i)(?:if|when|in case|should .* fail|eğer)\b", text
+        ) or AUTHORIZATION_CONSTRAINT.search(text):
             kind, status, category = "constraint", "documented", "documented_constraint"
         elif pending or gap:
             if LIMITATION.search(text) and not re.search(
@@ -321,11 +362,19 @@ def document_candidates(record: Record, lines: list[str]) -> list[Candidate]:
                     "documented_pending",
                 )
         elif re.search(
-            r"(?i)\b(?:ran|reviewed|built|passed|completed|returned)\b", text
-        ) and not re.search(
-            r"(?i)\b(?:must|requires?|always|guarantee|continuous|preflight|prerequisite)\b", text
+            r"(?i)\b(?:decided|decision|we chose|we use|karar|seçtik)\b", text
+        ) and re.search(r"(?i)decision|assumption|architecture|karar", section):
+            kind, status, category = "decision", "documented", "documented_decision"
+        elif VERSION_CHANGE.search(text) or (
+            re.search(r"(?i)\b(?:ran|reviewed|built|rebuilt|passed|completed|returned)\b", text)
+            and not re.search(
+                r"(?i)\b(?:must|requires?|always|guarantee|continuous|preflight|prerequisite)\b",
+                text,
+            )
         ):
             kind, status, category = "claim", "unverified", "documented_claim"
+        elif RESULT_QUALIFICATION.search(text):
+            kind, status, category = "limitation", "documented", "documented_limitation"
         elif CONDITION.search(text):
             kind, status, category = "constraint", "documented", "documented_constraint"
         elif LIMITATION.search(text) and re.search(

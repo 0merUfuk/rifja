@@ -190,3 +190,21 @@ relax commit synchronization, remove source-level rollback, defer ingestion to a
 background job, or omit the final connection close from measured CLI wall time.
 Long-lived external readers can delay WAL recycling; the threshold is not a hard
 file-size limit. See [SQLite's WAL performance and checkpoint documentation](https://sqlite.org/wal.html).
+
+### Bounded daily materialization
+
+Daily activity ranks lightweight item IDs in SQLite and counts the complete
+activity/carryover buckets before loading the displayed text and provenance.
+This path applies only when there are no imported resolution events or durable
+user corrections; either condition retains the full correction-resolution path.
+Historical activity, current-generation carryover, project/worktree scope, stable
+ordering and omission counts retain their existing meaning. Nonpositive internal
+API limits and SQLite versions before 3.25 also use the complete path.
+
+A bounded experiment on a private copy of the synthetic LARGE state produced
+byte-identical complete JSON before and after the change. Two warm development
+CLI samples were 0.748 and 0.746 seconds; the first cold filesystem sample was
+3.633 seconds and remains recorded. These measurements diagnose the change and
+do not replace the final installed LARGE query gate or its unchanged one-second
+warm p95 budget. The benchmark generator, source/record counts and semantic
+assertions remain unchanged.

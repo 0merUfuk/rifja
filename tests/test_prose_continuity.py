@@ -122,6 +122,54 @@ def test_architecture_condition_is_not_pending_work():
     assert not any(c.kind in {"task", "blocker", "next_action"} for c in extract(record))
 
 
+def test_compact_json_observation_references_preserve_scope_at_different_budgets(continuity_cli):
+    cli = continuity_cli
+    (cli.project_path / "STATUS.md").write_text(
+        "# Validation\n\nThe release comparison remains pending.\n\n"
+        "The build passed 31 checks on revision b17.\n\n"
+        "The source report is not an equality-verified report.\n\n"
+        "Do not publish without explicit owner approval.\n"
+    )
+    seed(cli, [event("The release comparison remains pending.")])
+    cli.data("document", "add", "acceptance")
+    cli.data("refresh")
+    resume = cli.data("resume", "acceptance")
+    originals = {
+        entry["record_id"]: entry
+        for key in ("pending", "claims", "constraints", "limitations")
+        for entry in resume["continuity"][key]
+    }
+    for budget in (3000, 8000, 24000):
+        raw = cli.run(
+            "export",
+            "acceptance",
+            "--format",
+            "json",
+            "--max-chars",
+            str(budget),
+            json_output=False,
+        ).stdout
+        assert len(raw) <= budget
+        result = json.loads(raw)
+        refs = set()
+        for entry in result["context"]:
+            evidence = entry.get("evidence", {})
+            if "observation_ref" not in evidence:
+                continue
+            ref = evidence["observation_ref"]
+            refs.add(ref)
+            observation = result["document_observations"][ref]
+            original = originals[entry["record_id"]]
+            assert observation["worktree_id"] == original["worktree_id"]
+            for field in ("observed_at", "content_scope", "git_head", "modified"):
+                assert observation[field] == original["evidence"][field]
+            for field in ("relative_path", "line_start", "line_end", "status"):
+                assert evidence[field] == original["evidence"][field]
+        assert refs == set(result["document_observations"])
+        if budget == 24000:
+            assert refs and len(refs) < len(result["context"])
+
+
 def test_document_fenced_and_commented_instructions_are_inert():
     record = Record(
         "project_document",

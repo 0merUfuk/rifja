@@ -46,6 +46,25 @@ conditions, decisions/constraints, and uncertainty before detailed history. Both
 exports carry short labeled source excerpts, evidence categories and locators.
 Bounded output reports what cannot fit; it must not silently erase conditions.
 
+Compact exports allocate space across pending work, constraints, limitations,
+claims and decisions before adding further entries from one facet or optional
+agent updates. Current documented result claims precede historical notes; explicit
+revision/date scope and negative verification qualifications retain their source
+wording. An approval prohibition remains a documented constraint. These are
+presentation and classification rules, never permission to act or certification
+of a claimed result. The independent generic regressions cover build scope,
+qualified QA input, publication approval and competition for a tight export budget.
+Numeric PASS/FAIL/SKIP summaries in document test-output blocks can be retained as
+quoted, unverified claims. Embedded commands, intent markers, quoted prompts and
+example blocks remain inert. Result qualifications are matched within the same
+worktree, document and section; another worktree cannot supply the claimed scope.
+JSON exports share identical document observation fields in
+`document_observations`. Each document excerpt's `evidence.observation_ref` points
+to its observation time, working-tree scope, Git revision, modification status
+and worktree identity; path, lines, record ID and evidence status stay on the
+excerpt. Sharing preserves provenance within the same character budget. A skipped
+excerpt cannot leave an orphan observation or a dangling reference.
+
 ## Pressure test
 
 | Risk | Resolution / limit |

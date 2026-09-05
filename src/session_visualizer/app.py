@@ -36,6 +36,8 @@ VALID_STATUSES = {
     "pending",
 }
 
+_ITEM_QUERY = "SELECT i.*,r.session_id,r.native_id,r.project_id,r.worktree_id,r.provider,r.actor,r.event_time,r.time_status,EXISTS(SELECT 1 FROM occurrences o JOIN generations g ON g.id=o.generation_id WHERE o.record_id=r.id AND g.status='current') source_current FROM items i JOIN records r ON r.id=i.record_id"
+
 
 def snapshot(method: Callable[..., Any]) -> Callable[..., Any]:
     @wraps(method)
@@ -367,11 +369,34 @@ class App:
         if provider:
             where.append("(r.provider=? OR i.kind='correction')")
             args.append(provider)
-        query = "SELECT i.*,r.session_id,r.native_id,r.project_id,r.worktree_id,r.provider,r.actor,r.event_time,r.time_status,EXISTS(SELECT 1 FROM occurrences o JOIN generations g ON g.id=o.generation_id WHERE o.record_id=r.id AND g.status='current') source_current FROM items i JOIN records r ON r.id=i.record_id"
+        query = _ITEM_QUERY
         if where:
             query += " WHERE " + " AND ".join(where)
         # Explicit derived items are bounded separately from raw records; include resolution events.
         rows = self.store.rows(query, tuple(args))
+        return self._resolve_items(
+            rows,
+            kind=kind,
+            limit=limit,
+            include_archived=include_archived,
+            prioritize_active=prioritize_active,
+            include_evidence=include_evidence,
+            provider=provider,
+            kinds=kinds,
+        )
+
+    def _resolve_items(
+        self,
+        rows: list[dict[str, Any]],
+        *,
+        kind: str | None = None,
+        limit: int | None = 100,
+        include_archived: bool = False,
+        prioritize_active: bool = False,
+        include_evidence: bool = True,
+        provider: str | None = None,
+        kinds: frozenset[str] | None = None,
+    ) -> dict[str, Any]:
         rows.sort(key=lambda item: (item["event_time"] or "", item["id"]))
         by_id = {item["id"]: item for item in rows}
         by_target: dict[str, list[dict[str, Any]]] = {}
@@ -522,6 +547,44 @@ class App:
             "observations_refreshed": observe,
         }
 
+    def _daily_candidates(
+        self, first: str, last: str, project: str | None, worktree: str | None, limit: int
+    ) -> tuple[list[dict[str, Any]], dict[tuple[str | None, str], int]]:
+        """Select bounded daily rows only when no corrections need full replay."""
+        scope = ""
+        scope_args: list[Any] = []
+        if project:
+            scope += " AND r.project_id=?"
+            scope_args.append(self.find_project(project)["id"])
+        if worktree:
+            scope += " AND r.worktree_id=?"
+            scope_args.append(worktree)
+        rows = []
+        totals = {}
+        for bucket, where, args in (
+            ("activity", "r.event_time>=? AND r.event_time<?", [first, last]),
+            (
+                "carryover",
+                "(r.event_time<? OR r.event_time IS NULL) AND i.kind IN ('task','next_action','blocker') AND i.status IN ('active','blocked','pending','proposed') AND EXISTS(SELECT 1 FROM occurrences o JOIN generations g ON g.id=o.generation_id WHERE o.record_id=r.id AND g.status='current')",
+                [first],
+            ),
+        ):
+            # Rank IDs and count the complete bucket before loading bounded text.
+            # Start from derived items rather than scanning raw records with no items.
+            # Status-changing events/overrides always use the full replay instead.
+            query = (
+                "WITH ranked AS (SELECT i.id,count(*) OVER(PARTITION BY r.project_id) daily_total,row_number() OVER(PARTITION BY r.project_id ORDER BY coalesce(r.event_time,'') DESC,i.id DESC) daily_rank FROM items i CROSS JOIN records r ON r.id=i.record_id WHERE i.status NOT IN ('archived','rejected') AND "
+                + where
+                + scope
+                + ") SELECT ranked.daily_total,"
+                + _ITEM_QUERY.removeprefix("SELECT ")
+                + " JOIN ranked ON ranked.id=i.id WHERE ranked.daily_rank<=?"
+            )
+            for item in self.store.rows(query, (*args, *scope_args, limit)):
+                totals[(item["project_id"], bucket)] = item.pop("daily_total")
+                rows.append(item)
+        return rows, totals
+
     @snapshot
     def daily(
         self,
@@ -613,9 +676,19 @@ class App:
                     }
                 )
         groups.sort(key=lambda group: (group["name"] or "", group["project_id"] or ""))
-        scoped_items = self.items(project, limit=None, worktree=worktree, include_evidence=False)[
-            "items"
-        ]
+        totals = None
+        needs_resolution = self.store.db.execute(
+            "SELECT EXISTS(SELECT 1 FROM items WHERE kind='correction') OR EXISTS(SELECT 1 FROM corrections)"
+        ).fetchone()[0]
+        if needs_resolution or limit <= 0 or sqlite3.sqlite_version_info < (3, 25, 0):
+            scoped_items = self.items(
+                project, limit=None, worktree=worktree, include_evidence=False
+            )["items"]
+        else:
+            candidates, totals = self._daily_candidates(first, last, project, worktree, limit)
+            scoped_items = self._resolve_items(candidates, limit=None, include_evidence=False)[
+                "items"
+            ]
         items_by_project: dict[str | None, list[dict[str, Any]]] = {}
         for item in scoped_items:
             items_by_project.setdefault(item["project_id"], []).append(item)
@@ -643,8 +716,16 @@ class App:
             for item in [*group["activity"], *group["carryover"]]:
                 item["evidence"] = self.evidence(item["record_id"])
             group["omissions"] = {
-                "activity": max(0, len(activity) - limit),
-                "carryover": max(0, len(carryover) - limit),
+                "activity": max(
+                    0,
+                    (totals.get((pid, "activity"), 0) if totals is not None else len(activity))
+                    - limit,
+                ),
+                "carryover": max(
+                    0,
+                    (totals.get((pid, "carryover"), 0) if totals is not None else len(carryover))
+                    - limit,
+                ),
             }
             group["observed_changes"] = changes.get(pid, [])
         return {

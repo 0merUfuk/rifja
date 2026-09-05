@@ -292,6 +292,8 @@ def bounded_export(data: dict[str, Any], format: str = "markdown", max_chars: in
         },
         "omission_notice": "Positive omission counts mean material context is missing. Inspect full resume/project/explain output before acting. Local references may be unavailable to a recipient.",
     }
+    if format == "json":
+        compact["document_observations"] = {}
 
     def serialize() -> str:
         if format == "json":
@@ -421,9 +423,6 @@ def bounded_export(data: dict[str, Any], format: str = "markdown", max_chars: in
         )
     for result in data.get("recent_recorded_results", []):
         context_entries.append({**result, "kind": "recent_recorded_result"})
-    for update in data.get("recent_agent_updates", []):
-        if not stop or update["record_id"] != stop.get("id"):
-            context_entries.append({**update, "kind": "recent_agent_update"})
     for mapping in brief.get("identity", {}).get("explicit_mappings", []):
         context_entries.append(
             {
@@ -435,9 +434,24 @@ def bounded_export(data: dict[str, Any], format: str = "markdown", max_chars: in
         )
     # Conditions are selected before secondary history. No full command output
     # is allowed to consume this semantic budget.
-    for key in ("conflicts", "pending", "constraints", "claims", "limitations", "decisions"):
-        for entry in brief.get(key, []):
-            context_entries.append({"kind": key, **entry})
+    for entry in brief.get("conflicts", []):
+        context_entries.append({"kind": "conflicts", **entry})
+    # Give each facet a place before spending the budget on more of the same
+    # kind. Otherwise several long conditions can hide every decision or limit.
+    facets = ("pending", "constraints", "limitations", "claims", "decisions")
+    for index in range(max((len(brief.get(key, [])) for key in facets), default=0)):
+        for key in facets:
+            entries = brief.get(key, [])
+            # Results often need a separate summary and qualification; allocate
+            # two result slots per round before more repetitive conditions.
+            width = 2 if key == "claims" else 1
+            for entry in entries[index * width : (index + 1) * width]:
+                context_entries.append({"kind": key, **entry})
+    # Optional agent progress repeats intent/results already summarized above.
+    # Keep documented scope, limitations and decisions ahead of that detail.
+    for update in data.get("recent_agent_updates", []):
+        if not stop or update["record_id"] != stop.get("id"):
+            context_entries.append({**update, "kind": "recent_agent_update"})
     compact["omissions"]["context"] = len(context_entries)
     for entry in context_entries:
         entry = {k: v for k, v in entry.items() if v is not None and v != []}
@@ -458,7 +472,30 @@ def bounded_export(data: dict[str, Any], format: str = "markdown", max_chars: in
                 }
                 and v is not None
             }
-        try_add("context", entry, "context")
+        new_observation = None
+        if format == "json" and entry.get("evidence", {}).get("relative_path"):
+            # Many statements share one document observation. Preserve its full
+            # scope once, with an explicit reference, instead of repeating it
+            # until the budget excludes a different material statement.
+            ref = entry["evidence"]
+            observation = {
+                key: ref.pop(key)
+                for key in ("observed_at", "content_scope", "git_head", "modified")
+                if key in ref
+            }
+            if "worktree_id" in entry:
+                observation["worktree_id"] = entry.pop("worktree_id")
+            observations = compact["document_observations"]
+            observation_id = next(
+                (key for key, value in observations.items() if value == observation), None
+            )
+            if observation_id is None:
+                observation_id = "document_observation_" + str(len(observations) + 1)
+                observations[observation_id] = observation
+                new_observation = observation_id
+            ref["observation_ref"] = observation_id
+        if not try_add("context", entry, "context") and new_observation:
+            del compact["document_observations"][new_observation]
     for principle in data["principles"]:
         try_add(
             "principles",

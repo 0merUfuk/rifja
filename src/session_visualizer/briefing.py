@@ -4,7 +4,7 @@ import re
 from collections.abc import Callable
 from typing import Any
 
-from .semantics import topic
+from .semantics import AUTHORIZATION_CONSTRAINT, RESULT_QUALIFICATION, VERSION_CHANGE, topic
 
 
 def _words(text: str) -> set[str]:
@@ -43,6 +43,24 @@ def _distinct(items: list[dict[str, Any]], limit: int) -> list[dict[str, Any]]:
     return selected
 
 
+def _claim_rank(item: dict[str, Any]) -> tuple[bool, bool, bool, bool, bool, bool, int, str]:
+    text = item["text"]
+    result = bool(
+        re.search(r"(?i)\b(?:ran|reviewed|built|rebuilt|pass(?:ed)?|completed|returned)\b", text)
+    )
+    scoped = result and bool(re.search(r"(?i)\b(?:revision|commit)\b|\b\d{4}-\d{2}-\d{2}\b", text))
+    return (
+        item["category"] == "documented_history",
+        not scoped,
+        not RESULT_QUALIFICATION.search(text),
+        not (result and re.search(r"\b\d+\b", text)),
+        not (result or VERSION_CHANGE.search(text)),
+        bool(re.match(r"(?i)^(?:no|not|never|nothing)\b", text)),
+        len(text),
+        item["id"],
+    )
+
+
 def build_brief(
     items: list[dict[str, Any]],
     evidence: Callable[[str], dict[str, Any]],
@@ -78,6 +96,7 @@ def build_brief(
     )
     constraints.sort(
         key=lambda i: (
+            not AUTHORIZATION_CONSTRAINT.search(i["text"]),
             -bool(
                 re.search(
                     r"(?i)continuous|deadline|prerequisite|does not depend|keep .{0,20}running|remain active",
@@ -118,11 +137,43 @@ def build_brief(
             },
         }
 
+    def source_section(item: dict[str, Any]) -> tuple[str | None, str | None, str | None]:
+        metadata = evidence(item["record_id"]).get("metadata", {})
+        return item["worktree_id"], metadata.get("relative_path"), metadata.get("section")
+
+    claim_candidates = [
+        i for i in active if i["category"] in {"documented_claim", "documented_history"}
+    ]
+    version_claims = sorted(
+        [i for i in claim_candidates if VERSION_CHANGE.search(i["text"])],
+        key=lambda i: (i["category"] == "documented_history", -len(i["text"]), i["id"]),
+    )
+    # Repeated version summaries must not displace all dated operation results.
+    # Keep one complete implementation description alongside those result claims.
+    results = sorted(
+        [i for i in claim_candidates if not VERSION_CHANGE.search(i["text"])],
+        key=_claim_rank,
+    )
+    leading_sections = {source_section(i) for i in results[:3]} - {(None, None, None)}
+
+    def result_rank(item: dict[str, Any]) -> tuple:
+        rank = _claim_rank(item)
+        # Preserve related result scope beside leading dated/revision claims
+        # before collecting unrelated historical or capability summaries.
+        return (*rank[:2], source_section(item) not in leading_sections, *rank[2:])
+
+    claims = (
+        _distinct(sorted(results, key=result_rank), 6 if version_claims else 7) + version_claims[:1]
+    )
+
+    claim_sections = {source_section(item) for item in claims} - {(None, None, None)}
     limitations = [
         i for i in active if i["kind"] == "limitation" or i["category"] == "documented_deferred"
     ]
     limitations.sort(
         key=lambda i: (
+            not (RESULT_QUALIFICATION.search(i["text"]) and source_section(i) in claim_sections),
+            not RESULT_QUALIFICATION.search(i["text"]),
             -bool(
                 re.search(
                     r"(?i)no remote|no .{0,20}publication|not .{0,15}run|known incomplete|not real.data.verified|unavailable.*cuts",
@@ -138,21 +189,7 @@ def build_brief(
         "constraints": _distinct(constraints, 6),
         "limitations": _distinct(limitations, 5),
         "decisions": _distinct([i for i in active if i["kind"] == "decision"], 3),
-        "claims": _distinct(
-            sorted(
-                [i for i in active if i["category"] in {"documented_claim", "documented_history"}],
-                key=lambda i: (
-                    -bool(
-                        re.search(
-                            r"(?i)\b(?:passed|completed|verified|geçti|tamamlandı)\b", i["text"]
-                        )
-                    ),
-                    len(i["text"]),
-                    i["id"],
-                ),
-            ),
-            3,
-        ),
+        "claims": claims,
     }
     result: dict[str, Any] = {key: [entry(i) for i in group] for key, group in groups.items()}
     result["identity"] = {

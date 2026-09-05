@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 
 from .models import Candidate, Record
-from .semantics import conversational, document_candidates, natural
+from .semantics import conversational, document_candidates, document_reported_results, natural
 
 MAX_CANDIDATES = 256
 
@@ -213,9 +213,13 @@ def extract(record: Record) -> list[Candidate]:
         return []
     actor = record.actor.lower()
     if record.provider == "project_document" and record.kind == "document_section":
-        if record.metadata.get("source_context") in {"code", "quote"}:
+        if record.metadata.get("source_context") == "quote":
             return []
-        result = document_candidates(record, _lines(record.text))
+        result = (
+            document_reported_results(record)
+            if record.metadata.get("source_context") == "code"
+            else document_candidates(record, _lines(record.text))
+        )
         if len(result) > MAX_CANDIDATES:
             raise ExtractionLimitError("record_extraction_limit")
         return result

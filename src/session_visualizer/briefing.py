@@ -138,6 +138,21 @@ def build_brief(
         "constraints": _distinct(constraints, 6),
         "limitations": _distinct(limitations, 5),
         "decisions": _distinct([i for i in active if i["kind"] == "decision"], 3),
+        "claims": _distinct(
+            sorted(
+                [i for i in active if i["category"] in {"documented_claim", "documented_history"}],
+                key=lambda i: (
+                    -bool(
+                        re.search(
+                            r"(?i)\b(?:passed|completed|verified|geçti|tamamlandı)\b", i["text"]
+                        )
+                    ),
+                    len(i["text"]),
+                    i["id"],
+                ),
+            ),
+            3,
+        ),
     }
     result: dict[str, Any] = {key: [entry(i) for i in group] for key, group in groups.items()}
     result["identity"] = {

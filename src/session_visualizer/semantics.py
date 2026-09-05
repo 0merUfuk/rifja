@@ -10,7 +10,7 @@ from pathlib import PurePosixPath
 from .models import Candidate, Record
 
 CHAT = re.compile(
-    r"(?i)(?:\b(?:continue|resume)\s+(?:this|the|our|previous)\s+(?:chat|session|conversation)\b|"
+    r"(?i)(?:^(?:hello|hi|hey|thanks|thank you|merhaba|selam|teşekkürler)[!. ]*$|\b(?:continue|resume)\s+(?:this|the|our|previous)\s+(?:chat|session|conversation)\b|"
     r"\bcarry on\s+(?:with\s+)?(?:this|the|our)\s+(?:chat|session|conversation)\b|"
     r"\b(?:repeat|restate|reproduce|give me|show me|send me)\b.{0,70}\b(?:prompt|message|brief|explanation|what you said)\b|"
     r"\b(?:sohbet|oturum|konuşma)(?:e|a|u|ı|ya)?\s+(?:devam|sürdür)|"

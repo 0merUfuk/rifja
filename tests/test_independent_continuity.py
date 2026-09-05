@@ -49,6 +49,89 @@ def exported(cli, format):
     ).stdout
 
 
+@pytest.mark.parametrize(
+    ("document", "revision", "reported_result"),
+    [
+        (
+            (
+                "# Delivery notes\n\n## Earlier validation\n"
+                "On revision a17, all unit checks passed.\n\n## Before handoff\n"
+                "Browser rendering remains unverified.\n"
+            ),
+            "a17",
+            "all unit checks passed",
+        ),
+        (
+            (
+                "# Current state\n\nNo open release checks remain in this documented snapshot.\n\n"
+                "## Historical work\n"
+                "The operator reported the checksum review complete on revision b23.\n"
+            ),
+            "b23",
+            "checksum review complete",
+        ),
+        (
+            (
+                "# Current report\n\nBrowser verification is no longer pending. "
+                "The owner reported it completed on revision c42. "
+                "This document is not a fresh test result for a later revision.\n"
+            ),
+            "c42",
+            "owner reported it completed",
+        ),
+    ],
+)
+def test_documented_historical_results_survive_exports_with_their_revision(
+    independent_cli, document, revision, reported_result
+):
+    cli = independent_cli
+    (cli.project_path / "STATUS.md").write_text(document)
+    register_documents(cli)
+    register_events(cli, [("user", "Please repeat the previous explanation.")])
+    cli.data("refresh")
+    for format in ("markdown", "json"):
+        result = exported(cli, format)
+        # The phrase cannot accidentally match an opaque identifier containing c42.
+        assert f"revision {revision}" in result
+        assert reported_result in result
+        if format == "json":
+            data = json.loads(result)
+            statements = [
+                item
+                for item in data["context"] + data["items"]
+                if f"revision {revision}" in item.get("text", "")
+            ]
+            assert statements
+            assert all(item.get("status") != "verified" for item in statements)
+            assert all("documented" in item.get("category", "") for item in statements)
+
+
+def test_greeting_and_repeat_request_are_not_latest_work_instructions(independent_cli):
+    cli = independent_cli
+    register_documents(cli)
+    register_events(
+        cli,
+        [
+            ("user", "Hello!"),
+            ("user", "Merhaba!"),
+            ("user", "Can you repeat that last explanation?"),
+            ("assistant", "We could add collaboration later."),
+        ],
+    )
+    cli.data("refresh")
+    resume = cli.data("resume", "notebook")
+    assert resume["next_actions"] == []
+    assert resume["latest_user_instruction"] is None
+    for format in ("markdown", "json"):
+        result = exported(cli, format)
+        if format == "json":
+            assert not any(
+                item["kind"] == "latest_user_instruction" for item in json.loads(result)["context"]
+            )
+        else:
+            assert "**latest user instruction**" not in result
+
+
 def test_ordinary_verification_gap_survives_chat_noise_and_exports(independent_cli):
     cli = independent_cli
     (cli.project_path / "STATUS.md").write_text(

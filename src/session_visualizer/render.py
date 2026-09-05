@@ -111,6 +111,7 @@ def _brief_lines(data: dict[str, Any]) -> list[str]:
     for key, title in (
         ("pending", "Documented unfinished work"),
         ("constraints", "Conditions and constraints"),
+        ("claims", "Documented and historical claims (not current verification)"),
         ("limitations", "Documented limitations"),
         ("decisions", "Documented decisions"),
     ):
@@ -432,7 +433,7 @@ def bounded_export(data: dict[str, Any], format: str = "markdown", max_chars: in
         )
     # Conditions are selected before secondary history. No full command output
     # is allowed to consume this semantic budget.
-    for key in ("conflicts", "pending", "constraints", "limitations", "decisions"):
+    for key in ("conflicts", "pending", "constraints", "claims", "limitations", "decisions"):
         for entry in brief.get(key, []):
             context_entries.append({"kind": key, **entry})
     compact["omissions"]["context"] = len(context_entries)

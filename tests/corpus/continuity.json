@@ -1,0 +1,1992 @@
+{
+  "schema_version": 1,
+  "corpus_id": "synthetic-continuity-v1",
+  "provenance": "All transcripts, names, paths, providers and revisions are invented. No private transcript or live provider source was accessed.",
+  "semantics": {
+    "events": "expected is test-only annotation and MUST NOT be given to extraction.",
+    "scope": "Exact project and worktree identity comes from the envelope; mentioned paths never override it.",
+    "evidence": "Assistant prose is a claim. Captured tool output proves only its recorded result at its recorded revision, not task completion.",
+    "time": "Aware timestamps are instants. Report dates use selection.timezone. Naive timestamps remain unresolved and visible.",
+    "source_ids": "Each surfaced item preserves its supporting source event IDs; a combined item may cover multiple requirements if support and status survive.",
+    "no_completion": "No scenario permits inferred verified task or project completion."
+  },
+  "thresholds": {
+    "critical_blocker_recall": 1.0,
+    "critical_action_recall": 1.0,
+    "unsupported_completion_count": 0,
+    "cross_project_misattribution_count": 0,
+    "cross_worktree_misattribution_count": 0,
+    "cancelled_action_active_count": 0,
+    "superseded_decision_active_count": 0,
+    "missing_provenance_count": 0
+  },
+  "scenarios": [
+    {
+      "id": "interrupted-critical-work",
+      "synthetic": true,
+      "language": "en",
+      "purpose": "Preserve explicit blocking work across an interrupted capture.",
+      "selection": {
+        "project": "harbor",
+        "worktree": "/synthetic/harbor/main",
+        "day": "2026-09-05",
+        "timezone": "Europe/Istanbul"
+      },
+      "events": [
+        {
+          "id": "ic-task",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:00:00+03:00",
+          "text": "TASK: Repair the invoice parser for empty tax fields.",
+          "category": "message"
+        },
+        {
+          "id": "ic-blocker",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:01:00+03:00",
+          "text": "BLOCKER: Critical: the empty-tax fixture is missing; validation cannot proceed.",
+          "category": "message"
+        },
+        {
+          "id": "ic-next",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:02:00+03:00",
+          "text": "NEXT: Obtain the empty-tax fixture from the local fixture directory before editing.",
+          "category": "message"
+        },
+        {
+          "id": "ic-stop",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "system",
+          "timestamp": "2026-09-05T10:03:00+03:00",
+          "text": "Session capture ended while work was in progress.",
+          "category": "source_status",
+          "metadata": {
+            "capture_status": "interrupted"
+          }
+        }
+      ],
+      "expected": {
+        "must_surface": [
+          {
+            "kind": "task",
+            "source_ids": [
+              "ic-task"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Repair empty-tax parsing.",
+            "status": "open"
+          },
+          {
+            "kind": "blocker",
+            "source_ids": [
+              "ic-blocker"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Validation is blocked by the missing empty-tax fixture.",
+            "status": "open",
+            "critical": true
+          },
+          {
+            "kind": "next_action",
+            "source_ids": [
+              "ic-next"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Obtain the local fixture before editing.",
+            "status": "active",
+            "critical": true
+          },
+          {
+            "kind": "uncertainty",
+            "source_ids": [
+              "ic-stop"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Later activity is unknown because capture was interrupted.",
+            "code": "interrupted_source"
+          }
+        ],
+        "must_not_assert": [
+          {
+            "predicate": "unsupported_completion",
+            "meaning": "The parser is repaired, tested, or complete."
+          },
+          {
+            "predicate": "invented_action",
+            "meaning": "Release or publish the parser without explicit instruction."
+          }
+        ]
+      }
+    },
+    {
+      "id": "explicitly-abandoned-work",
+      "synthetic": true,
+      "language": "en",
+      "purpose": "A later user cancellation retires an abandoned task and next action.",
+      "selection": {
+        "project": "harbor",
+        "worktree": "/synthetic/harbor/main",
+        "day": "2026-09-05",
+        "timezone": "Europe/Istanbul"
+      },
+      "events": [
+        {
+          "id": "ab-task",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:00:00+03:00",
+          "text": "TASK: Replace the invoice renderer.",
+          "category": "message"
+        },
+        {
+          "id": "ab-next",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:01:00+03:00",
+          "text": "NEXT: Prototype the replacement renderer.",
+          "category": "message"
+        },
+        {
+          "id": "ab-cancel",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:02:00+03:00",
+          "text": "CANCEL: ab-task, ab-next. Abandon the renderer replacement; the current renderer is sufficient.",
+          "category": "message"
+        },
+        {
+          "id": "ab-chat",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:03:00+03:00",
+          "text": "Thanks. I am going for a walk.",
+          "category": "message"
+        }
+      ],
+      "expected": {
+        "must_surface": [
+          {
+            "kind": "correction",
+            "source_ids": [
+              "ab-cancel"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Renderer replacement and prototype are explicitly abandoned.",
+            "status": "cancelled",
+            "related_source_ids": [
+              "ab-task",
+              "ab-next"
+            ]
+          }
+        ],
+        "must_not_assert": [
+          {
+            "predicate": "cancelled_action_active",
+            "meaning": "Prototype replacement remains active.",
+            "source_ids": [
+              "ab-next"
+            ]
+          },
+          {
+            "predicate": "cancelled_task_complete",
+            "meaning": "Abandonment is represented as successful completion.",
+            "source_ids": [
+              "ab-task"
+            ]
+          }
+        ],
+        "active_action_source_ids": [],
+        "inactive_action_source_ids": [
+          "ab-next"
+        ]
+      }
+    },
+    {
+      "id": "turkish-explicit-continuity",
+      "synthetic": true,
+      "language": "tr",
+      "purpose": "Turkish intent markers preserve tasks, decisions, blockers and actions.",
+      "selection": {
+        "project": "harbor",
+        "worktree": "/synthetic/harbor/main",
+        "day": "2026-09-05",
+        "timezone": "Europe/Istanbul"
+      },
+      "events": [
+        {
+          "id": "tr-task",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:00:00+03:00",
+          "text": "GÖREV: İçe aktarma sırasında boş tarih alanını destekle.",
+          "category": "message"
+        },
+        {
+          "id": "tr-decision",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:01:00+03:00",
+          "text": "KARAR: Boş tarih alanı null olarak saklanacak.",
+          "category": "message"
+        },
+        {
+          "id": "tr-blocker",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:02:00+03:00",
+          "text": "ENGEL: Kritik: örnek CSV dosyası eksik; doğrulama ilerleyemiyor.",
+          "category": "message"
+        },
+        {
+          "id": "tr-next",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:03:00+03:00",
+          "text": "SONRA: Önce yerel örnek CSV dosyasını bul ve boş tarih satırını doğrula.",
+          "category": "message"
+        }
+      ],
+      "expected": {
+        "must_surface": [
+          {
+            "kind": "task",
+            "source_ids": [
+              "tr-task"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Support empty dates during import.",
+            "status": "open"
+          },
+          {
+            "kind": "decision",
+            "source_ids": [
+              "tr-decision"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Store empty dates as null.",
+            "status": "active"
+          },
+          {
+            "kind": "blocker",
+            "source_ids": [
+              "tr-blocker"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "The missing CSV prevents validation.",
+            "status": "open",
+            "critical": true
+          },
+          {
+            "kind": "next_action",
+            "source_ids": [
+              "tr-next"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Find the local CSV and validate its empty-date row first.",
+            "status": "active",
+            "critical": true
+          }
+        ],
+        "must_not_assert": [
+          {
+            "predicate": "unsupported_completion",
+            "meaning": "Empty-date support is implemented or verified."
+          }
+        ]
+      }
+    },
+    {
+      "id": "mixed-correction-and-supersession",
+      "synthetic": true,
+      "language": "mixed",
+      "purpose": "A later correction supersedes old intent across providers.",
+      "selection": {
+        "project": "harbor",
+        "worktree": "/synthetic/harbor/main",
+        "day": "2026-09-05",
+        "timezone": "Europe/Istanbul"
+      },
+      "events": [
+        {
+          "id": "mx-old-decision",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:00:00+03:00",
+          "text": "DECISION: Use SQLite for the cache.",
+          "category": "message"
+        },
+        {
+          "id": "mx-old-next",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:01:00+03:00",
+          "text": "NEXT: Add a SQLite cache adapter.",
+          "category": "message"
+        },
+        {
+          "id": "mx-correction",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-b",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:02:00+03:00",
+          "text": "DÜZELTME: mx-old-decision, mx-old-next. SQLite seçimini ve adapter işini iptal et.",
+          "category": "message"
+        },
+        {
+          "id": "mx-new-decision",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-b",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:03:00+03:00",
+          "text": "KARAR: Keep the cache in a local JSON file.",
+          "category": "message"
+        },
+        {
+          "id": "mx-new-next",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-b",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:04:00+03:00",
+          "text": "SONRA: JSON cache için atomik dosya yazımını ekle.",
+          "category": "message"
+        }
+      ],
+      "expected": {
+        "must_surface": [
+          {
+            "kind": "correction",
+            "source_ids": [
+              "mx-correction"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Cancel the SQLite decision and adapter action.",
+            "status": "superseded",
+            "related_source_ids": [
+              "mx-old-decision",
+              "mx-old-next"
+            ]
+          },
+          {
+            "kind": "decision",
+            "source_ids": [
+              "mx-new-decision"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Use a local JSON cache.",
+            "status": "active"
+          },
+          {
+            "kind": "next_action",
+            "source_ids": [
+              "mx-new-next"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Add atomic JSON cache writes.",
+            "status": "active",
+            "critical": true
+          }
+        ],
+        "must_not_assert": [
+          {
+            "predicate": "superseded_decision_active",
+            "meaning": "SQLite remains the current decision.",
+            "source_ids": [
+              "mx-old-decision"
+            ]
+          },
+          {
+            "predicate": "cancelled_action_active",
+            "meaning": "Add the SQLite adapter remains active.",
+            "source_ids": [
+              "mx-old-next"
+            ]
+          }
+        ],
+        "active_action_source_ids": [
+          "mx-new-next"
+        ],
+        "inactive_action_source_ids": [
+          "mx-old-next"
+        ]
+      }
+    },
+    {
+      "id": "assistant-success-without-evidence",
+      "synthetic": true,
+      "language": "en",
+      "purpose": "Assistant success language remains unverified when no output was captured.",
+      "selection": {
+        "project": "harbor",
+        "worktree": "/synthetic/harbor/main",
+        "day": "2026-09-05",
+        "timezone": "Europe/Istanbul"
+      },
+      "events": [
+        {
+          "id": "uc-task",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:00:00+03:00",
+          "text": "TASK: Fix the duplicate-import bug.",
+          "category": "message"
+        },
+        {
+          "id": "uc-claim",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "assistant",
+          "timestamp": "2026-09-05T10:01:00+03:00",
+          "text": "Done. The duplicate-import bug is fixed and all 14 tests pass.",
+          "category": "message"
+        },
+        {
+          "id": "uc-next",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:02:00+03:00",
+          "text": "NEXT: Capture the duplicate-import regression output before accepting the fix.",
+          "category": "message"
+        }
+      ],
+      "expected": {
+        "must_surface": [
+          {
+            "kind": "claim",
+            "source_ids": [
+              "uc-claim"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "The assistant claims a fix and 14 passing tests.",
+            "status": "unverified"
+          },
+          {
+            "kind": "uncertainty",
+            "source_ids": [
+              "uc-claim"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "No captured output verifies the fix or passing result.",
+            "code": "unverified_claim"
+          },
+          {
+            "kind": "next_action",
+            "source_ids": [
+              "uc-next"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Capture the regression output before acceptance.",
+            "status": "active",
+            "critical": true
+          }
+        ],
+        "must_not_assert": [
+          {
+            "predicate": "unsupported_completion",
+            "meaning": "The bug is verified fixed.",
+            "source_ids": [
+              "uc-claim"
+            ]
+          },
+          {
+            "predicate": "claim_promoted_to_evidence",
+            "meaning": "The 14-test count is a captured passing result.",
+            "source_ids": [
+              "uc-claim"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "captured-tests-on-older-revision",
+      "synthetic": true,
+      "language": "en",
+      "purpose": "Captured passing tests do not certify a later code revision.",
+      "selection": {
+        "project": "harbor",
+        "worktree": "/synthetic/harbor/main",
+        "day": "2026-09-05",
+        "timezone": "Europe/Istanbul"
+      },
+      "events": [
+        {
+          "id": "sr-old",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "tool",
+          "timestamp": "2026-09-05T10:00:00+03:00",
+          "text": "Current revision: a111111.",
+          "category": "revision",
+          "metadata": {
+            "revision": "a111111"
+          }
+        },
+        {
+          "id": "sr-pass",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "tool",
+          "timestamp": "2026-09-05T10:01:00+03:00",
+          "text": "command: test-suite\nexit_code: 0\n14 passed",
+          "category": "tool_result",
+          "metadata": {
+            "revision": "a111111",
+            "command": "test-suite",
+            "exit_code": 0,
+            "passed": 14
+          }
+        },
+        {
+          "id": "sr-new",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "tool",
+          "timestamp": "2026-09-05T10:02:00+03:00",
+          "text": "Current revision: b222222. Parser source changed after testing.",
+          "category": "revision",
+          "metadata": {
+            "revision": "b222222"
+          }
+        },
+        {
+          "id": "sr-claim",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "assistant",
+          "timestamp": "2026-09-05T10:03:00+03:00",
+          "text": "All tests pass on the current code.",
+          "category": "message"
+        },
+        {
+          "id": "sr-next",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:04:00+03:00",
+          "text": "NEXT: Rerun the suite on b222222 and capture its output.",
+          "category": "message"
+        }
+      ],
+      "expected": {
+        "must_surface": [
+          {
+            "kind": "evidence",
+            "source_ids": [
+              "sr-pass"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "14 passing tests were captured only for a111111.",
+            "status": "captured",
+            "revision": "a111111"
+          },
+          {
+            "kind": "fact",
+            "source_ids": [
+              "sr-new"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "The last captured revision is b222222.",
+            "revision": "b222222"
+          },
+          {
+            "kind": "claim",
+            "source_ids": [
+              "sr-claim"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Current-code passing tests are claimed, not captured.",
+            "status": "unverified"
+          },
+          {
+            "kind": "uncertainty",
+            "source_ids": [
+              "sr-pass",
+              "sr-new"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "The result predates the current revision.",
+            "code": "stale_verification"
+          },
+          {
+            "kind": "next_action",
+            "source_ids": [
+              "sr-next"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Rerun and capture the suite at b222222.",
+            "status": "active",
+            "critical": true
+          }
+        ],
+        "must_not_assert": [
+          {
+            "predicate": "stale_evidence_verifies_current",
+            "meaning": "Tests at a111111 prove b222222 passes.",
+            "source_ids": [
+              "sr-pass",
+              "sr-new"
+            ]
+          },
+          {
+            "predicate": "unsupported_completion",
+            "meaning": "Current revision b222222 is verified complete."
+          }
+        ],
+        "current_revision": "b222222"
+      }
+    },
+    {
+      "id": "two-projects-same-topic",
+      "synthetic": true,
+      "language": "en",
+      "purpose": "Matching task wording cannot cause cross-project attribution.",
+      "selection": {
+        "project": "harbor",
+        "worktree": "/synthetic/harbor/main",
+        "day": "2026-09-05",
+        "timezone": "Europe/Istanbul"
+      },
+      "events": [
+        {
+          "id": "pi-task",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:00:00+03:00",
+          "text": "TASK: Repair cache loading.",
+          "category": "message"
+        },
+        {
+          "id": "pi-next",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:01:00+03:00",
+          "text": "NEXT: Inspect the Harbor cache fixture.",
+          "category": "message"
+        },
+        {
+          "id": "pi-other-blocker",
+          "project": "beacon",
+          "worktree": "/synthetic/beacon/main",
+          "provider": "provider-b",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:02:00+03:00",
+          "text": "BLOCKER: Critical: Beacon credentials are unavailable.",
+          "category": "message"
+        },
+        {
+          "id": "pi-other-next",
+          "project": "beacon",
+          "worktree": "/synthetic/beacon/main",
+          "provider": "provider-b",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:03:00+03:00",
+          "text": "NEXT: Rotate the Beacon API token.",
+          "category": "message"
+        },
+        {
+          "id": "pi-other-claim",
+          "project": "beacon",
+          "worktree": "/synthetic/beacon/main",
+          "provider": "provider-c",
+          "actor": "assistant",
+          "timestamp": "2026-09-05T10:04:00+03:00",
+          "text": "Cache loading is complete and deployed.",
+          "category": "message"
+        }
+      ],
+      "expected": {
+        "must_surface": [
+          {
+            "kind": "task",
+            "source_ids": [
+              "pi-task"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Repair Harbor cache loading.",
+            "status": "open"
+          },
+          {
+            "kind": "next_action",
+            "source_ids": [
+              "pi-next"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Inspect the Harbor cache fixture.",
+            "status": "active",
+            "critical": true
+          }
+        ],
+        "must_not_assert": [
+          {
+            "predicate": "cross_project_attribution",
+            "meaning": "Beacon events are attributed to Harbor.",
+            "source_ids": [
+              "pi-other-blocker",
+              "pi-other-next",
+              "pi-other-claim"
+            ]
+          },
+          {
+            "predicate": "unsupported_completion",
+            "meaning": "Harbor cache loading is complete or deployed."
+          }
+        ],
+        "selected_event_ids": [
+          "pi-task",
+          "pi-next"
+        ],
+        "excluded_event_ids": [
+          "pi-other-blocker",
+          "pi-other-next",
+          "pi-other-claim"
+        ]
+      }
+    },
+    {
+      "id": "worktree-and-provider-isolation",
+      "synthetic": true,
+      "language": "en",
+      "purpose": "Providers merge within explicit scope; another worktree cannot cancel that scope.",
+      "selection": {
+        "project": "harbor",
+        "worktree": "/synthetic/harbor/worktrees/parser",
+        "day": "2026-09-05",
+        "timezone": "Europe/Istanbul"
+      },
+      "events": [
+        {
+          "id": "wi-blocker",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/worktrees/parser",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:00:00+03:00",
+          "text": "BLOCKER: Critical: parser fixture schema is undocumented.",
+          "category": "message"
+        },
+        {
+          "id": "wi-next",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/worktrees/parser",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:01:00+03:00",
+          "text": "NEXT: Document the parser fixture schema.",
+          "category": "message"
+        },
+        {
+          "id": "wi-decision",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/worktrees/parser",
+          "provider": "provider-b",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:02:00+03:00",
+          "text": "DECISION: Preserve the existing parser fixture format.",
+          "category": "message"
+        },
+        {
+          "id": "wi-auth-next",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/worktrees/auth",
+          "provider": "provider-c",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:03:00+03:00",
+          "text": "NEXT: Document the auth token schema.",
+          "category": "message"
+        },
+        {
+          "id": "wi-auth-cancel",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/worktrees/auth",
+          "provider": "provider-c",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:04:00+03:00",
+          "text": "CANCEL: wi-next. Cancel documentation in this auth worktree.",
+          "category": "message"
+        }
+      ],
+      "expected": {
+        "must_surface": [
+          {
+            "kind": "blocker",
+            "source_ids": [
+              "wi-blocker"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/worktrees/parser"
+            },
+            "meaning": "The parser fixture schema is undocumented.",
+            "status": "open",
+            "critical": true
+          },
+          {
+            "kind": "next_action",
+            "source_ids": [
+              "wi-next"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/worktrees/parser"
+            },
+            "meaning": "Document the parser schema.",
+            "status": "active",
+            "critical": true
+          },
+          {
+            "kind": "decision",
+            "source_ids": [
+              "wi-decision"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/worktrees/parser"
+            },
+            "meaning": "Preserve the parser format.",
+            "status": "active"
+          }
+        ],
+        "must_not_assert": [
+          {
+            "predicate": "cross_worktree_attribution",
+            "meaning": "Auth work is attributed to the parser worktree.",
+            "source_ids": [
+              "wi-auth-next",
+              "wi-auth-cancel"
+            ]
+          },
+          {
+            "predicate": "cross_scope_transition",
+            "meaning": "An auth cancellation cancels the parser action.",
+            "source_ids": [
+              "wi-auth-cancel",
+              "wi-next"
+            ]
+          }
+        ],
+        "selected_event_ids": [
+          "wi-blocker",
+          "wi-next",
+          "wi-decision"
+        ],
+        "excluded_event_ids": [
+          "wi-auth-next",
+          "wi-auth-cancel"
+        ]
+      }
+    },
+    {
+      "id": "unavailable-source-is-not-empty-work",
+      "synthetic": true,
+      "language": "en",
+      "purpose": "Known unavailable sources must not justify claims of complete coverage.",
+      "selection": {
+        "project": "harbor",
+        "worktree": "/synthetic/harbor/main",
+        "day": "2026-09-05",
+        "timezone": "Europe/Istanbul"
+      },
+      "events": [
+        {
+          "id": "us-next",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:00:00+03:00",
+          "text": "NEXT: Review the captured import failure.",
+          "category": "message"
+        },
+        {
+          "id": "us-missing",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-b",
+          "actor": "system",
+          "timestamp": "2026-09-05T10:01:00+03:00",
+          "text": "Configured provider-b export could not be read.",
+          "category": "source_status",
+          "metadata": {
+            "availability": "unavailable",
+            "source_ref": "synthetic://provider-b/unavailable-export",
+            "reason": "file_missing"
+          }
+        }
+      ],
+      "expected": {
+        "must_surface": [
+          {
+            "kind": "next_action",
+            "source_ids": [
+              "us-next"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Review the captured import failure.",
+            "status": "active",
+            "critical": true
+          },
+          {
+            "kind": "uncertainty",
+            "source_ids": [
+              "us-missing"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Provider-b activity and blockers are unknown.",
+            "code": "source_unavailable"
+          }
+        ],
+        "must_not_assert": [
+          {
+            "predicate": "absence_claim_from_missing_source",
+            "meaning": "All sources were checked and no blockers remain.",
+            "source_ids": [
+              "us-missing"
+            ]
+          },
+          {
+            "predicate": "invented_missing_content",
+            "meaning": "Content is invented for the unread source."
+          }
+        ]
+      }
+    },
+    {
+      "id": "incomplete-source-preserves-known-blocker",
+      "synthetic": true,
+      "language": "mixed",
+      "purpose": "Visible blockers remain active when the source tail is unavailable.",
+      "selection": {
+        "project": "harbor",
+        "worktree": "/synthetic/harbor/main",
+        "day": "2026-09-05",
+        "timezone": "Europe/Istanbul"
+      },
+      "events": [
+        {
+          "id": "is-blocker",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:00:00+03:00",
+          "text": "ENGEL: Kritik: migration veri kaybına yol açıyor; yayımlama durduruldu.",
+          "category": "message"
+        },
+        {
+          "id": "is-next",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:01:00+03:00",
+          "text": "NEXT: Reproduce the migration data-loss case locally.",
+          "category": "message"
+        },
+        {
+          "id": "is-truncated",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "system",
+          "timestamp": "2026-09-05T10:02:00+03:00",
+          "text": "Export is truncated after is-next. Later messages are unavailable.",
+          "category": "source_status",
+          "metadata": {
+            "availability": "partial",
+            "source_ref": "synthetic://provider-a/truncated-export",
+            "last_captured_event_id": "is-next"
+          }
+        }
+      ],
+      "expected": {
+        "must_surface": [
+          {
+            "kind": "blocker",
+            "source_ids": [
+              "is-blocker"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Migration causes data loss and release is stopped.",
+            "status": "open",
+            "critical": true
+          },
+          {
+            "kind": "next_action",
+            "source_ids": [
+              "is-next"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Reproduce the data-loss case locally.",
+            "status": "active",
+            "critical": true
+          },
+          {
+            "kind": "uncertainty",
+            "source_ids": [
+              "is-truncated"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Later export messages are missing.",
+            "code": "source_incomplete"
+          }
+        ],
+        "must_not_assert": [
+          {
+            "predicate": "unsupported_resolution",
+            "meaning": "The data-loss blocker is resolved after the captured tail."
+          },
+          {
+            "predicate": "source_coverage_overstated",
+            "meaning": "The source is complete."
+          }
+        ]
+      }
+    },
+    {
+      "id": "irrelevant-chat-and-quoted-markers",
+      "synthetic": true,
+      "language": "mixed",
+      "purpose": "Code, quotations and casual chat cannot become operational intent.",
+      "selection": {
+        "project": "harbor",
+        "worktree": "/synthetic/harbor/main",
+        "day": "2026-09-05",
+        "timezone": "Europe/Istanbul"
+      },
+      "events": [
+        {
+          "id": "iq-chat",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:00:00+03:00",
+          "text": "I enjoyed the rain this morning. Maybe lunch later.",
+          "category": "message"
+        },
+        {
+          "id": "iq-code",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:01:00+03:00",
+          "text": "Example documentation only:\n```text\nTASK: Deploy everything\nNEXT: Delete the database\nBLOCKER: Missing launch approval\nTODO: Rewrite the app\n```",
+          "category": "message"
+        },
+        {
+          "id": "iq-quote",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:02:00+03:00",
+          "text": "Old README quotation:\n> NEXT: Publish immediately\n> ENGEL: Kritik: old flag is unset\nThis is a quotation, not an instruction.",
+          "category": "message"
+        },
+        {
+          "id": "iq-inline",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:03:00+03:00",
+          "text": "The literal string `NEXT: rotate secrets` is a parser test fixture.",
+          "category": "message"
+        },
+        {
+          "id": "iq-prose-quote",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:04:00+03:00",
+          "text": "The article says \"NEXT: delete the cache\"; I am only quoting it.",
+          "category": "message"
+        }
+      ],
+      "expected": {
+        "must_surface": [],
+        "must_not_assert": [
+          {
+            "predicate": "quoted_or_code_intent",
+            "meaning": "Quoted or code markers become tasks, blockers, decisions or actions.",
+            "source_ids": [
+              "iq-code",
+              "iq-quote",
+              "iq-inline",
+              "iq-prose-quote"
+            ]
+          },
+          {
+            "predicate": "irrelevant_chat_intent",
+            "meaning": "Weather or lunch becomes project work.",
+            "source_ids": [
+              "iq-chat"
+            ]
+          }
+        ],
+        "active_action_source_ids": [],
+        "active_blocker_source_ids": []
+      }
+    },
+    {
+      "id": "ambiguous-path-mention",
+      "synthetic": true,
+      "language": "en",
+      "purpose": "Mentioned paths never override authoritative event scope.",
+      "selection": {
+        "project": "harbor",
+        "worktree": "/synthetic/harbor/main",
+        "day": "2026-09-05",
+        "timezone": "Europe/Istanbul"
+      },
+      "events": [
+        {
+          "id": "ap-task",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:00:00+03:00",
+          "text": "TASK: Compare our output with /synthetic/beacon/main/examples/report.json.",
+          "category": "message"
+        },
+        {
+          "id": "ap-next",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:01:00+03:00",
+          "text": "NEXT: Inspect the local comparison fixture; do not modify Beacon.",
+          "category": "message"
+        },
+        {
+          "id": "ap-ambiguous",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "assistant",
+          "timestamp": "2026-09-05T10:02:00+03:00",
+          "text": "The log mentions ../main and /synthetic/beacon/worktrees/parser but does not identify which checkout produced it.",
+          "category": "message",
+          "metadata": {
+            "attribution_status": "ambiguous_mentioned_paths"
+          }
+        }
+      ],
+      "expected": {
+        "must_surface": [
+          {
+            "kind": "task",
+            "source_ids": [
+              "ap-task"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Compare Harbor output against a referenced sample.",
+            "status": "open"
+          },
+          {
+            "kind": "next_action",
+            "source_ids": [
+              "ap-next"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Inspect the Harbor comparison fixture.",
+            "status": "active",
+            "critical": true
+          },
+          {
+            "kind": "uncertainty",
+            "source_ids": [
+              "ap-ambiguous"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Mentioned paths do not establish the originating checkout.",
+            "code": "ambiguous_path_reference"
+          }
+        ],
+        "must_not_assert": [
+          {
+            "predicate": "path_mention_changes_scope",
+            "meaning": "Mentioned Beacon paths change authoritative Harbor scope.",
+            "source_ids": [
+              "ap-task",
+              "ap-ambiguous"
+            ]
+          },
+          {
+            "predicate": "invented_action",
+            "meaning": "Modify Beacon because its path is mentioned."
+          }
+        ]
+      }
+    },
+    {
+      "id": "midnight-offset-day-bucketing",
+      "synthetic": true,
+      "language": "en",
+      "purpose": "Calendar selection uses timezone-normalized instants, not date prefixes.",
+      "selection": {
+        "project": "harbor",
+        "worktree": "/synthetic/harbor/main",
+        "day": "2026-04-02",
+        "timezone": "Europe/Istanbul"
+      },
+      "events": [
+        {
+          "id": "mo-in",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-04-01T23:30:00Z",
+          "text": "NEXT: Inspect the after-midnight import.",
+          "category": "message"
+        },
+        {
+          "id": "mo-same",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-b",
+          "actor": "user",
+          "timestamp": "2026-04-02T02:45:00+03:00",
+          "text": "BLOCKER: Critical: the overnight fixture is missing.",
+          "category": "message"
+        },
+        {
+          "id": "mo-before",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-04-01T20:59:59Z",
+          "text": "NEXT: Archive the previous-day note.",
+          "category": "message"
+        },
+        {
+          "id": "mo-after",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-04-02T23:30:00Z",
+          "text": "NEXT: Inspect tomorrow’s export.",
+          "category": "message"
+        }
+      ],
+      "expected": {
+        "must_surface": [
+          {
+            "kind": "next_action",
+            "source_ids": [
+              "mo-in"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Inspect the after-midnight import.",
+            "status": "active",
+            "critical": true
+          },
+          {
+            "kind": "blocker",
+            "source_ids": [
+              "mo-same"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "The overnight fixture is missing.",
+            "status": "open",
+            "critical": true
+          }
+        ],
+        "must_not_assert": [
+          {
+            "predicate": "wrong_local_day",
+            "meaning": "Date prefixes select the wrong local-day records.",
+            "source_ids": [
+              "mo-in",
+              "mo-before",
+              "mo-after"
+            ]
+          }
+        ],
+        "selected_event_ids": [
+          "mo-in",
+          "mo-same"
+        ],
+        "excluded_event_ids": [
+          "mo-before",
+          "mo-after"
+        ],
+        "ordered_event_ids": [
+          "mo-in",
+          "mo-same"
+        ]
+      }
+    },
+    {
+      "id": "dst-fall-back-order",
+      "synthetic": true,
+      "language": "en",
+      "purpose": "Repeated wall-clock times retain correct real-time cancellation order.",
+      "selection": {
+        "project": "harbor",
+        "worktree": "/synthetic/harbor/main",
+        "day": "2026-11-01",
+        "timezone": "America/New_York"
+      },
+      "events": [
+        {
+          "id": "df-old",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-11-01T01:30:00-04:00",
+          "text": "NEXT: Run the legacy parser benchmark.",
+          "category": "message"
+        },
+        {
+          "id": "df-cancel",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-b",
+          "actor": "user",
+          "timestamp": "2026-11-01T01:10:00-05:00",
+          "text": "CANCEL: df-old. The legacy benchmark is no longer needed.",
+          "category": "message"
+        },
+        {
+          "id": "df-new",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-b",
+          "actor": "user",
+          "timestamp": "2026-11-01T01:15:00-05:00",
+          "text": "NEXT: Run the streaming parser benchmark.",
+          "category": "message"
+        }
+      ],
+      "expected": {
+        "must_surface": [
+          {
+            "kind": "correction",
+            "source_ids": [
+              "df-cancel"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "The legacy benchmark was cancelled after its request.",
+            "status": "cancelled",
+            "related_source_ids": [
+              "df-old"
+            ]
+          },
+          {
+            "kind": "next_action",
+            "source_ids": [
+              "df-new"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Run the streaming parser benchmark.",
+            "status": "active",
+            "critical": true
+          }
+        ],
+        "must_not_assert": [
+          {
+            "predicate": "cancelled_action_active",
+            "meaning": "The legacy benchmark remains active.",
+            "source_ids": [
+              "df-old"
+            ]
+          },
+          {
+            "predicate": "wrong_instant_order",
+            "meaning": "Wall-clock sorting places cancellation before its target."
+          }
+        ],
+        "selected_event_ids": [
+          "df-old",
+          "df-cancel",
+          "df-new"
+        ],
+        "ordered_event_ids": [
+          "df-old",
+          "df-cancel",
+          "df-new"
+        ],
+        "active_action_source_ids": [
+          "df-new"
+        ],
+        "inactive_action_source_ids": [
+          "df-old"
+        ]
+      }
+    },
+    {
+      "id": "dst-spring-forward",
+      "synthetic": true,
+      "language": "en",
+      "purpose": "Both real instants around the skipped DST hour remain on the requested local day.",
+      "selection": {
+        "project": "harbor",
+        "worktree": "/synthetic/harbor/main",
+        "day": "2026-03-08",
+        "timezone": "America/New_York"
+      },
+      "events": [
+        {
+          "id": "ds-before",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-03-08T01:59:00-05:00",
+          "text": "TASK: Check the overnight parser window.",
+          "category": "message"
+        },
+        {
+          "id": "ds-after",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-b",
+          "actor": "user",
+          "timestamp": "2026-03-08T03:01:00-04:00",
+          "text": "NEXT: Verify the first export after the clock jump.",
+          "category": "message"
+        }
+      ],
+      "expected": {
+        "must_surface": [
+          {
+            "kind": "task",
+            "source_ids": [
+              "ds-before"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Check the overnight parser window.",
+            "status": "open"
+          },
+          {
+            "kind": "next_action",
+            "source_ids": [
+              "ds-after"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Verify the first export after the clock jump.",
+            "status": "active",
+            "critical": true
+          }
+        ],
+        "must_not_assert": [
+          {
+            "predicate": "invented_missing_hour_activity",
+            "meaning": "Uncaptured work is fabricated during the clock jump."
+          },
+          {
+            "predicate": "wrong_instant_order",
+            "meaning": "The actual instant order or local day is reversed."
+          }
+        ],
+        "selected_event_ids": [
+          "ds-before",
+          "ds-after"
+        ],
+        "ordered_event_ids": [
+          "ds-before",
+          "ds-after"
+        ]
+      }
+    },
+    {
+      "id": "naive-timestamps-are-unresolved",
+      "synthetic": true,
+      "language": "en",
+      "purpose": "Offset-free timestamps stay undated and visible, including critical explicit work.",
+      "selection": {
+        "project": "harbor",
+        "worktree": "/synthetic/harbor/main",
+        "day": "2026-09-05",
+        "timezone": "Europe/Istanbul"
+      },
+      "events": [
+        {
+          "id": "nt-next",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T00:10:00",
+          "text": "NEXT: Recover the failed import checkpoint.",
+          "category": "message"
+        },
+        {
+          "id": "nt-blocker",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T00:11:00",
+          "text": "BLOCKER: Critical: the checkpoint file is missing.",
+          "category": "message"
+        },
+        {
+          "id": "nt-known",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T09:00:00+03:00",
+          "text": "TASK: Inspect the import capture.",
+          "category": "message"
+        }
+      ],
+      "expected": {
+        "must_surface": [
+          {
+            "kind": "task",
+            "source_ids": [
+              "nt-known"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Inspect the import capture.",
+            "status": "open"
+          },
+          {
+            "kind": "uncertainty",
+            "source_ids": [
+              "nt-next",
+              "nt-blocker"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Missing offsets prevent local-day placement; preserve the unresolved intent.",
+            "code": "naive_timestamp"
+          },
+          {
+            "kind": "next_action",
+            "source_ids": [
+              "nt-next"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Recover the checkpoint with date assignment unresolved.",
+            "status": "active",
+            "critical": true,
+            "temporal_status": "unresolved"
+          },
+          {
+            "kind": "blocker",
+            "source_ids": [
+              "nt-blocker"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "The checkpoint file is missing with date assignment unresolved.",
+            "status": "open",
+            "critical": true,
+            "temporal_status": "unresolved"
+          }
+        ],
+        "must_not_assert": [
+          {
+            "predicate": "host_timezone_assumed",
+            "meaning": "Host timezone resolves an unqualified timestamp.",
+            "source_ids": [
+              "nt-next",
+              "nt-blocker"
+            ]
+          },
+          {
+            "predicate": "unresolved_timestamp_dropped",
+            "meaning": "Unknown dates discard critical explicit work.",
+            "source_ids": [
+              "nt-next",
+              "nt-blocker"
+            ]
+          }
+        ],
+        "selected_event_ids": [
+          "nt-known"
+        ],
+        "unresolved_event_ids": [
+          "nt-next",
+          "nt-blocker"
+        ]
+      }
+    },
+    {
+      "id": "plain-requests-and-assistant-proposals",
+      "synthetic": true,
+      "language": "mixed",
+      "purpose": "Explicit plain requests are actions; tentative assistant proposals are not accepted intent.",
+      "selection": {
+        "project": "harbor",
+        "worktree": "/synthetic/harbor/main",
+        "day": "2026-09-05",
+        "timezone": "Europe/Istanbul"
+      },
+      "events": [
+        {
+          "id": "pr-user",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:00:00+03:00",
+          "text": "Please reproduce the import failure with the local empty-row fixture.",
+          "category": "message"
+        },
+        {
+          "id": "pr-tr",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:01:00+03:00",
+          "text": "Lütfen hata çıktısını yerel dosyaya kaydet.",
+          "category": "message"
+        },
+        {
+          "id": "pr-assistant",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "assistant",
+          "timestamp": "2026-09-05T10:02:00+03:00",
+          "text": "We could migrate the storage layer and publish a new release.",
+          "category": "message"
+        },
+        {
+          "id": "pr-note",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:03:00+03:00",
+          "text": "I wonder whether the migration would help.",
+          "category": "message"
+        }
+      ],
+      "expected": {
+        "must_surface": [
+          {
+            "kind": "next_action",
+            "source_ids": [
+              "pr-user"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Reproduce the import failure with the local fixture.",
+            "status": "active",
+            "critical": true
+          },
+          {
+            "kind": "next_action",
+            "source_ids": [
+              "pr-tr"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Save the failure output to a local file.",
+            "status": "active",
+            "critical": true
+          }
+        ],
+        "must_not_assert": [
+          {
+            "predicate": "proposal_promoted_to_decision",
+            "meaning": "Assistant storage migration is an accepted decision.",
+            "source_ids": [
+              "pr-assistant"
+            ]
+          },
+          {
+            "predicate": "invented_action",
+            "meaning": "Publishing a release is authorized.",
+            "source_ids": [
+              "pr-assistant",
+              "pr-note"
+            ]
+          }
+        ],
+        "active_action_source_ids": [
+          "pr-user",
+          "pr-tr"
+        ]
+      }
+    },
+    {
+      "id": "turkish-cancellation-and-user-reopen",
+      "synthetic": true,
+      "language": "mixed",
+      "purpose": "A Turkish cancellation retires old work; a later new request does not resurrect it.",
+      "selection": {
+        "project": "harbor",
+        "worktree": "/synthetic/harbor/main",
+        "day": "2026-09-05",
+        "timezone": "Europe/Istanbul"
+      },
+      "events": [
+        {
+          "id": "tc-old",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:00:00+03:00",
+          "text": "SONRA: Eski CSV biçimini destekle.",
+          "category": "message"
+        },
+        {
+          "id": "tc-cancel",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:01:00+03:00",
+          "text": "İPTAL: tc-old. Eski CSV biçimi artık kapsam dışında.",
+          "category": "message"
+        },
+        {
+          "id": "tc-new",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "user",
+          "timestamp": "2026-09-05T10:02:00+03:00",
+          "text": "Lütfen yalnızca yeni CSV biçimi için hata mesajını düzelt.",
+          "category": "message"
+        },
+        {
+          "id": "tc-agent",
+          "project": "harbor",
+          "worktree": "/synthetic/harbor/main",
+          "provider": "provider-a",
+          "actor": "assistant",
+          "timestamp": "2026-09-05T10:03:00+03:00",
+          "text": "I will also restore support for the old CSV format.",
+          "category": "message"
+        }
+      ],
+      "expected": {
+        "must_surface": [
+          {
+            "kind": "correction",
+            "source_ids": [
+              "tc-cancel"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Old CSV support is explicitly out of scope.",
+            "status": "cancelled",
+            "related_source_ids": [
+              "tc-old"
+            ]
+          },
+          {
+            "kind": "next_action",
+            "source_ids": [
+              "tc-new"
+            ],
+            "scope": {
+              "project": "harbor",
+              "worktree": "/synthetic/harbor/main"
+            },
+            "meaning": "Fix error messages only for the new CSV format.",
+            "status": "active",
+            "critical": true
+          }
+        ],
+        "must_not_assert": [
+          {
+            "predicate": "cancelled_action_active",
+            "meaning": "Old CSV support remains active or is resurrected by an assistant proposal.",
+            "source_ids": [
+              "tc-old",
+              "tc-agent"
+            ]
+          }
+        ],
+        "active_action_source_ids": [
+          "tc-new"
+        ],
+        "inactive_action_source_ids": [
+          "tc-old"
+        ]
+      }
+    }
+  ]
+}

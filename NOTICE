@@ -1,0 +1,5 @@
+This release candidate is prepared for private local use.
+Public redistribution licensing has not been selected. No open-source license
+grant is made by this repository. Python and SQLite are supplied by the user's
+runtime and retain their respective licenses. Development/build dependencies
+are not bundled in the runtime wheel and retain their own licenses.

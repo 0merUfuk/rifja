@@ -1,0 +1,8 @@
+{"timestamp": "2026-01-01T09:00:00Z", "ordinal": 0, "type": "session_meta", "payload": {"id": "child-task", "session_id": "root-task", "parent_thread_id": "root-task", "subagent_history_start_ordinal": 3, "cwd": "/example/project", "cli_version": "0.153.4"}}
+{"timestamp": "2026-01-01T08:00:00Z", "ordinal": 1, "type": "session_meta", "payload": {"id": "root-task", "session_id": "root-task", "cwd": "/example/parent"}}
+{"timestamp": "2026-01-01T08:00:01Z", "ordinal": 2, "type": "response_item", "payload": {"type": "message", "role": "user", "content": [{"type": "input_text", "text": "Inherited text must not become a child task."}]}}
+{"timestamp": "2026-01-01T09:00:01Z", "ordinal": 3, "type": "response_item", "payload": {"id": "message-child", "type": "message", "role": "user", "content": [{"type": "input_text", "text": "Add a bounded retry."}]}}
+{"timestamp": "2026-01-01T09:00:02Z", "ordinal": 4, "type": "response_item", "payload": {"type": "function_call", "call_id": "call-1", "name": "exec_command", "arguments": "{\"cmd\":\"python -m unittest\"}"}}
+{"timestamp": "2026-01-01T09:00:03Z", "ordinal": 5, "type": "event_msg", "payload": {"type": "item_completed", "item": {"id": "call-1", "type": "command_execution", "command": "python -m unittest", "cwd": "/example/worktree", "exit_code": 0, "aggregated_output": "Ran 4 tests. OK"}}}
+{"timestamp": "2026-01-01T09:00:04Z", "ordinal": 6, "type": "response_item", "payload": {"id": "answer-child", "type": "message", "role": "assistant", "phase": "final_answer", "content": [{"type": "output_text", "text": "I believe the retry is complete."}]}}
+{"timestamp": "2026-01-01T09:00:05Z", "ordinal": 7, "type": "event_msg", "payload": {"type": "task_complete", "last_agent_message": "I believe the retry is complete."}}

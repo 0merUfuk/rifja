@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "session-visualizer"
-version = "0.1.0rc1"
+version = "0.1.0rc2"
 description = "Offline, evidence-aware engineering continuity for local agent sessions and Git"
 readme = "README.md"
 requires-python = ">=3.14"

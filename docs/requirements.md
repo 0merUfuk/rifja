@@ -29,6 +29,8 @@ is not a published release.
 | Installation without checkout/home/dev resources; uninstall preserves memory | wheel/sdist; console entry point | isolated artifact route and installed command transcript |
 | >=1k sessions/250k records/250MiB/20 repos, declared budgets | tools/benchmark.py | final artifact benchmark; docs/performance |
 | Independent review, coherent changes and exact final artifacts | review findings; release process | resolved regressions; final source fingerprint and artifact checksums |
+| Retain parse gaps across append; retain objectives and long-record intent; preserve handoff constraints and date-scoped activity | ingestion; explicit objective items; daily selection; render | test_acceptance_regressions; independent installed challenges; rc1-to-rc2 upgrade checks |
+| Daily aggregation meets the warm query budget without dropping selected evidence | app.daily; schema 3 covering index; bounded output | large installed daily query; schema 2 upgrade and failure rollback in test_resilience |
 
 Deferred by scope: cloud/registry publication, new public license, required AI,
 embeddings, servers/MCP, daemons, UI, synchronization, remote repository hosting,

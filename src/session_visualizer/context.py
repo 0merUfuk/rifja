@@ -4,7 +4,6 @@ import json
 import re
 from typing import Any
 
-from .extract import _lines
 from .store import Store
 
 
@@ -14,6 +13,7 @@ def details(
     items: list[dict[str, Any]],
     worktrees: list[dict[str, Any]],
     worktree: str | None = None,
+    objective: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     args: tuple[Any, ...] = (pid, worktree) if worktree else (pid,)
     scope = "project_id=?" + (" AND worktree_id=?" if worktree else "")
@@ -26,7 +26,6 @@ def details(
     uncertainty: list[dict[str, Any]] = []
     facts: list[dict[str, Any]] = []
     evidence: list[dict[str, Any]] = []
-    objective = None
     current_heads = {w["id"]: (w.get("observation") or {}).get("head") for w in worktrees}
     historical_revisions: dict[str, tuple[str, str]] = {}
     for record in records:
@@ -90,12 +89,6 @@ def details(
                     "applicability": "Historical captured output only; current applicability is unverified.",
                 }
             )
-        if record["actor"] == "user" and objective is None and record["source_current"]:
-            match = re.search(
-                r"(?im)^(?:OBJECTIVE|GOAL|HEDEF|AMAÇ):\s*(.+)$", "\n".join(_lines(record["text"]))
-            )
-            if match:
-                objective = {"text": match[1], **base, "category": "user_intent"}
         if re.search(r"(?i)\b(?:unclear|ambiguous|not sure|belirsiz|emin değil)\b", record["text"]):
             uncertainty.append(
                 {

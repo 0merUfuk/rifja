@@ -13,8 +13,9 @@ from uuid import uuid4
 from .privacy import private_dir
 from .timeutil import now
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 MIGRATION_V2 = "CREATE TABLE audit_log(id INTEGER PRIMARY KEY,action TEXT NOT NULL,target TEXT NOT NULL,at TEXT NOT NULL,details TEXT NOT NULL)"
+MIGRATION_V3 = "CREATE INDEX records_daily ON records(event_time,project_id,provider,actor,session_id,worktree_id)"
 
 SCHEMA_V1 = """
 CREATE TABLE config(key TEXT PRIMARY KEY,value TEXT NOT NULL);
@@ -81,6 +82,14 @@ class Store:
                 with self.transaction():
                     self.db.execute(MIGRATION_V2)
                     self.db.execute("PRAGMA user_version=2")
+                version = 2
+            if version == 2:
+                backup = self.home / "before-migration-v2.sqlite3"
+                if not backup.exists():
+                    self.backup(backup)
+                with self.transaction():
+                    self.db.execute(MIGRATION_V3)
+                    self.db.execute("PRAGMA user_version=3")
             self.db.execute("PRAGMA journal_mode=WAL")
             os.chmod(self.path, 0o600)
         except BaseException:
@@ -198,7 +207,7 @@ def restore(backup: Path, home: Path) -> dict[str, Any]:
     with sqlite3.connect(backup.resolve().as_uri() + "?mode=ro", uri=True) as source:
         source.execute("PRAGMA query_only=ON")
         version = source.execute("PRAGMA user_version").fetchone()[0]
-        if version not in (1, 2):
+        if version not in (1, 2, 3):
             raise ValueError("unsupported_backup_schema")
         validate_schema(source, version)
         if source.execute("PRAGMA quick_check").fetchone()[0] != "ok":
@@ -228,8 +237,10 @@ def validate_schema(connection: sqlite3.Connection, version: int) -> None:
     """Reject substituted trigger/view programs and unexpected schema objects."""
     with sqlite3.connect(":memory:") as expected:
         expected.executescript(SCHEMA_V1)
-        if version == 2:
+        if version >= 2:
             expected.execute(MIGRATION_V2)
+        if version >= 3:
+            expected.execute(MIGRATION_V3)
         sql = "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
         actual = [tuple(row) for row in connection.execute(sql)]
         canonical = [tuple(row) for row in expected.execute(sql)]

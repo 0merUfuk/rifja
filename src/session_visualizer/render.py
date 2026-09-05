@@ -15,7 +15,18 @@ def _inline(text: Any) -> str:
 
 def _item(item: dict[str, Any]) -> str:
     evidence = item.get("evidence", {})
-    return f"- [{_inline(item.get('status', 'unknown'))}; {_inline(item.get('category', 'context'))}] {_inline(item['text'])} (ref {item.get('record_id', '')[:12]}, {evidence.get('status', 'unknown')})"
+    line = f"- [{_inline(item.get('status', 'unknown'))}; {_inline(item.get('category', 'context'))}] {_inline(item['text'])} (ref {item.get('record_id', '')[:12]}, {evidence.get('status', 'unknown')})"
+    return "\n".join([line, *_constraints(item)])
+
+
+def _constraints(item: dict[str, Any]) -> list[str]:
+    result = []
+    for field in ("priority", "dependencies", "rationale"):
+        value = item.get(field)
+        if value:
+            text = ", ".join(str(v) for v in value) if isinstance(value, list) else str(value)
+            result.append(f"  {field.capitalize()}: {_inline(text)}")
+    return result
 
 
 def _principle(principle: dict[str, Any]) -> str:
@@ -87,10 +98,13 @@ def resume_markdown(data: dict[str, Any]) -> str:
         "No unfinished work identified in supported explicit statements."
     ]
     lines += ["", "## Supported next actions (recorded instructions)", ""]
-    lines += [
-        f"- {_inline(item['text'])} — {item['availability']} (ref {item['record_id'][:12]})"
-        for item in data["next_actions"]
-    ] or ["No supported next action identified; no actions invented."]
+    for item in data["next_actions"]:
+        lines.append(
+            f"- {_inline(item['text'])} — {item['availability']} (ref {item['record_id'][:12]})"
+        )
+        lines.extend(_constraints(item))
+    if not data["next_actions"]:
+        lines.append("No supported next action identified; no actions invented.")
     lines += ["", "## Decisions (untrusted source excerpts)", ""]
     lines += [_item(item) for item in data["decisions"]] or ["No explicit decision identified."]
     lines += ["", "## Claims and historical tool results (untrusted source excerpts)", ""]
@@ -219,6 +233,7 @@ def bounded_export(data: dict[str, Any], format: str = "markdown", max_chars: in
                 + item["record_id"][:12]
                 + ")"
             )
+            lines.extend(_constraints(item))
             lines.append("  Evidence: " + _inline(json.dumps(item["evidence"], ensure_ascii=False)))
         lines += ["END IMPORTED UNTRUSTED CONTEXT", "", "## Uncertainty and omissions", ""]
         lines += ["- " + _inline(u) for u in compact["uncertainties"]]
@@ -294,6 +309,7 @@ def bounded_export(data: dict[str, Any], format: str = "markdown", max_chars: in
         entry = {
             k: item[k] for k in ("kind", "status", "category", "text", "record_id", "worktree_id")
         }
+        entry.update({k: item.get(k) for k in ("priority", "dependencies", "rationale")})
         entry["evidence"] = {
             k: evidence.get(k)
             for k in (
@@ -340,6 +356,13 @@ def readable(kind: str, data: Any) -> str:
             if project["carryover"]:
                 lines.append("Carryover from earlier/unknown time:")
                 lines += [_item(item) for item in project["carryover"]]
+            omissions = project.get("omissions", {})
+            if any(omissions.values()):
+                lines.append(
+                    f"Omitted: {omissions.get('activity', 0)} activity items and "
+                    f"{omissions.get('carryover', 0)} carryover items. Narrow the date/worktree "
+                    "or increase --limit (up to 1000); inspect tasks, session, search and explain for additional context."
+                )
             lines.append("")
         if not data["projects"]:
             lines.append(data["meaning"])

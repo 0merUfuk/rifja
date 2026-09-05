@@ -2,7 +2,7 @@
 
 Session Visualizer is a local CLI for resuming engineering work across agent sessions, projects and Git worktrees. It imports explicitly selected Codex, Claude Code and Hermes sources, preserves evidence references, and keeps user instructions, agent claims, recorded results and current Git observations separate.
 
-Version **0.1.0rc1** is a private local release candidate. Runtime collection and queries need no network, model service or paid account. No public redistribution license is granted.
+Version **0.1.0rc2** is a private local release candidate. Runtime collection and queries need no network, model service or paid account. No public redistribution license is granted.
 
 ## Install the local release
 
@@ -10,12 +10,12 @@ Requirements: Python 3.14 or newer, Git, and Python's SQLite with FTS5. Python 3
 
 ```sh
 python3.14 -m venv "$HOME/.local/venvs/session-visualizer"
-"$HOME/.local/venvs/session-visualizer/bin/python" -m pip install --no-index --no-deps "./dist/session_visualizer-0.1.0rc1-py3-none-any.whl"
+"$HOME/.local/venvs/session-visualizer/bin/python" -m pip install --no-index --no-deps "./dist/session_visualizer-0.1.0rc2-py3-none-any.whl"
 export PATH="$HOME/.local/venvs/session-visualizer/bin:$PATH"
 session-visualizer --version
 ```
 
-The final command should print `0.1.0rc1`. Installation uses the local wheel; it does not fetch dependencies. Platform compatibility beyond recorded release verification should be treated as unverified.
+The final command should print `0.1.0rc2`. Installation uses the local wheel; it does not fetch dependencies. Platform compatibility beyond recorded release verification should be treated as unverified.
 
 ## Start with one project
 
@@ -48,6 +48,8 @@ Output files must not already exist. Exports include accepted project/global mem
 - [Supported provider formats and known gaps](docs/providers.md)
 - [Semantic acceptance corpus and release gates](docs/acceptance.md)
 - [Design and privacy boundaries](docs/design.md)
+- [Release changes and upgrade boundaries](docs/releases.md)
+- [Development checks and private release procedure](docs/development.md)
 
 `session-visualizer --help` and each subcommand's `--help` list the available options. `--json` and `--home PATH` work before or after subcommands. Normal successful JSON responses include `schema_version`, `command` and `data`; errors are written to stderr.
 

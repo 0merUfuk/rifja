@@ -12,10 +12,20 @@ from uuid import uuid4
 
 from . import __version__, adapters
 from .compressed import iter_zstd_lines
-from .extract import extract
+from .extract import ExtractionLimitError, extract
 from .git import resolve_repository
 from .models import Diagnostic, Record
-from .privacy import MAX_RECORD_BYTES, clean, digest, excluded, open_regular, parse_json, within
+from .privacy import (
+    MAX_EXCERPT,
+    MAX_RECORD_BYTES,
+    clean,
+    clean_text,
+    digest,
+    excluded,
+    open_regular,
+    parse_json,
+    within,
+)
 from .store import Store
 from .timeutil import normalize, now
 
@@ -124,8 +134,28 @@ class Ingestor:
         self.association_cache[cwd] = result
         return result
 
-    def record(self, raw: Record, generation: int, locator: str) -> None:
+    def _copy_overrides(self, old: str, new: str) -> None:
+        """Retain overrides when replaying an unchanged pre-rc2 long record."""
+        for table, fields in (
+            ("corrections", "text,status,reason,created_at"),
+            ("associations", "project_id,worktree_id,reason,created_at"),
+        ):
+            for row in self.store.rows(f"SELECT id FROM {table} WHERE target=?", (old,)):
+                self.store.db.execute(
+                    f"INSERT OR IGNORE INTO {table}(id,target,{fields}) SELECT ?,?,{fields} FROM {table} WHERE id=?",
+                    (digest("long_record_upgrade", row["id"], new), new, row["id"]),
+                )
+
+    def record(
+        self, raw: Record, generation: int, locator: str, migrate_legacy: bool = False
+    ) -> None:
         value = clean(asdict(raw))
+        # Classification sees the bounded, redacted record, not only its display
+        # excerpt. Hash the complete redacted text so edits beyond the excerpt
+        # still get distinct source evidence identities.
+        extraction_text = (
+            clean_text(raw.text, MAX_RECORD_BYTES) if len(raw.text) > MAX_EXCERPT else value["text"]
+        )
         session_native = value["session_id"]
         provider = value["provider"]
         if self.store.db.execute(
@@ -137,17 +167,34 @@ class Ingestor:
         self.store.db.execute(
             "INSERT OR IGNORE INTO sessions VALUES(?,?,?)", (session_id, provider, session_native)
         )
-        rid = digest(
+        identity = [
             provider,
             session_native,
             value["native_id"],
             value["actor"],
             value["kind"],
             value["timestamp"],
-            value["text"],
+            extraction_text,
             value["cwd"],
             value["metadata"],
+        ]
+        rid = digest(*identity)
+        legacy_id = rid
+        if extraction_text != value["text"]:
+            identity[6] = value["text"]
+            legacy_id = digest(*identity)
+        migrate_legacy = (
+            migrate_legacy
+            and legacy_id != rid
+            and bool(
+                self.store.db.execute(
+                    "SELECT 1 FROM occurrences o JOIN generations old ON old.id=o.generation_id JOIN generations current ON current.source_id=old.source_id WHERE o.record_id=? AND current.id=? LIMIT 1",
+                    (legacy_id, generation),
+                ).fetchone()
+            )
         )
+        if migrate_legacy:
+            self._copy_overrides(legacy_id, rid)
         event_time, time_status = normalize(value["timestamp"])
         project, worktree, reason = self.associate(value["cwd"], session_id, rid)
         changed = self.store.db.execute(
@@ -174,15 +221,22 @@ class Ingestor:
         # INSERT specifies sixteen columns; schema intentionally has no derived truth flags.
         if changed.rowcount:
             self.stats["inserted_records"] += 1
+        self.store.db.execute(
+            "INSERT OR IGNORE INTO occurrences VALUES(?,?,?)", (rid, generation, locator)
+        )
         if changed.rowcount or self.rebuild:
+            extracted_record = Record(**value)
+            extracted_record.text = extraction_text
+            candidates = extract(extracted_record)
             if self.rebuild:
                 self.store.db.execute("DELETE FROM items WHERE record_id=?", (rid,))
-            for i, candidate in enumerate(extract(Record(**value))):
+            for i, candidate in enumerate(candidates):
                 item = clean(asdict(candidate))
+                item_id = digest(rid, i, item)
                 self.store.db.execute(
                     "INSERT OR IGNORE INTO items VALUES(?,?,?,?,?,?,?,?,?,?,?)",
                     (
-                        digest(rid, i, item),
+                        item_id,
                         rid,
                         item["kind"],
                         item["text"],
@@ -195,6 +249,24 @@ class Ingestor:
                         item["method"],
                     ),
                 )
+                if migrate_legacy:
+                    # Only transfer item-specific edits when the old derived
+                    # item is identical; newly recovered intent has no prior approval.
+                    old_items = self.store.rows(
+                        "SELECT id FROM items WHERE record_id=? AND kind=? AND text=? AND category=? AND target IS ? AND rationale IS ? AND priority IS ? AND dependencies=?",
+                        (
+                            legacy_id,
+                            item["kind"],
+                            item["text"],
+                            item["category"],
+                            item["target"],
+                            item["rationale"],
+                            item["priority"],
+                            json.dumps(item["dependencies"]),
+                        ),
+                    )
+                    if len(old_items) == 1:
+                        self._copy_overrides(old_items[0]["id"], item_id)
                 if item["kind"] == "principle":
                     mid = digest("proposed_principle", rid, item["text"])
                     self.store.db.execute(
@@ -215,9 +287,6 @@ class Ingestor:
                             None,
                         ),
                     )
-        self.store.db.execute(
-            "INSERT OR IGNORE INTO occurrences VALUES(?,?,?)", (rid, generation, locator)
-        )
 
     def refresh(self, verify: bool = False, rebuild: bool = False) -> dict[str, Any]:
         pipeline = __version__ + ":explicit-v1:redaction-v1"
@@ -416,6 +485,15 @@ class Ingestor:
                 offset, line, context = 0, 0, {}
             else:
                 context = json.loads(source["context"])
+                # A complete malformed/unsupported record was checkpointed and
+                # will not be revisited by this append. Its gap remains until
+                # a replacement or rebuild actually verifies that prefix again.
+                diagnostics = [
+                    d
+                    for d in json.loads(source["diagnostics"])
+                    if d.get("code") not in {"incomplete_tail", "oversized_incomplete_tail"}
+                ]
+                partial = bool(diagnostics)
             generation = self.generation(source, replace)
             stream.seek(offset)
             while stream.tell() < start.st_size:
@@ -453,9 +531,17 @@ class Ingestor:
                         locator=f"line:{line}",
                     )
                     for record in result.records:
-                        self.record(record, generation, f"line:{line}@{position}")
+                        self.record(
+                            record,
+                            generation,
+                            f"line:{line}@{position}",
+                            rebuild and source["signature"] == signature,
+                        )
                     diagnostics.extend(asdict(d) for d in result.diagnostics)
                     partial = partial or bool(result.diagnostics)
+                except ExtractionLimitError:
+                    diagnostics.append({"code": "record_extraction_limit", "line": line})
+                    partial = True
                 except ValueError, TypeError, KeyError, RecursionError:
                     diagnostics.append({"code": "malformed_record", "line": line})
                     partial = True
@@ -503,9 +589,17 @@ class Ingestor:
                         self.stats["parsed_records"] += 1
                         result = adapters.normalize("codex", payload, context, f"line:{line}")
                         for record in result.records:
-                            self.record(record, generation, f"decompressed-line:{line}")
+                            self.record(
+                                record,
+                                generation,
+                                f"decompressed-line:{line}",
+                                self.rebuild and source["signature"] == signature,
+                            )
                         diagnostics.extend(asdict(d) for d in result.diagnostics)
                         partial = partial or bool(result.diagnostics)
+                    except ExtractionLimitError:
+                        diagnostics.append({"code": "record_extraction_limit", "line": line})
+                        partial = True
                     except ValueError, TypeError, KeyError, RecursionError:
                         diagnostics.append({"code": "malformed_record", "line": line})
                         partial = True
@@ -535,7 +629,16 @@ class Ingestor:
                     diagnostics.append(asdict(value))
             else:
                 self.stats["parsed_records"] += 1
-                self.record(value, generation, f"message:{value.native_id}")
+                try:
+                    self.record(
+                        value,
+                        generation,
+                        f"message:{value.native_id}",
+                        self.rebuild and source["signature"] == signature,
+                    )
+                except ExtractionLimitError:
+                    if len(diagnostics) < 30:
+                        diagnostics.append({"code": "record_extraction_limit"})
         if source_signature(path) != signature:
             raise ValueError("source_changed_during_read")
         if diagnostics:

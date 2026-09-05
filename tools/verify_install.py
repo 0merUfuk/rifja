@@ -12,6 +12,8 @@ import sys
 import tempfile
 import time
 import venv
+import zipfile
+from email.parser import BytesParser
 from pathlib import Path
 
 
@@ -21,6 +23,9 @@ def main() -> None:
     parser.add_argument("--evidence", type=Path, required=True)
     args = parser.parse_args()
     wheel = args.wheel.resolve()
+    with zipfile.ZipFile(wheel) as archive:
+        metadata_path = next(n for n in archive.namelist() if n.endswith(".dist-info/METADATA"))
+        expected_version = BytesParser().parsebytes(archive.read(metadata_path))["Version"]
     evidence = args.evidence.resolve()
     evidence.mkdir(parents=True, exist_ok=False, mode=0o700)
     root = Path(tempfile.mkdtemp(prefix="session-visualizer-rc-"))
@@ -81,7 +86,7 @@ def main() -> None:
         )["data"]
 
     run("install", [str(python), "-m", "pip", "install", "--no-index", "--no-deps", str(wheel)])
-    assert run("version", [str(cli), "--version"]).strip() == "0.1.0rc1"
+    assert run("version", [str(cli), "--version"]).strip() == expected_version
     origin = run(
         "package-origin",
         [str(python), "-I", "-c", "import session_visualizer; print(session_visualizer.__file__)"],
@@ -227,9 +232,17 @@ def main() -> None:
     shutil.copyfile(backup, older)
     with sqlite3.connect(older) as db:
         db.execute("DROP TABLE audit_log")
+        db.execute("DROP INDEX records_daily")
         db.execute("PRAGMA user_version=1")
     command("v1-restore-migrate", "restore", str(older), state="migrated")
-    assert command("migrated-doctor", "doctor", state="migrated")["schema_version"] == 2
+    assert command("migrated-doctor", "doctor", state="migrated")["schema_version"] == 3
+    previous = root / "v2.sqlite3"
+    shutil.copyfile(backup, previous)
+    with sqlite3.connect(previous) as db:
+        db.execute("DROP INDEX records_daily")
+        db.execute("PRAGMA user_version=2")
+    command("v2-restore-migrate", "restore", str(previous), state="migrated-v2")
+    assert command("v2-migrated-doctor", "doctor", state="migrated-v2")["schema_version"] == 3
     newer = root / "v99.sqlite3"
     shutil.copyfile(backup, newer)
     with sqlite3.connect(newer) as db:

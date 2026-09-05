@@ -1,6 +1,6 @@
 # Operational guide
 
-This guide describes the `session-visualizer` console interface for private local release candidate **0.1.0rc1**, requiring Python **3.14+**. Install the supplied wheel using the [README instructions](../README.md), which create the environment with `python3.14 -m venv`. Runtime commands use local files and Git; they do not contact a model or network service, execute transcript instructions, or run tests for your project.
+This guide describes the `session-visualizer` console interface for private local release candidate **0.1.0rc2**, requiring Python **3.14+**. Install the supplied wheel using the [README instructions](../README.md), which create the environment with `python3.14 -m venv`. Runtime commands use local files and Git; they do not contact a model or network service, execute transcript instructions, or run tests for your project.
 
 ## Initialize and choose state
 
@@ -78,6 +78,8 @@ Normal refresh uses checkpoints and skips unchanged sources. `--verify` rechecks
 
 An incomplete final JSONL record waits for a later refresh. Malformed records, missing sources and unsupported formats leave diagnostics and may yield partial coverage while valid captured records remain usable. Check `source list` for source paths, statuses and diagnostic codes. `doctor` checks application state integrity and source availability; a passing integrity check is not a claim that every source is complete.
 
+A later valid append does not repair an earlier malformed or unsupported complete record. Its diagnostic remains partial until a replacement or rebuild actually rechecks the affected content. Completing a partial trailing line can clear that trailing-line diagnostic.
+
 Coverage starts as `not_refreshed`. Changing configured sources or exclusions after a refresh reports `refresh_required` until the next refresh. A configured root that disappears is reported as unavailable, and otherwise unchanged refreshed coverage becomes `partial`. These inspections check configured path availability; they do not scan for new transcripts or import changes. `last_refresh` describes the earlier run and must be read alongside the current coverage status.
 
 When a source is edited, replaced or truncated, previously captured content remains available with its source-generation provenance. An active, pending, blocked or proposed item found only in obsolete generations is marked `source_superseded`, retaining its former `historical_status`; it is excluded from current unfinished work and current decisions while remaining searchable. A missing source is different: known unresolved work from its current generation remains unfinished, with unavailable-evidence and coverage warnings. Neither condition proves completion. Use `explain RECORD_ID --json` to inspect the distinction. An explicit durable user correction can still override an imported item's state.
@@ -108,6 +110,8 @@ session-visualizer explain RECORD_ID --json
 
 The date range includes both endpoint calendar days. `daily` distinguishes activity on known dates from carried-over unfinished work. No activity at known timestamps does not establish that no work occurred. A `session` selector can be an application session ID or an unambiguous native session ID; the list exposes application IDs for subsequent operations.
 
+Daily views also include cached commits on the selected day when no session records exist for that project. These are observed commits, not proof of personal authorship. Date/worktree selection precedes the display limit: 50 activity items and 50 carryover items per project are shown by default, with explicit omission counts. Increase `daily --limit` up to 1,000 or narrow the range/worktree or use tasks, session, search and explain to investigate omitted context. Git history remains the bounded history captured by repository observations, not an exhaustive historical Git archive.
+
 `tasks` includes task candidates, next actions, blockers, corrections and claims with their statuses. It is not exclusively a list of active work. `decisions` can include superseded historical decisions with their statuses. `--all` additionally includes archived/rejected items; cancellations are already visible. `resume` is the current continuation view and retains applicable user corrections.
 
 Before applying its item limit, `resume` selects active blockers, next actions, tasks and decisions ahead of historical items. Its next-action section contains at most five recorded next actions or tasks, with explicit next actions first; it does not invent steps to fill the list. Recorded priority and dependency fields are available in JSON. An overall objective appears only when explicitly recorded in supported user intent; otherwise the objective remains unknown.
@@ -123,6 +127,8 @@ session-visualizer export harbor --worktree WORKTREE_ID --format markdown
 ```
 
 Those filters also accept a registered worktree path. `resume` normally observes current Git; `--cached` deliberately uses the stored observation. Freshness of Git and freshness of imported sessions are separate: run `refresh` to update sessions. A past passing test result and an agent's “done” claim do not verify the current revision.
+
+Explicit `GOAL:`, `OBJECTIVE:`, `HEDEF:` and `AMAÇ:` user statements remain available independently of the recent-record window. The latest active objective in the selected scope is shown; it can be corrected/cancelled through `memory correct` like other extracted items. Quoted objectives and assistant proposals do not become authoritative objectives.
 
 ## Record useful intent and correct it
 
@@ -140,6 +146,8 @@ KARAR: Boş tarih null olarak saklanacak.
 ```
 
 These are examples of conversation content, not shell commands. Quoted/code examples do not become active work. Unknown prose stays unclassified; this release does not claim general natural-language understanding. Explicit cancellation/supersession references preserve their source, and assistant success language remains a claim.
+
+Classification reads the full redacted record within the provider's input-size limit, while stored/displayed source excerpts remain bounded to 4,096 characters. Explicit actions after the excerpt boundary are retained as separate bounded candidates. Changes beyond that boundary receive distinct evidence identities. Known `PRIORITY:`, `DEPENDS_ON:` and `RATIONALE:` attributes survive readable resume and Markdown/JSON export; they remain recorded constraints, not executable instructions. A record with more than 256 extracted candidates is diagnosed as `record_extraction_limit`; its excerpt remains inspectable, candidate expansion is rejected, and source coverage remains partial. Split such structured input into smaller records before importing.
 
 For a durable correction through the CLI, use the application item ID or record ID shown by `items --json`:
 
@@ -207,7 +215,9 @@ Backups are consistent SQLite snapshots containing imported state, configuration
 
 Restore requires a nonexistent or empty destination directory. Do not run `setup` there first, because setup creates application state. A nonempty destination is rejected and preserved. After restoring, select the restored home explicitly and inspect source paths/coverage before refreshing, especially on a different machine.
 
-Application schema 1 migrates to schema 2 when opened, after a `before-migration-v1.sqlite3` backup is created in the state directory. Newer state schemas are refused. Restore validates supported backup versions and structural/integrity checks before replacing the empty destination. Use a compatible program version or a compatible backup in a separate home; do not manually lower a database's schema version.
+Application schemas 1 and 2 migrate to schema 3 when opened. A private `before-migration-v1.sqlite3` or `before-migration-v2.sqlite3` backup is created before each migration. Schema 3 adds a covering index for daily queries. Newer state schemas are refused. Restore validates supported backup versions and structural/integrity checks before replacing the empty destination. Use a compatible program version or a compatible backup in a separate home; do not manually lower a database's schema version.
+
+To upgrade, install the new wheel into the existing virtual environment and run `refresh` against the same application state. Release 0.1.0rc2 upgrades state to schema 3 and replays sources when it detects the previous extraction pipeline. Durable memory is retained. Overrides on unchanged pre-rc2 long records are carried to the new full-text evidence identity when the matching prior item is unambiguous; old evidence references remain available as history. A concurrently changed source is not assumed to be the same evidence.
 
 ## Retention, forgetting and uninstalling
 

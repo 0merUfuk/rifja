@@ -17,6 +17,8 @@ from pathlib import Path
 
 import pytest
 
+from session_visualizer import __version__
+
 ROOT = Path(__file__).resolve().parents[1]
 CONSOLE = Path(sys.executable).parent / "session-visualizer"
 
@@ -178,7 +180,7 @@ def cli(tmp_path):
 def test_public_help_and_version_do_not_initialize_state(cli):
     help_output = cli.run("--help", json_output=False).stdout
     assert "resume" in help_output and "--home" in help_output and "3 partial" in help_output
-    assert cli.run("--version", json_output=False).stdout.strip() == "0.1.0rc1"
+    assert cli.run("--version", json_output=False).stdout.strip() == __version__
     assert not cli.state.exists()
 
 

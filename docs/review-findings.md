@@ -117,3 +117,26 @@ SHA-256 sampled at **20:23:26 UTC**. The working tree remains mutable; later cha
 ## Residual boundaries
 
 No unresolved reproduced runtime defect remains at this source checkpoint. This is bounded review, not proof against every hostile input. Cooperative SQLite progress limits cannot preempt every native operation or blocked filesystem call; page-cache targets are not total-process memory limits. Best-effort redaction cannot recognize all secrets, missing source evidence remains explicitly uncertain, and finite views disclose omissions. Supplied backup content can still contain false facts even when its executable schema is canonical. Exported untrusted instructions may influence an external reader despite escaping and provenance; the application does not grant them execution authority. No required CLI command was found implemented as a silent stub; unsupported provider shapes return diagnostics and partial coverage.
+
+## Subsequent rc2 acceptance review
+
+The preceding results describe earlier checkpoints. A later independent review
+reproduced six additional failures against the delivered rc1 wheel, despite its
+238 passing tests and 45 passing installation checks. The reviewer recorded the
+failures before implementation changes; repair was subsequently authorized.
+
+| Finding | Correction | Regression |
+|---|---|---|
+| A1: valid append hides an unresolved malformed record | Keep prefix diagnostics until that prefix is rechecked; distinguish incomplete tails | Append, rebuild and actual repair |
+| A2: explicit objective ages out after 60 records | Extract objective items and select current intent independently of the recent window | 70 later events, limits 1/1000, cancellation |
+| A3: Git-only activity missing from daily view | Include cached timestamped commits independently of transcript groups | Known commit with zero transcript events |
+| A4: later items displace an earlier day's blocker | Filter date/worktree before presentation limits; disclose carryover omissions | 1,001 later claims and a prior critical blocker |
+| A5: handoff loses dependencies, priorities and rationale | Preserve structured attributes in readable and exported context | Both Markdown and JSON with ample budget |
+| A6: intent after the excerpt boundary is lost | Classify full bounded redacted records; retain short source excerpts and full-text identities | Long message, suffix edit, legacy corrections and memory |
+| A7: month-wide daily query was absent from the performance gate and exceeded one second | Add the actual daily query to the gate; batch counts and item work, defer evidence hydration, index the date aggregation, and retain equivalent output sanitization | Installed large benchmark with unchanged time budget and 1,000 displayed items; schema 2 backup, upgrade, restore and rollback checks |
+
+Durable regression cases are in `tests/test_acceptance_regressions.py`. The local
+release evidence separately records unchanged black-box checks against the new
+wheel, the complete suite, fresh installation, upgrade and performance results.
+The same reviewer implemented these repairs; a second post-fix human/agent review
+is not implied by those reruns.

@@ -31,20 +31,12 @@ SECRET_PATTERNS = [
     re.compile(r"(?i)(https?://)[^/\s:@]+:[^/\s@]+@"),
 ]
 ANSI = re.compile(r"\x1b(?:\[[0-?]*[ -/]*[@-~]|\][^\x07]*(?:\x07|\x1b\\))")
+CONTROLS = re.compile(r"[\x00-\x08\x0b-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]")
 
 
 def clean_text(value: str, limit: int = MAX_EXCERPT) -> str:
     text = ANSI.sub("", value)
-    text = "".join(
-        c
-        for c in text
-        if c in "\n\t"
-        or (
-            ord(c) >= 32
-            and not 127 <= ord(c) <= 159
-            and c not in "\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069"
-        )
-    )
+    text = CONTROLS.sub("", text)
     for pattern in SECRET_PATTERNS:
         text = pattern.sub("[REDACTED]", text)
     if len(text) > limit:

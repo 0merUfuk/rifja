@@ -507,6 +507,7 @@ def run_benchmark(harness: Harness, preset: str) -> dict:
         "search-common": ["search", "latency", "--limit", "20"],
         "tasks": ["tasks", "--project", "bench-00", "--limit", "50"],
         "decisions": ["decisions", "--project", "bench-00", "--limit", "50"],
+        "daily": ["daily", "2026-01-01", "--to", "2026-01-31"],
     }
     query_stats = {}
     for label, args in queries.items():
@@ -519,6 +520,10 @@ def run_benchmark(harness: Harness, preset: str) -> dict:
             ), "tasks returned no continuity data"
         if label == "decisions":
             assert warm["data"]["items"], "decisions returned no useful data"
+        if label == "daily":
+            assert any(p["activity"] for p in warm["data"]["projects"]), (
+                "daily returned no activity"
+            )
         values = [
             harness.run(label, args, quiet=True)["seconds"] for _ in range(harness.repetitions)
         ]

@@ -24,7 +24,14 @@ import pytest
 from session_visualizer.app import App
 from session_visualizer.ingest import Ingestor
 from session_visualizer.privacy import MAX_DEPTH, MAX_RECORD_BYTES
-from session_visualizer.store import SCHEMA_V1, SCHEMA_VERSION, BusyError, Store, restore
+from session_visualizer.store import (
+    MIGRATION_V2,
+    SCHEMA_V1,
+    SCHEMA_VERSION,
+    BusyError,
+    Store,
+    restore,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -417,6 +424,42 @@ def test_failed_migration_rolls_back_and_preserves_original_version(tmp_path: Pa
         )
         assert db.execute("PRAGMA quick_check").fetchone()[0] == "ok"
     assert (home / "before-migration-v1.sqlite3").is_file()
+
+
+def test_v2_upgrade_backup_restore_and_failed_index_migration(tmp_path: Path) -> None:
+    home = tmp_path / "v2"
+    create_v1(home)
+    with sqlite3.connect(home / "state.sqlite3") as db:
+        db.execute(MIGRATION_V2)
+        db.execute("PRAGMA user_version=2")
+    with Store(home) as migrated:
+        assert migrated.config("sentinel") == "preserve-me"
+        assert migrated.db.execute("PRAGMA user_version").fetchone()[0] == 3
+    backup = home / "before-migration-v2.sqlite3"
+    with sqlite3.connect(backup) as db:
+        assert db.execute("PRAGMA user_version").fetchone()[0] == 2
+    restored_home = tmp_path / "restored-v2"
+    restore(backup, restored_home)
+    with Store(restored_home) as restored:
+        assert restored.config("sentinel") == "preserve-me"
+        assert restored.db.execute("PRAGMA user_version").fetchone()[0] == 3
+
+    failing = tmp_path / "failing-v2"
+    create_v1(failing)
+    with sqlite3.connect(failing / "state.sqlite3") as db:
+        db.execute(MIGRATION_V2)
+        db.execute("PRAGMA user_version=2")
+        db.execute("CREATE TABLE records_daily(unexpected_column TEXT)")
+    with pytest.raises(sqlite3.Error):
+        Store(failing)
+    with sqlite3.connect(failing / "state.sqlite3") as db:
+        assert db.execute("PRAGMA user_version").fetchone()[0] == 2
+        assert (
+            db.execute("SELECT value FROM config WHERE key='sentinel'").fetchone()[0]
+            == '"preserve-me"'
+        )
+        assert db.execute("PRAGMA quick_check").fetchone()[0] == "ok"
+    assert (failing / "before-migration-v2.sqlite3").is_file()
 
 
 def test_newer_schema_is_refused_without_mutating_database(tmp_path: Path) -> None:

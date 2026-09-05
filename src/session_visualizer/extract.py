@@ -11,7 +11,18 @@ import re
 
 from .models import Candidate, Record
 
+MAX_CANDIDATES = 256
+
+
+class ExtractionLimitError(ValueError):
+    """One source record contains more structured items than the safe limit."""
+
+
 _MARKERS = {
+    "GOAL": "objective",
+    "OBJECTIVE": "objective",
+    "HEDEF": "objective",
+    "AMAÇ": "objective",
     "TASK": "task",
     "GÖREV": "task",
     "GOREV": "task",
@@ -145,6 +156,8 @@ def _targets(body: str) -> list[str]:
         if match.group("bare") and not re.search(r"[\d_-]", target):
             break
         targets.append(target)
+        if len(targets) > MAX_CANDIDATES:
+            raise ExtractionLimitError("record_extraction_limit")
         rest = rest[match.end() :].lstrip()
         if not rest.startswith(","):
             break
@@ -196,6 +209,8 @@ def extract(record: Record) -> list[Candidate]:
 
     candidates: list[Candidate] = []
     for line in _lines(record.text):
+        if len(candidates) > MAX_CANDIDATES:
+            raise ExtractionLimitError("record_extraction_limit")
         attr = _ATTRIBUTE_RE.match(line)
         if attr:
             if candidates:
@@ -256,4 +271,6 @@ def extract(record: Record) -> list[Candidate]:
             candidates.append(candidate)
         elif actor == "assistant" and _SUCCESS_RE.search(_INLINE_CODE_RE.sub(" ", line)):
             candidates.append(Candidate("claim", line, "unverified", "agent_claim"))
+    if len(candidates) > MAX_CANDIDATES:
+        raise ExtractionLimitError("record_extraction_limit")
     return candidates

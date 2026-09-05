@@ -12,6 +12,7 @@ import json
 import re
 import subprocess
 import tarfile
+import tomllib
 import zipfile
 from pathlib import Path, PurePosixPath
 
@@ -56,6 +57,11 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
+    version = tomllib.loads((root / "pyproject.toml").read_text())["project"]["version"]
+    current_names = {
+        f"session_visualizer-{version}-py3-none-any.whl",
+        f"session_visualizer-{version}.tar.gz",
+    }
     findings: list[dict] = []
     synthetic_matches: list[dict] = []
 
@@ -118,6 +124,7 @@ def main() -> None:
 
     archives = []
     for path in sorted((root / "dist").glob("*")):
+        current = path.name in current_names
         if path.suffix == ".whl":
             with zipfile.ZipFile(path) as archive:
                 members = {
@@ -133,7 +140,7 @@ def main() -> None:
             for name, content in members.items():
                 inspect(name, content, path.name)
                 if name.startswith("session_visualizer/"):
-                    if source.get("src/" + name) != content:
+                    if current and source.get("src/" + name) != content:
                         findings.append(
                             {"scope": path.name, "file": name, "rule": "wheel_source_mismatch"}
                         )
@@ -164,7 +171,11 @@ def main() -> None:
                     members[info.name] = stream.read()
                     inspect(info.name, members[info.name], path.name)
                     relative = info.name.partition("/")[2]
-                    if relative != "PKG-INFO" and source.get(relative) != members[info.name]:
+                    if (
+                        current
+                        and relative != "PKG-INFO"
+                        and source.get(relative) != members[info.name]
+                    ):
                         findings.append(
                             {"scope": path.name, "file": info.name, "rule": "sdist_source_mismatch"}
                         )
@@ -176,8 +187,11 @@ def main() -> None:
                 "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
                 "bytes": path.stat().st_size,
                 "members": len(members),
+                "matches_current_version": current,
             }
         )
+    if {a["file"] for a in archives if a["matches_current_version"]} != current_names:
+        findings.append({"scope": "archives", "rule": "current_release_artifact_missing"})
     runtime = {
         Path(name).name: content
         for name, content in source.items()

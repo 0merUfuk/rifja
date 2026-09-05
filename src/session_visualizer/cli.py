@@ -78,6 +78,9 @@ def parser() -> argparse.ArgumentParser:
     daily.add_argument("--to")
     daily.add_argument("--project")
     daily.add_argument("--worktree")
+    daily.add_argument(
+        "--limit", type=int, default=50, help="Activity/carryover items per project (1-1000)"
+    )
     resume = sub.add_parser("resume", help="Current Git plus evidence-linked continuation context")
     resume.add_argument("project")
     resume.add_argument("--worktree")
@@ -194,7 +197,7 @@ def execute(args: argparse.Namespace, store: Store) -> tuple[Any, int]:
             return app.associate(args.target, args.project, args.worktree, args.reason), 0
         return {"projects": store.rows("SELECT * FROM projects ORDER BY name,id")}, 0
     if cmd == "daily":
-        return app.daily(args.date, args.to, args.project, args.worktree), 0
+        return app.daily(args.date, args.to, args.project, args.worktree, args.limit), 0
     if cmd == "resume":
         return app.resume(args.project, not args.cached, args.limit, args.worktree), 0
     if cmd == "session":
@@ -302,7 +305,7 @@ def main(argv: list[str] | None = None) -> int:
             text = json.dumps(
                 {"schema_version": 1, "command": args.command, "data": result},
                 ensure_ascii=False,
-                indent=2,
+                separators=(",", ":"),
             )
         elif args.command == "export" and isinstance(result, str):
             text = result

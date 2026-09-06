@@ -14,9 +14,9 @@ is required. Application setup and source registration remain explicit user acti
 
 ```sh
 brew update
-brew upgrade session-visualizer
-brew reinstall session-visualizer
-brew uninstall --force session-visualizer
+brew upgrade 0merUfuk/thematrix/session-visualizer
+brew reinstall 0merUfuk/thematrix/session-visualizer
+brew uninstall --force 0merUfuk/thematrix/session-visualizer
 ```
 
 `--force` removes all installed versions of this formula; it does not remove
@@ -27,7 +27,8 @@ unchanged refreshes are incremental.
 
 If upgrading from the private `session-visualizer/local` tap, first run
 `brew uninstall --force session-visualizer/local/session-visualizer`, then install from
-the public tap. The application state location stays the same. Do not install
+the public tap. The application state location stays the same. Use the fully qualified public name for upgrades and removal while the private
+tap remains registered; short formula names are ambiguous across two taps. Do not install
 both formulas concurrently or manually remove their managed environments.
 
 ## Specific release bundle

@@ -22,8 +22,8 @@ required. Initial installation can download Homebrew dependencies.
 
 ```sh
 brew update
-brew upgrade session-visualizer
-brew uninstall --force session-visualizer
+brew upgrade 0merUfuk/thematrix/session-visualizer
+brew uninstall --force 0merUfuk/thematrix/session-visualizer
 ```
 
 Uninstall preserves application state, exports and backups. To move from an older

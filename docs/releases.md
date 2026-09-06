@@ -3,14 +3,16 @@
 ## 0.1.1
 
 Corrects removal and migration instructions for Homebrew installations retaining
-multiple versions. Use `brew uninstall --force session-visualizer` to remove all
+multiple versions. Use `brew uninstall --force 0merUfuk/thematrix/session-visualizer` to remove all
 installed versions while preserving application state. When switching from the
 private tap, use `brew uninstall --force session-visualizer/local/session-visualizer`
 before `brew install 0merUfuk/thematrix/session-visualizer`.
 
 This addresses a reproduced migration failure where removing only the current
 private version left an older installed version and prevented switching taps.
-Runtime behavior and schema remain unchanged. Published 0.1.0 assets are retained
+Public maintenance commands use the fully qualified formula name to avoid
+ambiguity when the private tap remains registered. Runtime behavior and schema
+remain unchanged. Published 0.1.0 assets are retained
 unchanged; this patch carries the corrected instructions into every artifact.
 
 ## 0.1.0
@@ -23,7 +25,7 @@ and GitHub build-provenance attestations. The Homebrew formula is distributed
 through `0merUfuk/thematrix`.
 
 Install: `brew install 0merUfuk/thematrix/session-visualizer`.
-Upgrade: `brew update` followed by `brew upgrade session-visualizer`.
+Upgrade: `brew update` followed by `brew upgrade 0merUfuk/thematrix/session-visualizer`.
 Older private local-tap users must uninstall that formula before installing from
 the public tap. Saved state, facts and accepted principles remain in place.
 The first refresh after a version change replays derived extraction once;

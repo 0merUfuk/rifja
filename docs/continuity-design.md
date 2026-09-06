@@ -62,6 +62,13 @@ When a paragraph combines pending work and an approval prohibition, status
 detection ignores imperative policy clauses but retains independent pending
 clauses in either order. The candidate keeps the complete source wording, so its
 authorization boundary remains visible beside the unfinished work.
+A supported imperative with an unquoted document task marker or under a Pending
+or Next steps heading identifies unfinished work even when its wording includes
+an ordering condition. The whole instruction and condition remain together. A
+condition alone or a pure prohibition does not create an action; example,
+historical and deferred scopes retain their separate treatment. This rule follows
+an independently observed loss of explicit document work during final acceptance,
+not an inference that every paragraph under a pending heading is a task.
 JSON exports share identical document observation fields in
 `document_observations`. Each document excerpt's `evidence.observation_ref` points
 to its observation time, working-tree scope, Git revision, modification status

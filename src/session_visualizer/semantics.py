@@ -53,6 +53,7 @@ DECISION = re.compile(
     r"(?i)\b(?:decided|decision|we chose|we use|because|rationale|karar|seçtik|gerekçe)\b"
 )
 EXAMPLE = re.compile(r"(?i)\b(?:example|hypothetical|for instance|imagine|örnek|varsayalım)\b")
+EXAMPLE_SECTION = re.compile(r"(?i)\b(?:examples|hypotheticals|örnekler)\b")
 NEGATIVE_PENDING = re.compile(
     r"(?i)\b(?:no\s+(?:pending|unfinished|remaining|outstanding)\s+(?:work|checks?|tasks?)|no longer\s+(?:pending|blocked)|all\s+(?:previously\s+)?pending\s+.{0,45}(?:passed|completed)|bekleyen\s+.{0,30}yok)\b"
 )
@@ -68,6 +69,18 @@ AUTHORIZATION_CONSTRAINT = re.compile(
 REPORTED_RESULT = re.compile(
     r"(?i)^\d+\s+(?:tests?(?:/subtests?)?|subtests?|checks?|assertions?|scenarios?|packages?)\s+(?:PASS(?:ED)?|FAIL(?:ED)?|SKIP(?:PED)?)\b"
 )
+DOCUMENT_TASK = re.compile(r"(?i)^(?:NEXT|TASK|TODO|SONRAKİ|GÖREV)\s*:\s*(.+)$")
+PENDING_SECTION = re.compile(
+    r"(?i)(?:^| > )(?:pending|next(?: steps| actions)?|unfinished(?: work)?|to.do|"
+    r"bekleyen(?: işler| görevler)?|sonraki(?: adımlar)?|yapılacaklar)$"
+)
+DOCUMENT_IMPERATIVE = re.compile(
+    r"(?i)^(?:please\s+)?(?:inspect|check|verify|validate|run|test|review|finish|complete|"
+    r"implement|fix|add|remove|update|investigate|measure|compare|rebuild|repeat|retry|"
+    r"document|restore|install|configure)\b|"
+    r"\b(?:doğrula|kontrol et|incele|karşılaştır|ölç|çalıştır|test et|güncelle|"
+    r"tamamla|düzelt|ekle|kaldır|kur|yapılandır)[.!?]*$"
+)
 
 
 def document_reported_results(record: Record) -> list[Candidate]:
@@ -76,6 +89,7 @@ def document_reported_results(record: Record) -> list[Candidate]:
     name = PurePosixPath(str(record.metadata.get("relative_path", ""))).name.lower()
     if (
         EXAMPLE.search(section)
+        or EXAMPLE_SECTION.search(section)
         or EXAMPLE.search(record.text)
         or not re.search(r"(?i)\b(?:tests?|verification|validation|checks?|results?)\b", section)
     ):
@@ -279,6 +293,8 @@ def document_candidates(record: Record, lines: list[str]) -> list[Candidate]:
     """
     meta = record.metadata
     section = str(meta.get("section", ""))
+    if EXAMPLE.search(section) or EXAMPLE_SECTION.search(section):
+        return []
     name = PurePosixPath(str(meta.get("relative_path", ""))).name.lower()
     historical_section = bool(
         HISTORICAL.search(section) or re.search(r"master.prompt|draft|archive|plan", name)
@@ -332,14 +348,26 @@ def document_candidates(record: Record, lines: list[str]) -> list[Candidate]:
         # A prohibition can contain status words ("do not run", "never call it
         # unverified"). Exclude its clause from status detection, while keeping
         # independent pending clauses and the complete original wording.
+        marker = DOCUMENT_TASK.match(text)
+        directive_text = marker.group(1) if marker else text
         status_text = " ".join(
             part
-            for part in re.split(r"(?<=[.!?;])\s+", text)
+            for part in re.split(r"(?<=[.!?;])\s+", directive_text)
             if not re.match(r"(?i)^(?:do not|never|must not)\b", part)
         )
-        pending = bool(PENDING.search(status_text))
-        if re.search(r"(?i)architecture|changelog", name) and not re.search(
-            r"(?i)\b(?:pending|unfinished|unverified|still|not yet)\b", status_text
+        # Explicit document tasks and bounded imperatives under a pending-work
+        # heading stay pending even when their wording also has a condition.
+        # The complete paragraph retains that condition; no execution follows.
+        document_action = bool(DOCUMENT_IMPERATIVE.search(status_text)) and bool(
+            marker or PENDING_SECTION.search(section)
+        )
+        pending = bool(PENDING.search(status_text)) or document_action
+        if (
+            re.search(r"(?i)architecture|changelog", name)
+            and not document_action
+            and not re.search(
+                r"(?i)\b(?:pending|unfinished|unverified|still|not yet)\b", status_text
+            )
         ):
             pending = False
         # Negative availability phrasing describes a verification gap but never
@@ -352,15 +380,19 @@ def document_candidates(record: Record, lines: list[str]) -> list[Candidate]:
             kind, status, category = "context", "deferred", "documented_deferred"
         elif NEGATIVE_PENDING.search(status_text):
             kind, status, category = "claim", "unverified", "documented_claim"
-        elif historical_section or re.match(r"(?i)historical\b|earlier\b", text):
+        elif historical_section or re.match(r"(?i)historical\b|earlier\b", directive_text):
             kind, status, category = "context", "historical", "documented_history"
-        elif re.match(r"(?i)(?:if|when|in case|should .* fail|eğer)\b", text) or (
-            AUTHORIZATION_CONSTRAINT.search(text) and not (pending or gap)
+        elif re.match(r"(?i)(?:if|when|in case|should .* fail|eğer)\b", directive_text) or (
+            AUTHORIZATION_CONSTRAINT.search(directive_text) and not (pending or gap)
         ):
             kind, status, category = "constraint", "documented", "documented_constraint"
         elif pending or gap:
-            if LIMITATION.search(status_text) and not re.search(
-                r"(?i)\b(?:release|browser|visual|interactive|sürüm|tarayıcı)\b", status_text
+            if (
+                not document_action
+                and LIMITATION.search(status_text)
+                and not re.search(
+                    r"(?i)\b(?:release|browser|visual|interactive|sürüm|tarayıcı)\b", status_text
+                )
             ):
                 kind, status, category = "limitation", "documented", "documented_limitation"
             else:

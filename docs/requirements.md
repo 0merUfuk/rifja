@@ -32,7 +32,7 @@ exact commands and outcomes belong in the release evidence report. Published rel
 | Daily aggregation meets the warm query budget without dropping selected evidence | app.daily; schema 3 covering index; bounded output | large installed daily query; schema 2 upgrade and failure rollback in test_resilience |
 
 Deferred by scope: PyPI publication, required AI,
-embeddings, servers/MCP, daemons, UI, synchronization, remote repository hosting,
+embeddings, servers/MCP, daemons, UI, application-data synchronization,
 automatic orchestration and broad preference mining. Unavailable external
 platforms/remote CI are documented validation gaps, never represented as executed.
 

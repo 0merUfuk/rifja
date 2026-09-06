@@ -31,11 +31,11 @@ exact commands and outcomes belong in the release evidence report. Published rel
 | Retain parse gaps across append; retain objectives and long-record intent; preserve handoff constraints and date-scoped activity | ingestion; explicit objective items; daily selection; render | test_acceptance_regressions; independent installed challenges; rc1-to-rc2 upgrade checks |
 | Daily aggregation meets the warm query budget without dropping selected evidence | app.daily; schema 3 covering index; bounded output | large installed daily query; schema 2 upgrade and failure rollback in test_resilience |
 
-Deferred by scope: cloud/registry publication, new public license, required AI,
+Deferred by scope: PyPI publication, required AI,
 embeddings, servers/MCP, daemons, UI, synchronization, remote repository hosting,
 automatic orchestration and broad preference mining. Unavailable external
 platforms/remote CI are documented validation gaps, never represented as executed.
 
 ## Continuity repair acceptance
 
-The rc3 continuation adds bounded project documents, evidenced moves, ordinary status language, purpose/objective separation and semantic handoff context. See [design and ownership](continuity-design.md) and [product limits](project-context.md). Synthetic collection, identity, prose, independent challenge and reviewer regressions are tracked separately from the original 18-scenario corpus. The local consolidated release evidence must additionally prove installed real-project usefulness, a fresh-agent reading of the generated handoff, actual rc2 upgrade, and the unchanged large performance gates including documents. Test counts do not substitute for that usefulness gate.
+The historical rc3 continuation added bounded project documents, evidenced moves, ordinary status language, purpose/objective separation and semantic handoff context. See [design and ownership](continuity-design.md) and [product limits](project-context.md). Synthetic collection, identity, prose, independent challenge and reviewer regressions are tracked separately from the original 18-scenario corpus. The local consolidated release evidence must additionally prove installed real-project usefulness, a fresh-agent reading of the generated handoff, actual rc2 upgrade, and the unchanged large performance gates including documents. Test counts do not substitute for that usefulness gate.

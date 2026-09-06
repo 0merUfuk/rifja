@@ -1,4 +1,4 @@
-"""Prepare checksummed Homebrew delivery and install an unpublished local release.
+"""Prepare checksummed Homebrew delivery and install a release through a local tap.
 
 Only the owned local tap is changed; no remote, upload or user application state
 is touched. Public formula output requires an explicitly selected release URL.

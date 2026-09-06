@@ -69,6 +69,12 @@ condition alone or a pure prohibition does not create an action; example,
 historical and deferred scopes retain their separate treatment. This rule follows
 an independently observed loss of explicit document work during final acceptance,
 not an inference that every paragraph under a pending heading is a task.
+Compact context deduplicates equal wording only within the same worktree. An
+independent acceptance trial found that text-only deduplication hid one of two
+worktrees' identical pending instructions. Their separate source records and
+worktree scopes now remain separate summary entries, within the existing limits.
+For multiple worktrees, Markdown context entries include the readable worktree
+path beside the evidence reference; opaque record IDs alone do not convey scope.
 JSON exports share identical document observation fields in
 `document_observations`. Each document excerpt's `evidence.observation_ref` points
 to its observation time, working-tree scope, Git revision, modification status

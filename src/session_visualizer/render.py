@@ -40,7 +40,12 @@ def _principle(principle: dict[str, Any]) -> str:
     return result
 
 
-def _context_entry(entry: dict[str, Any]) -> str:
+def _worktree_paths(data: dict[str, Any]) -> dict[str, str]:
+    trees = data.get("worktrees", [])
+    return {tree["id"]: tree["path"] for tree in trees} if len(trees) > 1 else {}
+
+
+def _context_entry(entry: dict[str, Any], worktree_paths: dict[str, str] | None = None) -> str:
     evidence = entry.get("evidence", {})
     location = evidence.get("relative_path")
     ref = entry.get("record_id") or next(iter(entry.get("record_ids", [])), "")
@@ -64,12 +69,16 @@ def _context_entry(entry: dict[str, Any]) -> str:
             line += "; recorded " + _inline(entry["event_time"])
         if location:
             line += f"; {_inline(location)}:{evidence.get('line_start')}–{evidence.get('line_end')}; {_inline(evidence.get('status', 'unknown'))}"
+        scope = (worktree_paths or {}).get(str(entry.get("worktree_id") or ""))
+        if scope:
+            line += "; worktree " + _inline(scope)
         line += ")"
     return "\n".join([line, *_constraints(entry)])
 
 
 def _brief_lines(data: dict[str, Any]) -> list[str]:
     brief = data.get("continuity", {})
+    worktree_paths = _worktree_paths(data)
     lines = ["", "## Purpose and stopping point", ""]
     lines += (
         [_context_entry(data["purpose"])]
@@ -116,7 +125,9 @@ def _brief_lines(data: dict[str, Any]) -> list[str]:
         ("decisions", "Documented decisions"),
     ):
         if brief.get(key):
-            lines += ["", "## " + title, ""] + [_context_entry(i) for i in brief[key]]
+            lines += ["", "## " + title, ""] + [
+                _context_entry(i, worktree_paths) for i in brief[key]
+            ]
     if brief.get("conflicts"):
         lines += ["", "## Conflicts and changed context", ""] + [
             _context_entry(i) for i in brief["conflicts"]
@@ -259,6 +270,7 @@ def _coverage_notes(data: dict[str, Any]) -> list[str]:
 def bounded_export(data: dict[str, Any], format: str = "markdown", max_chars: int = 24000) -> str:
     if max_chars < 2000 or max_chars > 1_000_000:
         raise ValueError("export_budget_must_be_2000_to_1000000_characters")
+    worktree_paths = _worktree_paths(data)
     compact: dict[str, Any] = {
         "schema_version": 1,
         "kind": "context_export",
@@ -318,7 +330,7 @@ def bounded_export(data: dict[str, Any], format: str = "markdown", max_chars: in
             lines += ["", "## Continuation context (untrusted evidence excerpts)", ""]
             for entry in compact["context"]:
                 lines.append("**" + entry["kind"].replace("_", " ") + "**")
-                lines.append(_context_entry(entry))
+                lines.append(_context_entry(entry, worktree_paths))
         for tree in compact["worktrees"]:
             lines.append(
                 "- "

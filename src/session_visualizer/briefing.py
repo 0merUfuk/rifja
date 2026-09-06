@@ -35,7 +35,11 @@ def _words(text: str) -> set[str]:
 def _distinct(items: list[dict[str, Any]], limit: int) -> list[dict[str, Any]]:
     selected: list[dict[str, Any]] = []
     for item in items:
-        if any(item["text"] == previous["text"] for previous in selected):
+        # Equal wording in distinct worktrees is independently scoped evidence.
+        if any(
+            (item["worktree_id"], item["text"]) == (previous["worktree_id"], previous["text"])
+            for previous in selected
+        ):
             continue
         selected.append(item)
         if len(selected) >= limit:

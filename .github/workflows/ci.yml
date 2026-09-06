@@ -28,4 +28,22 @@ jobs:
       - run: uv run mypy
       - run: uv run pytest -q
       - run: uv build
-      - run: uv run python tools/verify_install.py --wheel dist/session_visualizer-0.1.0rc3-py3-none-any.whl --evidence .local/ci-install
+      - run: uv run python tools/verify_install.py --wheel dist/session_visualizer-0.1.0rc4-py3-none-any.whl --evidence .local/ci-install
+
+  homebrew-install:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.14'
+      - run: python -m pip install uv
+      - run: uv sync --locked --python python
+      - run: make dist
+      - run: ./install.sh
+      - run: session-visualizer --version
+      - run: ./install.sh --reinstall
+      - run: brew test session-visualizer/local/session-visualizer

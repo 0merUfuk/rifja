@@ -2,20 +2,40 @@
 
 Session Visualizer is a local CLI for resuming engineering work across agent sessions, projects and Git worktrees. It imports explicitly selected Codex, Claude Code and Hermes sources, preserves evidence references, and keeps user instructions, agent claims, recorded results and current Git observations separate.
 
-Version **0.1.0rc3** is a private local release candidate. Runtime collection and queries need no network, model service or paid account. No public redistribution license is granted.
+Version **0.1.0rc4** is a private local release candidate. Runtime collection and queries need no network, model service or paid account. No public redistribution license is granted.
 
-## Install the local release
+## Install with Homebrew
 
-Requirements: Python 3.14 or newer, Git, and Python's SQLite with FTS5. Python 3.14 supplies the standard-library Zstandard decoder used for compressed Codex transcripts. Run these commands from the directory containing the supplied `dist` folder:
+With Homebrew installed, run this from the supplied release directory:
 
 ```sh
-python3.14 -m venv "$HOME/.local/venvs/session-visualizer"
-"$HOME/.local/venvs/session-visualizer/bin/python" -m pip install --no-index --no-deps "./dist/session_visualizer-0.1.0rc3-py3-none-any.whl"
-export PATH="$HOME/.local/venvs/session-visualizer/bin:$PATH"
+./install.sh
 session-visualizer --version
 ```
 
-The final command should print `0.1.0rc3`. Installation uses the local wheel; it does not fetch dependencies. Platform compatibility beyond recorded release verification should be treated as unverified.
+The installer uses a private local Homebrew tap, installs the checked release
+wheel and lets Homebrew manage Python 3.14, Git and the application environment.
+The command is available on Homebrew's PATH; no activation or manual Python
+setup is needed. The first installation can download missing Homebrew
+dependencies. Application collection and queries remain offline.
+
+The supplied Homebrew archive includes everything specific to this application.
+This maintainer checkout also contains its release wheel under `dist`. A source
+checkout without release artifacts requires `make dist` before installation.
+
+```sh
+brew test session-visualizer/local/session-visualizer
+brew uninstall session-visualizer
+```
+
+Run `./install.sh` from a newer supplied release to upgrade. Existing application
+state and memory are preserved. `./install.sh --reinstall` repairs the current
+installation. The archive is copied into the local tap, so the installation does
+not depend on keeping the extracted release directory or this checkout.
+
+The public `0merUfuk/thematrix` formula is not published yet. Do not run a public
+install command until a release and its formula have actually been published.
+See [Homebrew delivery and release procedure](docs/homebrew.md).
 
 ## Start with one project
 

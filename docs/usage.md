@@ -1,6 +1,6 @@
 # Operational guide
 
-This guide describes the `session-visualizer` console interface for private local release candidate **0.1.0rc3**, requiring Python **3.14+**. Install the supplied wheel using the [README instructions](../README.md), which create the environment with `python3.14 -m venv`. Runtime commands use local files and Git; they do not contact a model or network service, execute transcript instructions, or run tests for your project.
+This guide describes the `session-visualizer` console interface for private local release candidate **0.1.0rc4**. Run `./install.sh` from the supplied release directory using the [README instructions](../README.md). Homebrew manages Python 3.14+, Git and the private environment; no manual Python setup is needed. Runtime commands use local files and Git; they do not contact a model or network service, execute transcript instructions, or run tests for your project.
 
 ## Initialize and choose state
 
@@ -223,7 +223,7 @@ Restore requires a nonexistent or empty destination directory. Do not run `setup
 
 Application schemas 1 and 2 migrate to schema 3 when opened. A private `before-migration-v1.sqlite3` or `before-migration-v2.sqlite3` backup is created before each migration. Schema 3 adds a covering index for daily queries. Newer state schemas are refused. Restore validates supported backup versions and structural/integrity checks before replacing the empty destination. Use a compatible program version or a compatible backup in a separate home; do not manually lower a database's schema version.
 
-To upgrade, install the new wheel into the existing virtual environment and run `refresh` against the same application state. Release 0.1.0rc2 upgrades state to schema 3 and replays sources when it detects the previous extraction pipeline. Durable memory is retained. Overrides on unchanged pre-rc2 long records are carried to the new full-text evidence identity when the matching prior item is unambiguous; old evidence references remain available as history. A concurrently changed source is not assumed to be the same evidence.
+To upgrade a Homebrew installation, run the newer supplied release's `./install.sh`, then `refresh` against the same application state. Homebrew manages the environment. A version change replays derived extraction once; durable memory is retained. Release 0.1.0rc2 introduced schema 3. Overrides on unchanged pre-rc2 long records are carried to the new full-text evidence identity when the matching prior item is unambiguous; old evidence references remain available as history. A concurrently changed source is not assumed to be the same evidence.
 
 ## Retention, forgetting and uninstalling
 
@@ -238,10 +238,10 @@ Retention without `--confirm` is a dry run. It selects whole sessions whose last
 
 Forgetting removes associated imported records and search entries and stores a provider/session rule preventing reimport. `refresh --rebuild` preserves these rules and durable user memory. It does not undo forgetting. References from retained memory show missing evidence. Producer transcripts remain untouched; earlier backups and exports remain independent copies. No forensic erasure is promised.
 
-Uninstall only removes the package from its virtual environment:
+For the recommended Homebrew installation, uninstall the application with:
 
 ```sh
-"$HOME/.local/venvs/session-visualizer/bin/python" -m pip uninstall session-visualizer
+brew uninstall session-visualizer
 ```
 
 Application state, exports, backups and producer transcripts remain. A new `--home` provides fresh application state without deleting the old one. Deleting a state directory also deletes its memory, configuration and rules preventing reimport; a later fresh import can then bring those sessions back.

@@ -16,8 +16,8 @@ import tomllib
 import zipfile
 from pathlib import Path, PurePosixPath
 
-ROOTS = ("src", "tests", "docs", "tools", ".github")
-FILES = (".gitignore", "README.md", "NOTICE", "pyproject.toml", "uv.lock")
+ROOTS = ("src", "tests", "docs", "tools", "packaging", ".github")
+FILES = (".gitignore", "README.md", "NOTICE", "pyproject.toml", "uv.lock", "install.sh", "Makefile")
 FORBIDDEN = {
     ".local",
     ".venv",

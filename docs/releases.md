@@ -1,5 +1,19 @@
 # Local release notes
 
+## 0.1.0rc4
+
+Adds Homebrew-managed installation from a private release bundle. One installer
+command registers a local tap, verifies the wheel through Homebrew and exposes
+the existing CLI. Homebrew owns Python and the isolated application environment.
+No runtime dependencies, commands, data model or schema change. Rc3 state remains
+compatible. As with previous version upgrades, the first refresh replays the
+derived extraction and preserves durable memory; subsequent unchanged refreshes
+skip those sources. Existing candidate artifacts remain preserved.
+
+Adds a deterministic installer bundle, formula generator, functional Homebrew
+test, installation regression coverage and a local release procedure. Public
+hosting and tap publication are not performed by the installer or build workflow.
+
 ## 0.1.0rc3
 
 Forward local candidate for useful continuity from registered repository documents

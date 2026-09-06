@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "session-visualizer"
-version = "0.1.0rc3"
+version = "0.1.0rc4"
 description = "Offline, evidence-aware engineering continuity for local agent sessions and Git"
 readme = "README.md"
 requires-python = ">=3.14"
@@ -27,7 +27,7 @@ dev = ["pytest>=8,<10", "ruff>=0.12,<1", "mypy>=1.15,<2", "build>=1.2,<2"]
 packages = ["src/session_visualizer"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/", "tests/", "docs/", "tools/", ".github/", ".gitignore", "README.md", "NOTICE", "pyproject.toml", "uv.lock"]
+include = ["src/", "tests/", "docs/", "tools/", "packaging/", "install.sh", "Makefile", ".github/", ".gitignore", "README.md", "NOTICE", "pyproject.toml", "uv.lock"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

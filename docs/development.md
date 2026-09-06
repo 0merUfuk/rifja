@@ -11,9 +11,15 @@ uv run ruff format --check src tests tools
 uv run mypy
 uv run pytest -q
 uv build
-uv run python tools/verify_install.py --wheel dist/session_visualizer-0.1.0rc3-py3-none-any.whl --evidence .local/development-install
+uv run python tools/verify_install.py --wheel dist/session_visualizer-0.1.0rc4-py3-none-any.whl --evidence .local/development-install
 uv run python tools/audit_release.py --output .local/development-audit.json
 ```
+
+`make check` groups the quality gates; `make dist` also creates the private
+Homebrew installer archive. `make install` installs the built release through
+Homebrew without manual environment management. These developer commands follow
+the owner's existing CLI conventions. See [Homebrew delivery](homebrew.md) for
+the end-user route and the explicit boundary before public publication.
 
 Choose a new evidence directory for each installation check. The harness uses
 isolated temporary state and synthetic data, installs outside the checkout,

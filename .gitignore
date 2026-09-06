@@ -11,3 +11,10 @@ build/
 *.egg-info/
 .coverage
 htmlcov/
+
+# Local configuration and application state
+.env
+.env.*
+!.env.example
+*.sqlite3
+*.sqlite3-*

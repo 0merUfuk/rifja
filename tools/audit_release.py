@@ -17,7 +17,18 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 ROOTS = ("src", "tests", "docs", "tools", "packaging", ".github")
-FILES = (".gitignore", "README.md", "NOTICE", "pyproject.toml", "uv.lock", "install.sh", "Makefile")
+FILES = (
+    ".gitignore",
+    "README.md",
+    "NOTICE",
+    "pyproject.toml",
+    "uv.lock",
+    "install.sh",
+    "Makefile",
+    "LICENSE",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
+)
 FORBIDDEN = {
     ".local",
     ".venv",
@@ -29,7 +40,9 @@ FORBIDDEN = {
     "FOUNDATIONS.md",
 }
 PATTERNS = {
-    "personal_home_path": re.compile(rb"/(?:Users|home)/[A-Za-z0-9_.-]+/"),
+    "personal_home_path": re.compile(
+        rb"/(?:Users/[A-Za-z0-9_.-]+|home/(?!linuxbrew/)[A-Za-z0-9_.-]+)/"
+    ),
     "private_attachment": re.compile(
         rb"(?:pasted-text-[0-9]+\.txt|\.codex/attachments/[a-f0-9-]{16,})"
     ),
@@ -40,7 +53,7 @@ PATTERNS = {
         rb"\b(?:ghp_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{40,}|AKIA[A-Z0-9]{16}|sk-(?:proj-)?[A-Za-z0-9_-]{32,})"
     ),
     "private_owner": re.compile(re.escape(Path.home().name.encode()), re.IGNORECASE)
-    if len(Path.home().name) > 5
+    if len(Path.home().name) > 5 and Path.home().name not in {"runner", "runneradmin"}
     else re.compile(rb"(?!)"),
 }
 
@@ -154,7 +167,12 @@ def main() -> None:
             if b"Requires-Dist:" in metadata or b"Requires-Python: >=3.14" not in metadata:
                 findings.append({"scope": path.name, "rule": "unexpected_runtime_metadata"})
             if not any(name.endswith("/licenses/NOTICE") for name in members):
-                findings.append({"scope": path.name, "rule": "missing_private_use_notice"})
+                findings.append({"scope": path.name, "rule": "missing_notice"})
+            if current and (
+                b"License-Expression: MIT" not in metadata
+                or not any(name.endswith("/licenses/LICENSE") for name in members)
+            ):
+                findings.append({"scope": path.name, "rule": "missing_public_license"})
         elif path.name.endswith(".tar.gz"):
             members = {}
             with tarfile.open(path) as archive:

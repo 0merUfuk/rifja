@@ -7,7 +7,7 @@ check:
 	uv run pytest -q
 
 dist:
-	uv build
+	uv build --no-build-isolation
 	uv run python tools/homebrew.py bundle
 
 install:

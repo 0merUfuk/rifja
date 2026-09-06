@@ -61,6 +61,8 @@ def formula(wheel: Path, url: str) -> str:
         raise ValueError("formula_url_requires_file_or_https_without_credentials")
     if parsed.scheme == "https" and not parsed.hostname:
         raise ValueError("formula_url_requires_host")
+    if Path(parsed.path).name != wheel.name:
+        raise ValueError("formula_url_filename_must_match_wheel")
     if parsed.query or parsed.fragment:
         raise ValueError("formula_url_must_be_immutable_without_query_or_fragment")
     result = (ROOT / "packaging/homebrew/session-visualizer.rb.in").read_text()
@@ -71,7 +73,12 @@ def formula(wheel: Path, url: str) -> str:
         "WHEEL": wheel.name,
     }.items():
         result = result.replace(f"@@{key}@@", ruby_string(value))
-    return result
+    with zipfile.ZipFile(wheel) as archive:
+        name = next(n for n in archive.namelist() if n.endswith(".dist-info/METADATA"))
+        license_id = BytesParser().parsebytes(archive.read(name))["License-Expression"]
+    if license_id not in {"MIT", "LicenseRef-Private-Local-Use"}:
+        raise ValueError("unsupported_wheel_license")
+    return result.replace("@@LICENSE@@", '"MIT"' if license_id == "MIT" else ":cannot_represent")
 
 
 def checked_copy(source: Path, target: Path) -> None:
@@ -152,6 +159,9 @@ def bundle(wheel: Path, output: Path) -> Path:
         "NOTICE": ROOT / "NOTICE",
         f"dist/{wheel.name}": wheel,
     }
+    for name in ("LICENSE", "CONTRIBUTING.md", "SECURITY.md"):
+        if (ROOT / name).is_file():
+            members[name] = ROOT / name
     members.update({f"docs/{p.name}": p for p in (ROOT / "docs").glob("*.md")})
     prefix = f"session-visualizer-{version}"
     # Stable bytes across rebuilds; no local absolute paths, user IDs or timestamps.

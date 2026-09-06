@@ -1,4 +1,25 @@
-# Local release notes
+# Release notes
+
+## 0.1.0
+
+First public MIT-licensed release. Retains the offline Python implementation and
+schema 3, with Homebrew-managed installation and a single `session-visualizer`
+command. Adds public repository metadata, contributor/security guidance, pinned
+build tooling, a macOS/Linux CI matrix, and tag-driven releases with checksums
+and GitHub build-provenance attestations. The Homebrew formula is distributed
+through `0merUfuk/thematrix`.
+
+Install: `brew install 0merUfuk/thematrix/session-visualizer`.
+Upgrade: `brew update` followed by `brew upgrade session-visualizer`.
+Older private local-tap users must uninstall that formula before installing from
+the public tap. Saved state, facts and accepted principles remain in place.
+The first refresh after a version change replays derived extraction once;
+unchanged later refreshes remain incremental.
+
+Read the README for supported platforms and `docs/providers.md` for format
+limits. Windows and untested platform combinations are not certified. The
+software retains the documented semantic/excerpt limits; publishing a release
+does not turn recorded claims into verified current project results.
 
 ## 0.1.0rc4
 

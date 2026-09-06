@@ -1,5 +1,4 @@
-This release candidate is prepared for private local use.
-Public redistribution licensing has not been selected. No open-source license
-grant is made by this repository. Python and SQLite are supplied by the user's
-runtime and retain their respective licenses. Development/build dependencies
-are not bundled in the runtime wheel and retain their own licenses.
+Session Visualizer is licensed under the MIT License; see LICENSE.
+Python, SQLite and Git retain their respective licenses and are supplied by
+the runtime or package manager. Build/development dependencies are not bundled
+in the application wheel and retain their own licenses.

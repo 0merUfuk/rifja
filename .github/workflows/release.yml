@@ -1,0 +1,55 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    uses: ./.github/workflows/ci.yml
+  publish:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.14'
+      - run: python -m pip install uv==0.10.10
+      - run: uv sync --locked --python python
+      - run: make dist
+      - name: Prepare release from matching tag
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: uv run python tools/release.py prepare --tag "$RELEASE_TAG"
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: |
+            dist/release/*.whl
+            dist/release/*.tar.gz
+            dist/release/*.rb
+            dist/release/SHA256SUMS
+      - name: Publish checked assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          flags=()
+          if [[ "$RELEASE_TAG" == *rc* ]]; then flags+=(--prerelease); fi
+          gh release create "$RELEASE_TAG" --verify-tag --title "Session Visualizer $RELEASE_TAG" --notes-file dist/release/RELEASE-NOTES.md "${flags[@]}" dist/release/*.whl dist/release/*.tar.gz dist/release/*.rb dist/release/SHA256SUMS

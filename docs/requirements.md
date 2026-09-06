@@ -1,8 +1,7 @@
 # Release acceptance ledger
 
 No row is certified solely by its implementation. Final source/artifact identity,
-exact commands and outcomes belong in the release evidence report. Current work
-is not a published release.
+exact commands and outcomes belong in the release evidence report. Published releases link their build and installation evidence on GitHub.
 
 | Mandatory boundary | Implementation | Verification |
 |---|---|---|

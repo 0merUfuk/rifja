@@ -2,40 +2,46 @@
 
 Session Visualizer is a local CLI for resuming engineering work across agent sessions, projects and Git worktrees. It imports explicitly selected Codex, Claude Code and Hermes sources, preserves evidence references, and keeps user instructions, agent claims, recorded results and current Git observations separate.
 
-Version **0.1.0rc4** is a private local release candidate. Runtime collection and queries need no network, model service or paid account. No public redistribution license is granted.
+[![CI](https://github.com/0merUfuk/session-visualizer/actions/workflows/ci.yml/badge.svg)](https://github.com/0merUfuk/session-visualizer/actions/workflows/ci.yml)
 
-## Install with Homebrew
+Version **0.1.0**. Licensed under [MIT](LICENSE). Runtime collection and queries
+need no network, model service or paid account.
 
-With Homebrew installed, run this from the supplied release directory:
+## Install
+
+With [Homebrew](https://brew.sh) installed and on PATH:
 
 ```sh
-./install.sh
+brew install 0merUfuk/thematrix/session-visualizer
 session-visualizer --version
 ```
 
-The installer uses a private local Homebrew tap, installs the checked release
-wheel and lets Homebrew manage Python 3.14, Git and the application environment.
-The command is available on Homebrew's PATH; no activation or manual Python
-setup is needed. The first installation can download missing Homebrew
-dependencies. Application collection and queries remain offline.
-
-The supplied Homebrew archive includes everything specific to this application.
-This maintainer checkout also contains its release wheel under `dist`. A source
-checkout without release artifacts requires `make dist` before installation.
+Homebrew manages Python 3.14, Git and the private application environment. You
+use one command; no Python installation commands or environment activation are
+required. Initial installation can download Homebrew dependencies.
 
 ```sh
-brew test session-visualizer/local/session-visualizer
+brew update
+brew upgrade session-visualizer
 brew uninstall session-visualizer
 ```
 
-Run `./install.sh` from a newer supplied release to upgrade. Existing application
-state and memory are preserved. `./install.sh --reinstall` repairs the current
-installation. The archive is copied into the local tap, so the installation does
-not depend on keeping the extracted release directory or this checkout.
+Uninstall preserves application state, exports and backups. To move from an older
+private `session-visualizer/local` installation, uninstall that formula first,
+then run the public install command above; your state stays in place.
 
-The public `0merUfuk/thematrix` formula is not published yet. Do not run a public
-install command until a release and its formula have actually been published.
-See [Homebrew delivery and release procedure](docs/homebrew.md).
+[GitHub Releases](https://github.com/0merUfuk/session-visualizer/releases) also
+provide a wheel, source archive, checksums and an installer bundle. Extract the
+Homebrew bundle and run `./install.sh` if you need a specific release through a
+local tap. Do not install both tap variants at once. A source checkout requires
+`make dist` before using this local installer.
+
+The release checks target macOS 15 on Apple Silicon and Intel, and Ubuntu 24.04
+x86-64 with Homebrew. Consult the linked CI run for executed results. Windows is
+unsupported because the implementation uses POSIX locking and file traversal.
+Other platforms and Linux arm64 are not release-certified. This is a Homebrew-
+managed Python CLI; it is not a self-contained native executable.
+See [release verification and Homebrew delivery](docs/homebrew.md).
 
 ## Start with one project
 
@@ -63,7 +69,7 @@ session-visualizer export harbor --format markdown --output "./harbor-handoff.md
 
 Output files must not already exist. Exports include accepted project/global memory, keep imported excerpts labeled as untrusted context, and disclose omissions within the chosen size limit. Inspect those notices before passing context to another agent.
 
-## Operational guide
+## Documentation
 
 - [Usage, corrections, principles, backup and retention](docs/usage.md)
 - [Supported provider formats and known gaps](docs/providers.md)
@@ -71,7 +77,8 @@ Output files must not already exist. Exports include accepted project/global mem
 - [Design and privacy boundaries](docs/design.md)
 - [Project documents, identity and continuity limits](docs/project-context.md)
 - [Release changes and upgrade boundaries](docs/releases.md)
-- [Development checks and private release procedure](docs/development.md)
+- [Development checks and release procedure](docs/development.md)
+- [Contributing](CONTRIBUTING.md) and [security reports](SECURITY.md)
 
 `session-visualizer --help` and each subcommand's `--help` list the available options. `--json` and `--home PATH` work before or after subcommands. Normal successful JSON responses include `schema_version`, `command` and `data`; errors are written to stderr.
 

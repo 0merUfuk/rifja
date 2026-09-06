@@ -1,6 +1,6 @@
 # Operational guide
 
-This guide describes the `session-visualizer` console interface for private local release candidate **0.1.0rc4**. Run `./install.sh` from the supplied release directory using the [README instructions](../README.md). Homebrew manages Python 3.14+, Git and the private environment; no manual Python setup is needed. Runtime commands use local files and Git; they do not contact a model or network service, execute transcript instructions, or run tests for your project.
+This guide describes the `session-visualizer` console interface for release **0.1.0**. Install with `brew install 0merUfuk/thematrix/session-visualizer` using the [README instructions](../README.md). Homebrew manages Python 3.14+, Git and the private environment; no manual Python setup is needed. Runtime commands use local files and Git; they do not contact a model or network service, execute transcript instructions, or run tests for your project.
 
 ## Initialize and choose state
 
@@ -223,7 +223,7 @@ Restore requires a nonexistent or empty destination directory. Do not run `setup
 
 Application schemas 1 and 2 migrate to schema 3 when opened. A private `before-migration-v1.sqlite3` or `before-migration-v2.sqlite3` backup is created before each migration. Schema 3 adds a covering index for daily queries. Newer state schemas are refused. Restore validates supported backup versions and structural/integrity checks before replacing the empty destination. Use a compatible program version or a compatible backup in a separate home; do not manually lower a database's schema version.
 
-To upgrade a Homebrew installation, run the newer supplied release's `./install.sh`, then `refresh` against the same application state. Homebrew manages the environment. A version change replays derived extraction once; durable memory is retained. Release 0.1.0rc2 introduced schema 3. Overrides on unchanged pre-rc2 long records are carried to the new full-text evidence identity when the matching prior item is unambiguous; old evidence references remain available as history. A concurrently changed source is not assumed to be the same evidence.
+To upgrade a Homebrew installation, run `brew update` and `brew upgrade session-visualizer`, then `refresh` against the same application state. Homebrew manages the environment. A version change replays derived extraction once; durable memory is retained. Release 0.1.0rc2 introduced schema 3. Overrides on unchanged pre-rc2 long records are carried to the new full-text evidence identity when the matching prior item is unambiguous; old evidence references remain available as history. A concurrently changed source is not assumed to be the same evidence.
 
 ## Retention, forgetting and uninstalling
 

@@ -2,6 +2,7 @@
 
 import importlib.util
 import tarfile
+import tomllib
 import zipfile
 from pathlib import Path
 
@@ -16,12 +17,13 @@ spec.loader.exec_module(packaging)
 
 
 def wheel(tmp_path, dependencies=""):
-    path = tmp_path / "session_visualizer-0.1.0rc4-py3-none-any.whl"
+    version = tomllib.loads((packaging.ROOT / "pyproject.toml").read_text())["project"]["version"]
+    path = tmp_path / f"session_visualizer-{version}-py3-none-any.whl"
     with zipfile.ZipFile(path, "w") as archive:
         archive.writestr(
-            "session_visualizer-0.1.0rc4.dist-info/METADATA",
-            "Metadata-Version: 2.4\nName: session-visualizer\nVersion: 0.1.0rc4\n"
-            "Requires-Python: >=3.14\n" + dependencies,
+            f"session_visualizer-{version}.dist-info/METADATA",
+            f"Metadata-Version: 2.4\nName: session-visualizer\nVersion: {version}\n"
+            "Requires-Python: >=3.14\nLicense-Expression: MIT\n" + dependencies,
         )
     return path
 
@@ -46,7 +48,7 @@ def test_formula_rejects_insecure_or_credential_urls(tmp_path, url):
 
 def test_formula_escapes_ruby_interpolation_from_local_path(tmp_path):
     source = wheel(tmp_path)
-    output = packaging.formula(source, "file:///tmp/evil%23%7Bname%7D/x.whl")
+    output = packaging.formula(source, f"file:///tmp/evil%23%7Bname%7D/{source.name}")
     assert f'sha256 "{packaging.digest(source)}"' in output
     assert "@@" not in output
     assert packaging.ruby_string('#{system("false")}') == '"\\#{system(\\"false\\")}"'

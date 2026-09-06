@@ -1,77 +1,78 @@
 # Homebrew delivery
 
-The owner approved retaining Python while matching the installation experience
-of their existing Homebrew CLI tools. Python is an implementation dependency;
-users should not create or activate a virtual environment. This is a managed
-Python application, not a self-contained native executable.
-
-## Current private release
-
-Extract the supplied `session-visualizer-VERSION-homebrew.tar.gz`, enter the
-extracted directory, and run `./install.sh`. Homebrew must already be installed
-and on PATH. Python 3.14 and Git are installed by Homebrew when needed. The
-installer creates the owned `session-visualizer/local` tap, copies the immutable
-wheel into it, and installs the generated formula. No project histories are
-imported and no application state is initialized by installation. The formula
-test uses temporary state only.
-
-Use `session-visualizer --help` immediately afterward. For ordinary configuration,
-run `session-visualizer setup --timezone Europe/Istanbul`, register a project and
-explicit sources, then refresh. See [usage](usage.md).
-
-Run a newer bundle's `./install.sh` to upgrade. `./install.sh --reinstall` repairs
-the installed version. Homebrew owns its private `libexec` environment and links
-the command into its `bin`; it does not modify your shell configuration. If
-Homebrew itself is not on PATH, follow the shell setup instructions from your
-Homebrew installation. No application-specific PATH entry is required.
-
-`brew uninstall session-visualizer` removes the application, preserving user
-state, exports and backups. It does not remove the local tap or cached release
-wheels. A tap owned by something else or an existing release with different
-bytes is rejected. Local wheels are copied outside the source checkout, so
-deleting the checkout or extracted installer directory does not break reinstall.
-Do not manually delete Homebrew-managed environments.
-
-## Maintainer preparation
-
-`make check` runs the existing quality gates. `make dist` builds the wheel/source
-archive and an additional deterministic installer archive under `dist/homebrew`,
-with `SHA256SUMS`. An existing installer archive is never overwritten; use a new
-output directory for repeated verification builds or a new version for a changed
-release. The source distribution includes the packaging tools and template.
-
-The formula installs the pinned dependency-free wheel with network package
-resolution disabled. No Hatchling or other build dependency is needed on the
-user's machine to install it. The Python runtime is supplied and patched through
-Homebrew. Git remains an explicit runtime dependency. The formula's functional
-test exercises version, temporary state, integrity, FTS5, Zstandard and timezone
-data. Packaging verification must also exercise real CLI import/export and state
-preservation across upgrade and uninstall/reinstall.
-
-## Public tap preparation
-
-The intended public tap follows the owner's existing `0merUfuk/thematrix`
-convention, but this repository currently has no configured release remote and
-its NOTICE grants no public redistribution license. Do not manufacture a working
-public install command or publish from the local installer.
-
-Once the owner has selected hosting and authorized publication, generate a
-formula from the exact wheel and its immutable HTTPS release URL:
+## Public installation
 
 ```sh
-uv run python tools/homebrew.py formula --wheel /path/to/release.whl --url https://example.org/releases/VERSION/release.whl --output /path/to/session-visualizer.rb
+brew install 0merUfuk/thematrix/session-visualizer
+session-visualizer --help
 ```
 
-These are placeholders. Use the real wheel filename and actual selected release
-URL. The generator reads and validates wheel metadata and computes SHA-256;
-it refuses runtime Python dependencies until their packaging is explicitly
-implemented. It never creates a remote, selects a license, pushes a tap or
-uploads files. Publication requires the tested wheel/installer/source archive,
-checksums and matching formula; test the final hosted formula before announcing
-`brew install 0merUfuk/thematrix/session-visualizer`.
+Homebrew installs Python 3.14 and Git, owns the application's private environment,
+and links `session-visualizer` into its `bin` directory. Homebrew must be installed
+and on PATH. No application-specific shell setup or virtual-environment activation
+is required. Application setup and source registration remain explicit user actions.
 
-The CI Homebrew job tests an unpublished local formula using the generated
-artifact. A remote CI result only exists after that workflow actually runs.
-macOS is the first release verification environment; Linux needs its own
-executed Homebrew checks before a compatibility claim. Windows is unsupported
-by the current POSIX file locking and source traversal implementation.
+```sh
+brew update
+brew upgrade session-visualizer
+brew reinstall session-visualizer
+brew uninstall session-visualizer
+```
+
+Uninstall preserves state, exports and backups. The first refresh after a version
+change replays derived extraction once and preserves durable memory. Further
+unchanged refreshes are incremental.
+
+If upgrading from the private `session-visualizer/local` tap, first run
+`brew uninstall session-visualizer/local/session-visualizer`, then install from
+the public tap. The application state location stays the same. Do not install
+both formulas concurrently or manually remove their managed environments.
+
+## Specific release bundle
+
+Each [release](https://github.com/0merUfuk/session-visualizer/releases) contains
+`session-visualizer-VERSION-homebrew.tar.gz`. Extract it, enter the directory and
+run `./install.sh`. This registers the installer-owned `session-visualizer/local`
+tap and copies the wheel into it. Reinstallation continues working if the
+checkout or extracted bundle is removed. This alternative requires manual
+selection of a newer bundle to upgrade; use the public tap for normal updates.
+
+The installer rejects a tap owned by something else, a symlink destination or an
+existing same-version wheel with different bytes. Installation does not import
+histories or initialize application state. The formula test uses temporary state.
+
+## Authenticity and release maintenance
+
+Release assets include `SHA256SUMS`, the exact public formula, wheel, source
+archive and installer bundle. For a downloaded asset, use
+`gh attestation verify /path/to/asset --repo 0merUfuk/session-visualizer` to verify
+GitHub build provenance. Checksums identify bytes; attestations bind those bytes
+to the repository's release workflow. There is no standalone native executable
+or Apple application bundle requiring notarization.
+
+The formula installs the dependency-free wheel with pip network resolution
+disabled. Homebrew supplies and updates the interpreter; no build backend needs
+to be installed by the user. Runtime Python dependency changes require explicit
+formula support and are rejected by the generator until implemented.
+
+The tag-driven release workflow runs CI before publishing attested assets. Once
+it succeeds, an authorized maintainer with GitHub CLI access runs:
+
+```sh
+uv run python tools/release.py publish-tap --tag v0.1.0
+```
+
+Use the new release tag for later versions and run from that version's checkout.
+This command downloads the hosted wheel/formula, verifies checksums and GitHub
+attestations, regenerates the formula for comparison, updates only
+`Formula/session-visualizer.rb` in `0merUfuk/homebrew-thematrix`, then reads it back.
+It is idempotent for identical contents. This explicit authenticated handoff
+avoids storing a cross-repository personal token in Actions. A release is not
+fully distributed until the tap is updated and its hosted install is tested.
+
+For an independent formula, `tools/homebrew.py formula` requires the exact wheel,
+a matching immutable HTTPS URL and a new output path. It does not publish.
+
+CI targets macOS 15 arm64/x86-64 and Ubuntu 24.04 x86-64. Successful runs are the
+compatibility evidence; configuration alone is not a platform certification.
+Windows and Linux arm64 remain outside the release matrix.

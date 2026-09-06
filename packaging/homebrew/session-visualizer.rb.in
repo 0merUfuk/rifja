@@ -2,11 +2,11 @@ class SessionVisualizer < Formula
   include Language::Python::Virtualenv
 
   desc "Offline, evidence-aware continuity for local agent sessions and Git"
-  homepage "https://github.com/0merUfuk"
+  homepage "https://github.com/0merUfuk/session-visualizer"
   url @@URL@@, using: :nounzip
   version @@VERSION@@
   sha256 @@SHA256@@
-  license :cannot_represent
+  license @@LICENSE@@
 
   depends_on "git"
   depends_on "python@3.14"

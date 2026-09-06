@@ -26,6 +26,16 @@ def isolated_git(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("HOME", str(home))
     monkeypatch.setenv("XDG_CONFIG_HOME", str(home / "xdg"))
     monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "1")
+    # Production deliberately preserves system trust configuration. These
+    # fixtures must not inherit a runner's LFS filters or safe.directory=*.
+    original_environment = collector._environment
+
+    def fixture_environment() -> dict[str, str]:
+        env = original_environment()
+        env["GIT_CONFIG_NOSYSTEM"] = "1"
+        return env
+
+    monkeypatch.setattr(collector, "_environment", fixture_environment)
     monkeypatch.setenv("GIT_AUTHOR_NAME", "Fixture Author")
     monkeypatch.setenv("GIT_AUTHOR_EMAIL", "fixture@example.invalid")
     monkeypatch.setenv("GIT_COMMITTER_NAME", "Fixture Committer")

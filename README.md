@@ -4,7 +4,7 @@ Session Visualizer is a local CLI for resuming engineering work across agent ses
 
 [![CI](https://github.com/0merUfuk/session-visualizer/actions/workflows/ci.yml/badge.svg)](https://github.com/0merUfuk/session-visualizer/actions/workflows/ci.yml)
 
-Version **0.1.0**. Licensed under [MIT](LICENSE). Runtime collection and queries
+Version **0.1.1**. Licensed under [MIT](LICENSE). Runtime collection and queries
 need no network, model service or paid account.
 
 ## Install
@@ -23,11 +23,11 @@ required. Initial installation can download Homebrew dependencies.
 ```sh
 brew update
 brew upgrade session-visualizer
-brew uninstall session-visualizer
+brew uninstall --force session-visualizer
 ```
 
 Uninstall preserves application state, exports and backups. To move from an older
-private `session-visualizer/local` installation, uninstall that formula first,
+private `session-visualizer/local` installation, remove all its installed versions with `brew uninstall --force session-visualizer/local/session-visualizer` first,
 then run the public install command above; your state stays in place.
 
 [GitHub Releases](https://github.com/0merUfuk/session-visualizer/releases) also

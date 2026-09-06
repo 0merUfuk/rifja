@@ -1,5 +1,18 @@
 # Release notes
 
+## 0.1.1
+
+Corrects removal and migration instructions for Homebrew installations retaining
+multiple versions. Use `brew uninstall --force session-visualizer` to remove all
+installed versions while preserving application state. When switching from the
+private tap, use `brew uninstall --force session-visualizer/local/session-visualizer`
+before `brew install 0merUfuk/thematrix/session-visualizer`.
+
+This addresses a reproduced migration failure where removing only the current
+private version left an older installed version and prevented switching taps.
+Runtime behavior and schema remain unchanged. Published 0.1.0 assets are retained
+unchanged; this patch carries the corrected instructions into every artifact.
+
 ## 0.1.0
 
 First public MIT-licensed release. Retains the offline Python implementation and

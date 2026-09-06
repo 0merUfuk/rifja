@@ -16,15 +16,17 @@ is required. Application setup and source registration remain explicit user acti
 brew update
 brew upgrade session-visualizer
 brew reinstall session-visualizer
-brew uninstall session-visualizer
+brew uninstall --force session-visualizer
 ```
 
+`--force` removes all installed versions of this formula; it does not remove
+application state. This matters after upgrades that retained an older version.
 Uninstall preserves state, exports and backups. The first refresh after a version
 change replays derived extraction once and preserves durable memory. Further
 unchanged refreshes are incremental.
 
 If upgrading from the private `session-visualizer/local` tap, first run
-`brew uninstall session-visualizer/local/session-visualizer`, then install from
+`brew uninstall --force session-visualizer/local/session-visualizer`, then install from
 the public tap. The application state location stays the same. Do not install
 both formulas concurrently or manually remove their managed environments.
 
@@ -59,7 +61,7 @@ The tag-driven release workflow runs CI before publishing attested assets. Once
 it succeeds, an authorized maintainer with GitHub CLI access runs:
 
 ```sh
-uv run python tools/release.py publish-tap --tag v0.1.0
+uv run python tools/release.py publish-tap --tag v0.1.1
 ```
 
 Use the new release tag for later versions and run from that version's checkout.

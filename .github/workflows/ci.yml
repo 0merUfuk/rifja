@@ -43,7 +43,7 @@ jobs:
           session-visualizer --version
           brew test session-visualizer/local/session-visualizer
           ./install.sh --reinstall
-          brew uninstall session-visualizer/local/session-visualizer
+          brew uninstall --force session-visualizer/local/session-visualizer
           ./install.sh
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()

@@ -1,6 +1,6 @@
 # Operational guide
 
-This guide describes the `session-visualizer` console interface for release **0.1.0**. Install with `brew install 0merUfuk/thematrix/session-visualizer` using the [README instructions](../README.md). Homebrew manages Python 3.14+, Git and the private environment; no manual Python setup is needed. Runtime commands use local files and Git; they do not contact a model or network service, execute transcript instructions, or run tests for your project.
+This guide describes the `session-visualizer` console interface for release **0.1.1**. Install with `brew install 0merUfuk/thematrix/session-visualizer` using the [README instructions](../README.md). Homebrew manages Python 3.14+, Git and the private environment; no manual Python setup is needed. Runtime commands use local files and Git; they do not contact a model or network service, execute transcript instructions, or run tests for your project.
 
 ## Initialize and choose state
 
@@ -241,7 +241,7 @@ Forgetting removes associated imported records and search entries and stores a p
 For the recommended Homebrew installation, uninstall the application with:
 
 ```sh
-brew uninstall session-visualizer
+brew uninstall --force session-visualizer
 ```
 
 Application state, exports, backups and producer transcripts remain. A new `--home` provides fresh application state without deleting the old one. Deleting a state directory also deletes its memory, configuration and rules preventing reimport; a later fresh import can then bring those sessions back.

@@ -30,7 +30,7 @@ rifja = "rifja.cli:main"
 session-visualizer = "rifja.cli:main"
 
 [dependency-groups]
-dev = ["pytest>=8,<10", "ruff>=0.12,<1", "mypy>=1.15,<2", "build>=1.2,<2", "hatchling==1.32.0"]
+dev = ["pytest>=8,<10", "ruff>=0.12,<1", "mypy>=1.15,<3", "build>=1.2,<2", "hatchling==1.32.0"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/rifja", "src/session_visualizer"]

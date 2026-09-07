@@ -86,7 +86,16 @@ rifja --version
 ```
 
 The tap's `formula_renames.json` maps the old formula to Rifja. A formula alias
-also resolves old qualified install commands. Both executable names remain present;
+also resolves old qualified install commands. On current Homebrew, a fresh install
+through that alias requires trust in the canonical formula. Prefer the normal
+`brew install 0merUfuk/thematrix/rifja` command. If retaining an old install script:
+
+```sh
+brew trust --formula 0merUfuk/thematrix/rifja
+brew install 0merUfuk/thematrix/session-visualizer
+```
+
+This grants trust only to Rifja, not the whole tap. Both executable names remain present;
 there is one application installation. Do not install independent old and new
 wheel distributions into the same Python environment: remove the old distribution
 first, then install Rifja. Package removal preserves application state.
@@ -116,5 +125,10 @@ repository and should be evaluated as historical provenance.
 Compatibility entry points, environment/default paths, migration tests, excluded
 legacy state paths and this migration guide deliberately retain old identifiers.
 Local historical evidence and immutable installer caches remain historical too.
+If you physically move a registered source or project directory, re-register its
+canonical location through the documented project/source commands. A checkout
+symlink is not a substitute for explicit input registration, and source security
+checks may reject it. The product rename itself does not relocate user inputs.
+
 The local checkout is named `rifja`; the former checkout path is a compatibility
 symlink for existing bookmarks and running tasks. It is not a second checkout.

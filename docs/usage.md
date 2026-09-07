@@ -1,6 +1,6 @@
 # Operational guide
 
-This guide describes the `rifja` console interface for release **0.2.0**. Install with `brew install 0merUfuk/thematrix/rifja` using the [README instructions](../README.md). Homebrew manages Python 3.14+, Git and the private environment; no manual Python setup is needed. Runtime commands use local files and Git; they do not contact a model or network service, execute transcript instructions, or run tests for your project.
+This guide describes the `rifja` console interface for release **0.2.1**. Install with `brew install 0merUfuk/thematrix/rifja` using the [README instructions](../README.md). Homebrew manages Python 3.14+, Git and the private environment; no manual Python setup is needed. Runtime commands use local files and Git; they do not contact a model or network service, execute transcript instructions, or run tests for your project.
 
 ## Initialize and choose state
 

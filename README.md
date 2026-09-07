@@ -8,7 +8,7 @@ Rifja is a local CLI for resuming engineering work across agent sessions, projec
 
 [![CI](https://github.com/0merUfuk/rifja/actions/workflows/ci.yml/badge.svg)](https://github.com/0merUfuk/rifja/actions/workflows/ci.yml)
 
-Version **0.2.0**. Licensed under [MIT](LICENSE). Runtime collection and queries
+Version **0.2.1**. Licensed under [MIT](LICENSE). Runtime collection and queries
 need no network, model service or paid account.
 
 ## Install

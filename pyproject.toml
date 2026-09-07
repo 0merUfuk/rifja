@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "rifja"
-version = "0.2.0"
+version = "0.2.1"
 description = "Offline, evidence-aware engineering continuity for local agent sessions and Git"
 readme = "README.md"
 requires-python = ">=3.14"

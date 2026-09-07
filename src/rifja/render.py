@@ -3,6 +3,7 @@
 import html
 import json
 import re
+from collections.abc import Callable
 from typing import Any
 
 from .privacy import clean_text
@@ -585,7 +586,405 @@ def bounded_export(data: dict[str, Any], format: str = "markdown", max_chars: in
     return serialize()
 
 
-def readable(kind: str, data: Any) -> str:
+_STATUS_GLYPHS = {
+    "passed": "✓",
+    "ready": "✓",
+    "current": "✓",
+    "accepted": "✓",
+    "available": "✓",
+    "partial": "⚠",
+    "refresh_required": "⚠",
+    "proposed": "⚠",
+    "new": "⚠",
+    "failed": "✗",
+    "missing": "✗",
+    "unavailable": "✗",
+    "excluded": "✗",
+    "unsupported": "✗",
+    "not_refreshed": "•",
+    "unknown": "•",
+}
+
+_Renderer = Callable[[dict[str, Any], dict[str, Any], bool], list[str]]
+
+
+def status_word(status: Any, tty: bool) -> str:
+    """One vocabulary everywhere: '✓ passed' on a terminal, plain words otherwise."""
+    word = str(status)
+    if not tty:
+        return word
+    return _STATUS_GLYPHS.get(word, "•") + " " + word
+
+
+def _plural(count: int, singular: str, plural: str | None = None) -> str:
+    return f"{count} {singular if count == 1 else (plural or singular + 's')}"
+
+
+def _one_line(text: Any, limit: int = 200) -> str:
+    return " ".join(str(text).split())[:limit]
+
+
+def _decode_run_stats(run: dict[str, Any]) -> dict[str, Any]:
+    # last_refresh.stats is a JSON-encoded report (documented wart). Decode it
+    # for human display only; the JSON payload keeps the encoded string.
+    stats = run.get("stats")
+    if isinstance(stats, str):
+        try:
+            return json.loads(stats)
+        except ValueError:
+            return {}
+    return stats if isinstance(stats, dict) else {}
+
+
+def _coverage_lines(coverage: dict[str, Any], tty: bool, indent: str = "  ") -> list[str]:
+    counts = coverage.get("source_counts") or []
+    detail = ", ".join(f"{row['count']} {row['status']}" for row in counts)
+    total = coverage.get("source_total", 0)
+    lines = [
+        f"{indent}Coverage: {status_word(coverage['status'], tty)} — {_plural(total, 'source')}"
+        + (f" ({detail})" if detail else "")
+    ]
+    run = coverage.get("last_refresh")
+    if run:
+        stats = _decode_run_stats(run)
+        lines.append(
+            f"{indent}Last refresh: {run.get('ended_at') or run.get('started_at')} "
+            f"({run.get('status', 'unknown')}; parsed {stats.get('parsed_records', 0)}, "
+            f"inserted {stats.get('inserted_records', 0)})"
+        )
+    else:
+        lines.append(f"{indent}Last refresh: never")
+    if coverage.get("scope_changed_since_refresh"):
+        lines.append(f"{indent}Scope changed since the last refresh; run `rifja refresh`.")
+    for key, label in (
+        ("unassociated_records", "records lack registered project context"),
+        ("unknown_event_times", "records have unresolved event times"),
+    ):
+        if coverage.get(key):
+            lines.append(f"{indent}{coverage[key]} {label}.")
+    if coverage.get("sources_omitted"):
+        lines.append(
+            f"{indent}{coverage['sources_omitted']} sources omitted from this view (--json shows all)."
+        )
+    return lines
+
+
+def _setup_lines(data: dict[str, Any], extra: dict[str, Any], tty: bool) -> list[str]:
+    suffix = {
+        "explicit": "(explicit)",
+        "detected": "(detected)",
+        "fallback": "(fallback — pass --timezone to set it explicitly)",
+    }.get(extra.get("timezone_origin", "explicit"), "(explicit)")
+    return [
+        "Rifja state is ready.",
+        f"State directory: {data['state_directory']}",
+        f"Timezone: {data['timezone']} {suffix}",
+        "Network: not required",
+        "Next:",
+        *(f"  - {step}" for step in data["next"]),
+    ]
+
+
+def _doctor_lines(data: dict[str, Any], extra: dict[str, Any], tty: bool) -> list[str]:
+    lines = [f"Doctor: {status_word(data['status'], tty)}"]
+    lines += [f"  {check['name']}: {status_word(check['status'], tty)}" for check in data["checks"]]
+    lines.append(
+        f"  Schema: {data['schema_version']}; SQLite: {data['sqlite']}; "
+        f"offline runtime: {'yes' if data['offline_runtime'] else 'no'}"
+    )
+    return lines + _coverage_lines(data["coverage"], tty)
+
+
+def _source_lines(data: dict[str, Any], extra: dict[str, Any], tty: bool) -> list[str]:
+    if "candidates" in data:
+        lines = ["Candidate locations (discovery reads and imports nothing):"]
+        lines += [
+            f"  - {c['provider']} {c['path']}: {'available' if c['available'] else 'not found'}"
+            for c in data["candidates"]
+        ]
+        lines.append("Register one with `rifja source add PROVIDER PATH`; only `refresh` imports.")
+        return lines
+    if "registered_source" in data:
+        spec = data["registered_source"]
+        return [
+            f"Registered source {spec['provider']} {spec['path']}.",
+            "Next: `rifja refresh` imports it.",
+        ]
+    coverage = data["coverage"]
+    configured = coverage.get("configured_sources") or data.get("configured") or []
+    lines = [f"Configured sources: {len(configured)}"]
+    lines += [
+        f"  - {spec['provider']} {spec['path']}: "
+        f"{'available' if spec.get('available', True) else 'UNAVAILABLE'}"
+        for spec in configured
+    ]
+    lines += _coverage_lines(coverage, tty)
+    for source in coverage.get("sources", []):
+        diagnostics = len(source.get("diagnostics") or [])
+        line = f"  - {status_word(source['status'], tty)} {source['provider']} {source['path']}"
+        if diagnostics:
+            line += (
+                f" ({_plural(diagnostics, 'diagnostic')}; `rifja source list --json` shows them)"
+            )
+        lines.append(line)
+    return lines
+
+
+def _document_lines(data: dict[str, Any], extra: dict[str, Any], tty: bool) -> list[str]:
+    if "project_id" in data:  # document add returns the stored specification
+        return [
+            "Documents will be collected for:",
+            f"  project {data['project_id']} worktree {data['worktree_id']}",
+            (
+                f"  patterns: {data['patterns']} (max files {data['max_files']}, "
+                f"bytes {data['max_bytes']}, depth {data['max_depth']})"
+            ),
+        ]
+    coverage = data["coverage"]
+    configured = data.get("configured") or []
+    lines = [f"Configured document scopes: {len(configured)}"]
+    lines += [
+        f"  - project {spec.get('project_id', '?')} worktree {spec.get('worktree_id', '?')}: "
+        f"{', '.join(spec.get('patterns', []))}"
+        for spec in configured
+    ]
+    return lines + _coverage_lines(coverage, tty)
+
+
+def _refresh_lines(data: dict[str, Any], extra: dict[str, Any], tty: bool) -> list[str]:
+    lines = [
+        (
+            f"Refresh: {status_word(data['status'], tty)} — {_plural(data['sources'], 'source file')} "
+            f"({data['unchanged']} unchanged), {data['parsed_records']} parsed, "
+            f"{data['inserted_records']} inserted, {data['forgotten_records']} forgotten."
+        )
+    ]
+    attention = extra.get("attention") or []
+    if attention:
+        lines.append("Needs attention:")
+        lines += [
+            f"  - {status_word(s['status'], tty)} {s['provider']} {s['path']}"
+            for s in attention[:20]
+        ]
+        if len(attention) > 20:
+            lines.append(
+                f"  … and {len(attention) - 20} more; `rifja source list` shows every source."
+            )
+    diagnostics = data.get("diagnostics") or []
+    if diagnostics:
+        lines.append(f"{_plural(len(diagnostics), 'diagnostic')} recorded:")
+        lines += [
+            f"  - {d.get('code', 'unknown')} ({d.get('provider', 'unknown provider')})"
+            for d in diagnostics[:10]
+        ]
+        lines.append("Details per source: `rifja source list --json`.")
+    return lines
+
+
+def _project_lines(data: dict[str, Any], extra: dict[str, Any], tty: bool) -> list[str]:
+    if "projects" in data and "worktrees" not in data:  # project list and discover
+        projects = data["projects"]
+        lines = [f"Projects: {len(projects)}"]
+        for entry in projects:
+            if "project" in entry:  # discover returns full project views
+                project = entry["project"]
+                lines.append(
+                    f"  - {project['name']} (id {project['id']}; "
+                    f"{_plural(len(entry.get('worktrees', [])), 'worktree')})"
+                )
+            else:
+                lines.append(
+                    f"  - {entry['name']} (id {entry['id']}; {entry.get('common_dir') or 'no directory'})"
+                )
+        if data.get("roots"):
+            lines.append("Searched roots: " + ", ".join(data["roots"]))
+        if data.get("coverage"):
+            lines.append(
+                "Discovery is bounded; register an omitted repository with `rifja project add PATH`."
+            )
+        return lines
+    if "target" in data:  # associate result
+        return [
+            f"Associated {data['target']} with project {data['project_id']}"
+            + (f" worktree {data['worktree_id']}" if data.get("worktree_id") else "")
+            + f"; reason recorded: {_one_line(data['reason'], 120)}"
+        ]
+    project = data["project"]
+    lines = [f"Project {project['name']} (id {project['id']})"]
+    for tree in data.get("worktrees", []):
+        observation = tree.get("observation") or {}
+        lines.append(
+            f"  worktree {tree['path']}: "
+            f"{status_word('available' if tree['active'] else 'unavailable', tty)}; "
+            f"branch {observation.get('branch') or 'unknown'}; id {tree['id']}"
+        )
+    lines.append(f"  {_plural(len(data.get('sessions', [])), 'session')} with records")
+    return lines + _coverage_lines(data["coverage"], tty)
+
+
+def _session_lines(data: dict[str, Any], extra: dict[str, Any], tty: bool) -> list[str]:
+    if "sessions" in data:
+        sessions = data["sessions"]
+        lines = [f"{_plural(len(sessions), 'session')}:"]
+        lines += [f"  - {s['provider']} {s['id']} (native {s['native_id']})" for s in sessions]
+        if not sessions:
+            lines.append("No sessions imported yet; `rifja refresh` imports configured sources.")
+        return lines
+    session = data["session"]
+    lines = [
+        (
+            f"Session {session['id']} ({session['provider']}); "
+            f"{_plural(len(data['records']), 'record')} shown of limit {data['limit']}."
+        )
+    ]
+    lines += [
+        f"  - [{r['actor']}/{r['kind']} {r['event_time'] or 'unknown time'}] {_one_line(r['text'])} "
+        f"(ref {r['id'][:12]}; {status_word(r['evidence']['status'], tty)})"
+        for r in data["records"]
+    ]
+    return lines + _coverage_lines(data["coverage"], tty)
+
+
+def _search_lines(data: dict[str, Any], extra: dict[str, Any], tty: bool) -> list[str]:
+    matches = data["matches"]
+    lines = [f'Search "{data["query"]}": {_plural(len(matches), "match")} (limit {data["limit"]}).']
+    lines += [
+        f"  - [{m['provider']}/{m['actor']} {m['event_time'] or 'unknown time'}] "
+        f"{_one_line(m['text'])} (ref {m['id'][:12]}; {status_word(m['evidence']['status'], tty)})"
+        for m in matches
+    ]
+    lines.append(
+        "Inspect an origin with `rifja explain RECORD_ID`; filters narrow evidence, not authority."
+    )
+    return lines
+
+
+def _explain_lines(data: dict[str, Any], extra: dict[str, Any], tty: bool) -> list[str]:
+    if data.get("status") == "removed_or_unknown":
+        return [f"Record {data['record_id'][:12]}: removed or unknown."]
+    lines = [
+        f"Record {data['record_id'][:12]}: {status_word(data['status'], tty)}",
+        (
+            f"  {data['provider']} / {data['actor']} / {data['category']} / "
+            f"{data['timestamp'] or 'unknown time'} ({data['time_status']})"
+        ),
+    ]
+    for location in data.get("locations", []):
+        lines.append(
+            f"  - {location['path']} generation {location['generation']} {location['locator']} "
+            f"({location['source_status']}/{location['generation_status']})"
+        )
+    lines.append(f"  {data['limitation']}")
+    return lines
+
+
+def _config_lines(data: dict[str, Any], extra: dict[str, Any], tty: bool) -> list[str]:
+    if not data:
+        return ["Configuration is empty; `rifja setup` initializes it."]
+    return [
+        f"{key}: {json.dumps(value, ensure_ascii=False)}" for key, value in sorted(data.items())
+    ]
+
+
+def _memory_lines(data: dict[str, Any], extra: dict[str, Any], tty: bool) -> list[str]:
+    if "memory" in data:
+        entries = data["memory"]
+        lines = [f"{_plural(len(entries), 'memory entry', 'memory entries')}:"]
+        lines += [
+            f"  - [{m['kind']}/{m['status']}] {_one_line(m['text'])} (scope {m['scope']}; ref {m['id'][:12]})"
+            for m in entries
+        ]
+        return lines
+    if "target" in data:  # correction result
+        return [
+            (
+                f"Correction {data['id'][:12]} recorded for {data['target'][:12]}; "
+                "user corrections stay authoritative."
+            )
+        ]
+    return [
+        (
+            f"Memory {data['id'][:12]}: {data['kind']} {status_word(data['status'], tty)} "
+            f"(scope {data['scope']})."
+        ),
+        "Inspect all entries with `rifja memory list --json`.",
+    ]
+
+
+def _constitution_lines(data: dict[str, Any], extra: dict[str, Any], tty: bool) -> list[str]:
+    principles = data["principles"]
+    lines = [f"{_plural(len(principles), 'principle')}:"]
+    lines += [
+        f"  - [{p['status']}/{p['confidence']}] {_one_line(p['text'])} "
+        f"(scope {p['scope']}; ref {p['id'][:12]})"
+        for p in principles
+    ]
+    return lines + ["", f"Policy: {data['policy']}"]
+
+
+def _simple_lines(data: dict[str, Any], extra: dict[str, Any], tty: bool) -> list[str]:
+    """One-line confirmations for backup, restore, forget, retention and file exports."""
+    if "backup" in data:
+        return [f"Backup written to {data['backup']} (schema {data['schema_version']})."]
+    if "restored" in data:
+        return [
+            (
+                f"Restored into {data['destination']} (schema {data['schema_version']}). "
+                "Verify with `rifja doctor`."
+            )
+        ]
+    if "removed_records" in data:
+        return [
+            (
+                f"Forgot session: {_plural(data['removed_records'], 'record')} removed; "
+                "reimport prevented; user memory retained."
+            ),
+            data["limitation"],
+        ]
+    if "dry_run" in data:
+        return [
+            (
+                f"Dry run: {_plural(data['sessions_to_forget'], 'session')} would be forgotten "
+                f"(before {data['before']})."
+            ),
+            data["next"],
+        ]
+    if "sessions_forgotten" in data:
+        return [
+            (
+                f"Forget applied: {_plural(data['sessions_forgotten'], 'session')}, "
+                f"{_plural(data['records_removed'], 'record')} removed (before {data['before']})."
+            )
+        ]
+    if "exported" in data:
+        return [
+            f"Exported {_plural(data['characters'], 'character')} ({data['format']}) to {data['exported']}."
+        ]
+    return [json.dumps(data, ensure_ascii=False)]
+
+
+_RENDERERS: dict[str, _Renderer] = {
+    "backup": _simple_lines,
+    "config": _config_lines,
+    "constitution": _constitution_lines,
+    "document": _document_lines,
+    "doctor": _doctor_lines,
+    "explain": _explain_lines,
+    "export": _simple_lines,
+    "forget": _simple_lines,
+    "memory": _memory_lines,
+    "project": _project_lines,
+    "refresh": _refresh_lines,
+    "retention": _simple_lines,
+    "restore": _simple_lines,
+    "search": _search_lines,
+    "session": _session_lines,
+    "setup": _setup_lines,
+    "source": _source_lines,
+}
+
+
+def readable(kind: str, data: Any, extra: dict[str, Any] | None = None, tty: bool = False) -> str:
     if kind == "resume":
         return resume_markdown(data)
     if kind == "daily":
@@ -624,6 +1023,9 @@ def readable(kind: str, data: Any) -> str:
         return "\n".join(lines)
     if isinstance(data, dict) and "items" in data and isinstance(data["items"], list):
         return "\n".join(_item(i) for i in data["items"]) or data.get("meaning", "No items.")
+    handler = _RENDERERS.get(kind)
+    if handler is not None and isinstance(data, dict):
+        return "\n".join(handler(data, extra or {}, tty))
     return json.dumps(data, ensure_ascii=False, indent=2)
 
 

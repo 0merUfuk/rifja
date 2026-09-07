@@ -77,8 +77,14 @@ class Console:
         assert result.returncode == code, (command, result.returncode, result.stdout, result.stderr)
         assert "Traceback (most recent call last)" not in result.stderr
         assert "\x1b" not in result.stdout + result.stderr
+        noise = [
+            line
+            for line in result.stderr.splitlines()
+            if not line.startswith("refresh: ") and line.strip()
+        ]
         if code == 0:
-            assert not result.stderr, result.stderr
+            # Success writes progress lines to stderr at most; nothing else.
+            assert not noise, result.stderr
         return result
 
     def data(self, *args: str, **kwargs) -> dict:
@@ -223,8 +229,37 @@ def test_default_state_path_uses_the_controlled_home(cli):
     ],
 )
 def test_invalid_input_is_exit_two_without_traceback(cli, arguments):
-    result = cli.run(*arguments, code=2)
+    result = cli.run(*arguments, code=2, json_output=False)
     assert result.stderr.strip()
+    assert "Traceback (most recent call last)" not in result.stderr
+
+
+@pytest.mark.parametrize(
+    "arguments,code",
+    [
+        (("daily", "not-a-date"), 2),
+        (("daily", "2026-09-05", "--to", "2026-09-04"), 2),
+        (("session", "--limit", "0"), 2),
+        (("setup", "--timezone", "Invalid/Imaginary_Zone"), 2),
+        (("config", "timezone", "Invalid/Imaginary_Zone"), 2),
+        (("config", "exclusions", "not-json"), 2),
+        (("source", "add", "codex", "/synthetic/nonexistent-source.jsonl"), 2),
+    ],
+)
+def test_json_errors_carry_contract_codes_and_hints(cli, arguments, code):
+    result = cli.run(*arguments, code=code)
+    envelope = json.loads(result.stdout)
+    assert envelope["schema_version"] == 1
+    assert envelope["command"] == arguments[0]
+    assert envelope["error"]["code"]
+    assert isinstance(envelope["error"]["hints"], list)
+    assert not result.stderr
+
+
+def test_human_errors_show_contract_label_and_next_actions(cli):
+    result = cli.run("resume", "nope", code=2, json_output=False)
+    assert "Error: project_not_found" in result.stderr
+    assert "project list" in result.stderr and "project add" in result.stderr
 
 
 def test_source_discovery_is_metadata_only_and_uses_controlled_homes(cli):
@@ -383,8 +418,13 @@ def test_refresh_writer_contention_returns_four(cli):
     cli.data("setup")
     with (cli.state / "refresh.lock").open("a") as lock:
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-        result = cli.run("refresh", code=4)
-        assert "Busy:" in result.stderr
+        busy = cli.run("refresh", code=4)
+        envelope = json.loads(busy.stdout)
+        assert envelope["command"] == "refresh" and envelope["error"]["code"] == "busy"
+        assert envelope["error"]["hints"] and "retry" in envelope["error"]["hints"][0].lower()
+        assert not busy.stderr
+        text = cli.run("refresh", code=4, json_output=False)
+        assert "Busy:" in text.stderr and "retry" in text.stderr.lower()
     assert cli.data("refresh")["status"] == "passed"
 
 
@@ -580,8 +620,11 @@ def test_newer_state_schema_is_refused_without_modifying_it(cli):
     state_file = cli.state / "state.sqlite3"
     with sqlite3.connect(state_file) as conn:
         conn.execute("PRAGMA user_version=999")
-    result = cli.run("doctor", code=2)
+    result = cli.run("doctor", code=2, json_output=False)
     assert "newer_schema" in result.stderr
+    envelope = json.loads(cli.run("doctor", code=2).stdout)
+    assert envelope["error"]["code"].startswith("newer_schema")
+    assert any("version" in hint for hint in envelope["error"]["hints"])
     with sqlite3.connect(state_file) as conn:
         assert conn.execute("PRAGMA user_version").fetchone()[0] == 999
 
@@ -624,3 +667,108 @@ def test_tasks_keeps_unfinished_work_before_newer_claims_and_filters_before_limi
     assert len(tasks["items"]) == 2
     assert tasks["total"] == 26 and tasks["omitted"] == 24
     assert {item["kind"] for item in tasks["items"]} == {"task", "claim"}
+
+
+def test_bare_command_orients_without_initializing_state(cli):
+    overview = cli.run(code=2, json_output=False).stdout
+    assert "Start here:" in overview and "setup" in overview
+    for section in ("Setup:", "Data:", "Inspect:", "Deliver:"):
+        assert section in overview
+    assert not cli.state.exists()
+    envelope = json.loads(cli.run(code=2).stdout)
+    assert envelope["command"] is None and envelope["error"]["code"] == "no_command"
+    assert envelope["schema_version"] == 1 and envelope["error"]["hints"]
+    assert not cli.state.exists()
+
+
+def test_grouped_help_lists_commands_under_workflow_sections(cli):
+    help_output = cli.run("--help", json_output=False).stdout
+    for section in ("commands:", "Setup:", "Data:", "Inspect:", "Deliver:"):
+        assert section in help_output
+    assert "resume" in help_output and "--home" in help_output and "3 partial" in help_output
+    assert not cli.state.exists()
+
+
+@pytest.mark.parametrize("command", ["resume", "search", "source", "project", "memory", "export"])
+def test_subcommand_help_keeps_the_stock_formatter(cli, command):
+    output = cli.run(command, "--help", json_output=False).stdout
+    assert command in output
+    assert "Setup:" not in output and "commands:" not in output
+    assert not cli.state.exists()
+
+
+def test_setup_timezone_origin_is_explicit_detected_or_fallback(cli):
+    explicit = cli.run("setup", "--timezone", "Europe/Istanbul", json_output=False).stdout
+    assert "Timezone: Europe/Istanbul (explicit)" in explicit
+    detected_state = cli.root / "detected state"
+    cli.env["TZ"] = "Pacific/Kiritimati"
+    detected = cli.run("setup", json_output=False, state=detected_state).stdout
+    assert "Timezone: Pacific/Kiritimati (detected)" in detected
+    assert cli.data("config", "timezone", state=detected_state) == {
+        "timezone": "Pacific/Kiritimati"
+    }
+    fallback_state = cli.root / "fallback state"
+    cli.env["TZ"] = "Not/AZone"
+    fallback = cli.run("setup", json_output=False, state=fallback_state).stdout
+    assert "Timezone: UTC (fallback" in fallback and "--timezone" in fallback
+    assert cli.data("config", "timezone", state=fallback_state) == {"timezone": "UTC"}
+
+
+def test_human_renderers_cover_previously_json_only_commands(cli):
+    cli.seeded()
+    record_id = cli.data("search", "fixture schema")["matches"][0]["id"]
+    outputs = {
+        "doctor": cli.run("doctor", json_output=False).stdout,
+        "source list": cli.run("source", "list", json_output=False).stdout,
+        "source discover": cli.run("source", "discover", json_output=False).stdout,
+        "search": cli.run("search", "fixture schema", json_output=False).stdout,
+        "config": cli.run("config", json_output=False).stdout,
+        "project list": cli.run("project", "list", json_output=False).stdout,
+        "session list": cli.run("session", json_output=False).stdout,
+        "explain": cli.run("explain", record_id, json_output=False).stdout,
+        "memory": cli.run("memory", "list", json_output=False).stdout,
+        "constitution": cli.run("constitution", json_output=False).stdout,
+    }
+    assert "Doctor: passed" in outputs["doctor"] and "sqlite_integrity: passed" in outputs["doctor"]
+    assert "Coverage: passed" in outputs["source list"]
+    assert (
+        "Last refresh:" in outputs["source list"]
+        and "parsed 6, inserted 6" in outputs["source list"]
+    )
+    assert outputs["source discover"].startswith("Candidate locations")
+    assert '"fixture schema"' in outputs["search"] and "explain RECORD_ID" in outputs["search"]
+    assert 'timezone: "Europe/Istanbul"' in outputs["config"]
+    assert "Projects: 1" in outputs["project list"] and "harbor" in outputs["project list"]
+    assert "1 session:" in outputs["session list"]
+    assert "Record " in outputs["explain"] and "generation 1" in outputs["explain"]
+    assert "0 memory entries:" in outputs["memory"]
+    assert "Policy:" in outputs["constitution"]
+    for output in outputs.values():
+        assert output.strip() and "\x1b" not in output
+
+
+def test_refresh_progress_on_stderr_respects_quiet_and_json_modes(cli):
+    cli.seeded()
+    human = cli.run("refresh", json_output=False)
+    assert "refresh: " in human.stderr
+    assert human.stderr.count("refresh: passed") == 1
+    assert "Refresh: passed" in human.stdout and "1 source file" in human.stdout
+    quiet = cli.run("refresh", "--quiet", json_output=False)
+    assert "refresh: " not in quiet.stderr
+    assert "Refresh: passed" in quiet.stdout
+    machine = cli.run("refresh")
+    assert "refresh: " in machine.stderr
+    assert json.loads(machine.stdout)["data"]["status"] == "passed"
+    assert json.loads(cli.run("refresh", "--quiet").stdout)["data"]["status"] == "passed"
+
+
+def test_partial_refresh_names_attention_sources_in_human_mode(cli):
+    fixture = cli.seeded()
+    with fixture["source"].open("a") as stream:
+        stream.write('{"type":"response_item","payload":')
+    partial = cli.run("refresh", json_output=False, code=3)
+    assert "Refresh: partial" in partial.stdout
+    assert "Needs attention:" in partial.stdout and fixture["source"].name in partial.stdout
+    envelope = json.loads(cli.run("refresh", code=3).stdout)
+    assert envelope["data"]["status"] == "partial"
+    assert envelope["schema_version"] == 1

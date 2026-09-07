@@ -4,7 +4,7 @@ import hashlib
 import json
 import os
 import sqlite3
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from dataclasses import asdict
 from dataclasses import fields as dataclass_fields
 from pathlib import Path
@@ -33,6 +33,8 @@ from .timeutil import normalize, now
 
 _RECORD_FIELDS = tuple(field.name for field in dataclass_fields(Record))
 _CANDIDATE_FIELDS = tuple(field.name for field in dataclass_fields(Candidate))
+ProgressCallback = Callable[[dict[str, Any]], None]
+_PROGRESS_EVERY = 512
 
 
 def _clean_fields(value: Record | Candidate, names: tuple[str, ...]) -> dict[str, Any]:
@@ -108,6 +110,13 @@ class Ingestor:
         self.association_cache: dict[str, tuple[str | None, str | None, str]] = {}
         self.stats: dict[str, int] = {}
         self.rebuild = False
+        self.progress: ProgressCallback | None = None
+
+    def _emit(self, event: dict[str, Any]) -> None:
+        # Observe-only progress hook. Callbacks must not raise, mutate state or
+        # block checkpoint logic; refresh correctness never depends on them.
+        if self.progress is not None:
+            self.progress(event)
 
     def associate(
         self, cwd: str | None, session_id: str, record_id: str
@@ -332,11 +341,17 @@ class Ingestor:
                         ),
                     )
 
-    def refresh(self, verify: bool = False, rebuild: bool = False) -> dict[str, Any]:
+    def refresh(
+        self,
+        verify: bool = False,
+        rebuild: bool = False,
+        progress: ProgressCallback | None = None,
+    ) -> dict[str, Any]:
         pipeline = __version__ + ":prose-v1:documents-v1:redaction-v1"
         previous = self.store.config("pipeline_version")
         rebuild = rebuild or (previous is not None and previous != pipeline)
         self.rebuild = rebuild
+        self.progress = progress
         self.stats = {
             "sources": 0,
             "unchanged": 0,
@@ -352,13 +367,14 @@ class Ingestor:
         configured = self.store.config("sources", [])
         exclusions = self.store.config("exclusions", [])
         seen: set[str] = set()
+        self._emit({"type": "start", "roots_total": len(configured)})
         with self.store.writer_lock():
             run = self.store.db.execute(
                 "INSERT INTO refresh_runs(started_at,status,stats) VALUES(?, 'running', '{}')",
                 (started,),
             ).lastrowid
             try:
-                for spec in configured:
+                for index, spec in enumerate(configured, 1):
                     root = Path(spec["path"])
                     if (
                         not root.exists()
@@ -372,7 +388,27 @@ class Ingestor:
                                 "provider": spec["provider"],
                             }
                         )
+                        self._emit(
+                            {
+                                "type": "root",
+                                "index": index,
+                                "total": len(configured),
+                                "provider": spec["provider"],
+                                "path": spec["path"],
+                                "status": "unavailable",
+                            }
+                        )
                         continue
+                    self._emit(
+                        {
+                            "type": "root",
+                            "index": index,
+                            "total": len(configured),
+                            "provider": spec["provider"],
+                            "path": spec["path"],
+                            "status": "active",
+                        }
+                    )
                     try:
                         for path in iter_sources(root, self.store.home, exclusions):
                             provider = spec["provider"]
@@ -382,6 +418,17 @@ class Ingestor:
                             seen.add(key)
                             self.stats["sources"] += 1
                             self.refresh_source(provider, path, verify, rebuild)
+                            self._emit(
+                                {
+                                    "type": "source",
+                                    "done": self.stats["sources"],
+                                    "provider": provider,
+                                    "path": str(path),
+                                    "status": self._source_status(provider, path),
+                                    "parsed": self.stats["parsed_records"],
+                                    "inserted": self.stats["inserted_records"],
+                                }
+                            )
                     except (OSError, ValueError, sqlite3.Error) as exc:
                         self.stats["failed"] += 1
                         errors.append({"code": type(exc).__name__, "provider": spec["provider"]})
@@ -436,6 +483,12 @@ class Ingestor:
                     (now(), run),
                 )
                 raise
+
+    def _source_status(self, provider: str, path: Path) -> str:
+        row = self.store.db.execute(
+            "SELECT status FROM sources WHERE provider=? AND path=?", (provider, str(path))
+        ).fetchone()
+        return str(row["status"]) if row else "unknown"
 
     def refresh_source(self, provider: str, path: Path, verify: bool, rebuild: bool) -> None:
         signature = source_signature(path)
@@ -602,6 +655,16 @@ class Ingestor:
                     diagnostics.append({"code": "malformed_record", "line": line})
                     partial = True
                 diagnostics = diagnostics[:30]
+                if self.progress is not None and line % _PROGRESS_EVERY == 0:
+                    self._emit(
+                        {
+                            "type": "progress",
+                            "done": self.stats["sources"],
+                            "path": str(path),
+                            "parsed": self.stats["parsed_records"],
+                            "inserted": self.stats["inserted_records"],
+                        }
+                    )
             final = os.fstat(stream.fileno())
             if (
                 final.st_size != start.st_size
@@ -636,6 +699,16 @@ class Ingestor:
         partial = False
         with os.fdopen(open_regular(path), "rb") as stream:
             for line, raw, code in iter_zstd_lines(stream):
+                if self.progress is not None and line % _PROGRESS_EVERY == 0:
+                    self._emit(
+                        {
+                            "type": "progress",
+                            "done": self.stats["sources"],
+                            "path": str(path),
+                            "parsed": self.stats["parsed_records"],
+                            "inserted": self.stats["inserted_records"],
+                        }
+                    )
                 if code:
                     diagnostics.append({"code": code, "line": line})
                     partial = True
@@ -679,7 +752,17 @@ class Ingestor:
     def read_hermes(self, source: Any, path: Path, signature: str) -> None:
         generation = self.generation(source, True)
         diagnostics: list[dict[str, Any]] = []
-        for value in adapters.iter_hermes(path):
+        for position, value in enumerate(adapters.iter_hermes(path), 1):
+            if self.progress is not None and position % _PROGRESS_EVERY == 0:
+                self._emit(
+                    {
+                        "type": "progress",
+                        "done": self.stats["sources"],
+                        "path": str(path),
+                        "parsed": self.stats["parsed_records"],
+                        "inserted": self.stats["inserted_records"],
+                    }
+                )
             if isinstance(value, Diagnostic):
                 if len(diagnostics) < 30:
                     diagnostics.append(asdict(value))

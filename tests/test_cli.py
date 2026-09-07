@@ -689,6 +689,14 @@ def test_grouped_help_lists_commands_under_workflow_sections(cli):
     assert not cli.state.exists()
 
 
+@pytest.mark.parametrize("command", ["resume", "search", "source", "project", "memory", "export"])
+def test_subcommand_help_keeps_the_stock_formatter(cli, command):
+    output = cli.run(command, "--help", json_output=False).stdout
+    assert command in output
+    assert "Setup:" not in output and "commands:" not in output
+    assert not cli.state.exists()
+
+
 def test_setup_timezone_origin_is_explicit_detected_or_fallback(cli):
     explicit = cli.run("setup", "--timezone", "Europe/Istanbul", json_output=False).stdout
     assert "Timezone: Europe/Istanbul (explicit)" in explicit

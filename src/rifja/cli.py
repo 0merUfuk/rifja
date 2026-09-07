@@ -78,7 +78,12 @@ COMMAND_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
 
 
 class GroupedHelpParser(argparse.ArgumentParser):
-    """Replace argparse's single command list with workflow-grouped help."""
+    """Root-only help formatting: commands grouped by workflow instead of one list.
+
+    Subparsers are created with parser_class=argparse.ArgumentParser so leaf
+    commands keep the stock formatter; this class must never be reached without
+    a subparsers action.
+    """
 
     def format_help(self) -> str:
         text = super().format_help()
@@ -86,11 +91,11 @@ class GroupedHelpParser(argparse.ArgumentParser):
         try:
             head = lines.index("positional arguments:")
             tail = next(i for i in range(head + 1, len(lines)) if lines[i] == "options:")
+            subparsers = next(
+                action for action in self._actions if isinstance(action, argparse._SubParsersAction)
+            )
         except ValueError, StopIteration:
             return text
-        subparsers = next(
-            action for action in self._actions if isinstance(action, argparse._SubParsersAction)
-        )
         # The per-command help strings live on the subparsers action, not the parsers.
         helps = {
             item.dest: str(item.help or "").strip()
@@ -360,7 +365,12 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--home", type=Path, help="Private application state directory")
     p.add_argument("--json", action="store_true", help="Versioned JSON output")
     p.add_argument("-q", "--quiet", action="store_true", help="Suppress refresh progress output")
-    sub = p.add_subparsers(dest="command", required=True, metavar="COMMAND")
+    sub = p.add_subparsers(
+        dest="command",
+        required=True,
+        metavar="COMMAND",
+        parser_class=argparse.ArgumentParser,
+    )
     setup = sub.add_parser("setup", help="Initialize local configuration")
     setup.add_argument(
         "--timezone", help="IANA zone; detected from TZ or /etc/localtime when omitted"

@@ -55,11 +55,11 @@ The engine is better than the storefront. Every gap in §1.2 is presentation or 
 
 ## 2. Market Landscape
 
-*(Research agents still returning; this section is being finalized. Current verified/recovered findings:)*
+*(Primary-source findings, collected and verified 2026-09-07:)*
 
 ### 2.1 Memory plugins for coding agents `[R]`
 
-- **claude-mem** (thedotmack) — the closest well-known neighbor and the category's scale proof: **Apache-2.0, 93.4k stars, 334 open issues, pushed 2026-09-07** `[V]` (GitHub API). Plugin-marketplace distribution, SQLite (158MB observed locally) + Chroma vector store, LLM-compressed "observations," background worker with health supervision, multi-platform plugin dirs (`.claude-plugin`, `.codex-plugin`, `.cursor-plugin`, `.grok-plugin`), monetized via cmem.ai Pro. Its open issues document the LLM+vector architecture's failure modes: 74GB swap exhaustion from orphaned process pairs (#3905), a 395GB Chroma store filling a disk (#3879), observer recording untested hypotheses as confident findings and never amending them (#3897), 82% of condense calls discarded after timeout on oversized payloads (#3839), cross-session message dispatch (#3812). Sources: github.com/thedotmack/claude-mem (issues).
+- **claude-mem** (thedotmack) — the closest well-known neighbor and the category's scale proof: **Apache-2.0, 93.4k stars, 334 open issues, pushed 2026-09-07** `[R]` (GitHub API). Plugin-marketplace distribution, SQLite (158MB observed locally) + Chroma vector store, LLM-compressed "observations," background worker with health supervision, multi-platform plugin dirs (`.claude-plugin`, `.codex-plugin`, `.cursor-plugin`, `.grok-plugin`), monetized via cmem.ai Pro. Its open issues document the LLM+vector architecture's failure modes: 74GB swap exhaustion from orphaned process pairs (#3905), a 395GB Chroma store filling a disk (#3879), observer recording untested hypotheses as confident findings and never amending them (#3897), 82% of condense calls discarded after timeout on oversized payloads (#3839), cross-session message dispatch (#3812). Sources: github.com/thedotmack/claude-mem (issues).
 - **Lesson:** the LLM+vector approach buys compression but costs reliability, disk, money, and trust — and its failures are exactly the failure modes Rifja's determinism eliminates.
 
 ### 2.2 Session/continuity tool ecosystem `[R]` (verified via GitHub API, 2026-09-07)
@@ -76,7 +76,7 @@ The engine is better than the storefront. Every gap in §1.2 is presentation or 
 | claude-supermemory | MAINTAINED | 2,745 | 2026-09-07 | **No (cloud)** | **NONE** |
 | opencode-claude-memory | MAINTAINED | 57 | 2026-09-06 | Yes | MIT |
 
-**Headline: 2 of 9 dead (including the largest, at 28k stars), 1 stale, 1 pivoted out of the category, 1 cloud-only and unlicensed.** Only four are both maintained *and* local-first — and those are the smallest. Sources: github.com/ccusage/ccusage · github.com/stravu/crystal (deprecated → nimbalyst.com; issue #235) · github.com/BloopAI/vibe-kanban (sunset post 2026-04-10: "couldn't find a business model"; upgrade wiped tasks #2687; sunset build made projects export-only #3396) · github.com/omnara-ai/omnara (pivoted to managed-agent runtime) · github.com/smtg-ai/claude-squad (maintainer bandwidth admission, #250) · github.com/dchu917/ctx (one zero-comment issue in its lifetime) · github.com/supermemoryai/claude-supermemory (no LICENSE file — all rights reserved; per-worktree memory silos #27; ignored `skipTools` capture #12).
+**Headline: 2 of 9 dead (including the largest, at 28k stars), 1 stale, 1 pivoted out of the category, 1 cloud-only and unlicensed.** Only three are both maintained *and* local-first — and those are the smallest. Sources: github.com/ccusage/ccusage · github.com/stravu/crystal (deprecated → nimbalyst.com; issue #235) · github.com/BloopAI/vibe-kanban (sunset post 2026-04-10: "couldn't find a business model"; upgrade wiped tasks #2687; sunset build made projects export-only #3396) · github.com/omnara-ai/omnara (pivoted to managed-agent runtime) · github.com/smtg-ai/claude-squad (maintainer bandwidth admission, #250) · github.com/dchu917/ctx (one zero-comment issue in its lifetime) · github.com/supermemoryai/claude-supermemory (no LICENSE file — all rights reserved; per-worktree memory silos #27; ignored `skipTools` capture #12).
 
 Ecosystem lessons that shape the recommendations:
 
@@ -132,7 +132,6 @@ Ecosystem lessons that shape the recommendations:
 | Letta (MemGPT) | Agent-state server | Yes (`letta` code CLI) | Desktop app | Local supported; Docker unsupported | SDK, Slack | SDK | Yes (Apache-2.0, 24.6k★) | Real CLI + memory blocks | Every turn needs an LLM; compaction wiped history (#3270) | `/doctor` in a memory CLI is good UX to copy |
 | Graphiti/Zep | Temporal knowledge graph | No (lib + MCP server) | Zep cloud console | OSS local but heaviest (Neo4j/FalkorDB + LLM) | MCP server | SDK | Yes (Apache-2.0, 30.7k★) | Bi-temporal provenance model | LLM-bound ingest; fragile local setup (#868, #566) | Bi-temporality is the right idea, done with heavy machinery |
 | claude-mem | Memory plugin | Limited | None (worker logs) | Partial (LLM API cloud) | CC, Codex, Cursor, Grok | CC plugin marketplace | Yes (Apache-2.0, 93.4k★) | Set-and-forget capture at scale | 334 open issues; stability/resource/trust failures are architectural | Distribution via marketplace works; reliability is the differentiator gap |
-| claude-mem | Memory plugin | Limited | None (worker logs) | Partial (LLM API cloud) | CC, Codex, Cursor, Grok | CC plugin marketplace | Yes (Apache-2.0, 93.4k★) | Set-and-forget capture at scale | 334 open issues; stability/resource/trust failures are architectural | Distribution via marketplace works; reliability is the differentiator gap |
 | ccusage | Usage analytics | Yes | No (statusline hook) | Yes | Reads 18 agent CLIs | Statusline hook | Yes (MIT, 18.4k★) | Zero-vendor-cooperation adoption | Value hostage to one upstream field (#4) | Freeze a durable own-format index |
 | Conductor | Parallel agent workspaces | No (GUI only) | Native Mac app | Hybrid (cloud on Pro $50/mo) | CC, Codex, Cursor | Wraps CLIs | No | Polished GUI commercial winner | Closed; cloud monetization path | The GUI wedge is real — and monetized via cloud |
 | Crystal | Session manager | No (Electron) | Native app | Yes | CC | None | Yes (MIT, 3.1k★) | Worktree parallelism | **Dead** (deprecated 2026-02 → Nimbalyst) | UI-heavy continuity = abandonware risk |
@@ -150,8 +149,6 @@ Ecosystem lessons that shape the recommendations:
 ---
 
 ## 4. Recurring Industry Patterns
-
-*(Being finalized with agent data; core patterns already supported:)*
 
 - **CLI UX `[R]`:** clig.dev conventions — human-readable by default, `--json` for machines, grouped help, errors that state problem + next action, `NO_COLOR`/TTY detection. Modern tools (uv, gh, cargo) group commands by noun and mark a "start here" path.
 - **Localhost dashboards `[R]`** (verified current defaults): the universal pattern is *one subcommand → loopback bind → print URL*. **Auth is the differentiator:** Jupyter alone ships token auth on by default (`127.0.0.1:8888`, auto-generated token, `--no-browser`); MLflow (5000), TensorBoard (6006), Streamlit (8501), Aim (43800) all default to **no auth** — acceptable for experiment data, not for private transcripts. **Auto-open is *not* the norm:** only Streamlit opens a browser by default (and auto-disables when `DISPLAY` is unset over SSH); TensorBoard/MLflow/Aim/Jupyter print the URL and stay quiet. Aim also has `--read-only` and `--uds` flags — a Unix-socket serve mode is a strong option for a zero-network-posture tool.
@@ -193,7 +190,7 @@ Concrete shape:
 1. **Command groups in help:** Setup (`setup init doctor config`), Data (`source document project refresh retention forget`), Inspect (`daily resume session tasks decisions items search explain`), Deliver (`export memory constitution backup restore`). Overview screen when bare `rifja` is run: one-line what-it-is + "start here" (exit 2 preserved, text humanized).
 2. **Status vocabulary:** one glyph/word system — `✓ passed`, `⚠ partial`, `✗ failed`, `• info` — with plain-text fallback (`passed/partial/failed`) when not a TTY; identical vocabulary in CLI, doctor, dashboard.
 3. **Progress for long operations:** `refresh` emits a stderr progress line (source n/m, records parsed/inserted, current file) on a bounded cadence (e.g. every 250ms, updated in place on TTY, plain new lines otherwise). `--quiet` suppresses. JSON mode: progress on stderr, final envelope on stdout — so existing automation is untouched. Exit 3 partial already correct; add a human summary of *which* sources were partial.
-4. **Error hint map:** every contract label gets a next-action line, e.g. `project_not_found` → "Registered projects: `rifja project list`. Register one: `rifja project add PATH`." Hints live in one dict keyed by the contract label; `--json` payloads gain an optional `hints` array (additive, versioned).
+4. **Error hint map:** every contract label gets a next-action line, e.g. `project_not_found` → "Registered projects: `rifja project list`. Register one: `rifja project add PATH`." Hints live in one dict keyed by the contract label. JSON contract addition: today the error path writes plain text to stderr and never emits an envelope (`cli.py` catches `ValueError`/`BusyError` → exit 2/4 `[V]`); this proposal defines a **versioned JSON error envelope** for `--json` mode — `{schema_version, error: {code, message?, hints: []}}` on stdout with exit codes 2/3/4 unchanged — so automation gets machine-readable hints too. Success payloads gain no new fields.
 5. **Human renderers for every command that currently dumps JSON** (`setup`, `doctor`, `source list`, `search`, `config get`): short tables/lines; JSON still available via `--json`. Fix the double-encoded `stats` string at the same time (parse before render).
 6. **Verbosity:** `-q`/`--verbose` global pair; default is concise; verbose adds per-source diagnostics that today only appear in JSON.
 
@@ -208,10 +205,10 @@ Non-goals: no interactive TUI framework, no mouse, no live-refreshing screens (k
 Flow (all stdlib, no prompts library):
 
 1. Detect existing state → offer resume-vs-fresh.
-2. **Timezone:** detect from `TZ` env → `/etc/localtime` symlink (stdlib `os.readlink`; this machine resolves `Europe/Istanbul`) → verify with `ZoneInfo()` → propose, allow override. Never silently default to UTC (`cli.py:47` today).
+2. **Timezone:** detect from `TZ` env → `/etc/localtime` symlink (stdlib `os.readlink`; this machine resolves `Europe/Istanbul`) → verify the extracted key with `ZoneInfo()` (IANA validation only — a missing symlink or a non-IANA regular file ends the chain). If every detection step fails, the wizard **asks** with UTC pre-filled as an explicit question; UTC is never applied silently (`cli.py:47` today). An explicit `--timezone` flag overrides the whole chain.
 3. **Discovery:** run `source discover`, present found provider paths as a numbered menu ("register codex sessions at ~/.codex/sessions? [Y/n]"), each registration echoing the read-only promise. Where the producer has a deletion policy (e.g. Claude Code's 30-day transcript sweep `[R]`), say so in one line: registration is what makes this history survive.
 4. **Projects:** offer `project discover`-style suggestions (explicit paths only — never implicit disk scanning), or skip.
-5. **First refresh** with the §6 progress line, then print a human summary: N sources, M records, K projects, plus `rifja resume PROJECT` as the "start here."
+5. **First refresh as an explicit consent step:** the wizard states that refreshing writes indexed records, refresh state, and coverage data into the private state directory, and runs only on confirmation (registration consent does not implicitly authorize it). Runs with the §6 progress line, then prints a human summary: N sources, M records, K projects, plus `rifja resume PROJECT` as the "start here."
 6. End with `doctor` (human mode) as the health gate.
 7. Any command run with empty state and no setup → one-line hint: "No state yet — run `rifja init`." (Today: silent JSON.)
 
@@ -228,10 +225,11 @@ Why it fits the architecture: `App` is already the service layer; a UI is a thir
 Trust model (must stay inside the threat model's claim "no unauthenticated network endpoint"):
 
 - Bind `127.0.0.1` only, explicit `--port` with a default in a Rifja-owned range, refuse to start if the port is taken (never fall back silently).
-- **Per-launch random token** required in the URL (`http://127.0.0.1:PORT/?t=…`), Jupyter-style — this is deliberately *above* category norm (MLflow/TensorBoard/Streamlit/Aim all default to no auth `[R]`), because session transcripts are more sensitive than experiment metrics. `--uds` Unix-socket mode (Aim has one `[R]`) is the optional zero-TCP posture.
+- **One-time bootstrap token, not a reusable URL credential:** launch prints `http://127.0.0.1:PORT/?t=<one-time>`; the first authenticated request exchanges it for a scoped, expiring `HttpOnly`+`SameSite=strict` session cookie, the bootstrap token is invalidated immediately, and all routes (including `/state`) require the session. Response headers `Cache-Control: no-store`, `Referrer-Policy: no-referrer`. This is deliberately *above* category norm (MLflow/TensorBoard/Streamlit/Aim default to no auth `[R]`; a bare query-param token would persist in browser history, copies, and logs) because session transcripts are more sensitive than experiment metrics. `--uds` Unix-socket mode (Aim has one `[R]`) remains the optional zero-TCP posture.
+- **Output encoding is a renderer invariant, not an afterthought:** transcript-derived content is adversarial by the threat model's own definition, and loopback binding plus tokens do not neutralize it. The HTML renderer defines context-specific escaping (HTML body, attribute, URL) as separate functions, prohibits inline script interpolation entirely, ships a restrictive CSP (`default-src 'none'` + minimal style/img policy), and is tested against adversarial transcript fixtures (escaped markdown, `javascript:` URLs, attribute-breaking content) — the HTML counterpart of `render.safe_output()`.
 - Browser behavior per verified convention: print the URL and stay quiet (Jupyter/TensorBoard/MLflow norm); open the browser only with an explicit `--open` flag (or interactive TTY confirmation). Auto-open without asking is the exception in the ecosystem, not the rule.
 - Read-only in v1: GET-only handlers; no mutation endpoints at all — this is the strongest possible answer to "what is safe to expose."
-- v2 (optional, explicit): a small allowlist of safe operations already CLI-exposed (`refresh`, `doctor`) behind POST + token + confirm; still no delete/export-to-disk from the browser.
+- v2 (optional, explicit): a small allowlist of safe operations already CLI-exposed (`refresh`, `doctor`) behind POST + session + confirm; still no delete/export-to-disk from the browser.
 
 Pages (each maps to an existing `App` method): Overview (doctor checks + coverage + last refresh), Timeline (daily), Sessions, Search (FTS5 `search`), Evidence/explain, Memory/constitution, Sources & scope. Every figure carries the same provenance labels as the CLI — the dashboard's differentiator is *evidence inspection*, not charts.
 
@@ -255,10 +253,15 @@ The integration layer is three thin surfaces per platform. One honesty item firs
 
 **Decision: build the MCP server as the single query surface for all three platforms** rather than per-platform plugins. One stdlib JSON-RPC implementation over `App` methods serves every current and future MCP-capable agent; marketplace/plugin packaging (claude-mem-proven distribution) becomes a thin manifest on top, not a code fork. The hook/prompt snippets per platform stay 10–30 lines each.
 
-Two design rules borrowed from verified competitor failures:
+**MCP transport and authorization boundary (v1): stdio-only.** The server is spawned by the agent host (`mcp_servers` entry in Codex `config.toml` `[R]`, CC plugin/MCP config) and speaks JSON-RPC on stdin/stdout — no TCP listener, no daemon, no port. This preserves the threat model's "no unauthenticated network endpoint" property by construction: whoever can spawn the process already holds the operator's local authority. A socket- or network-capable transport is out of scope until it ships with explicit authentication, because tool results return transcript data.
+
+Contention contract over MCP: `Store.BusyError` maps to a **per-request application-level error** — a successful JSON-RPC result with `isError: true`, a stable error code (reusing the CLI's contract labels), and retry guidance — never a server crash or a CLI exit code. The long-lived server stays available for subsequent requests.
+
+Three design rules borrowed from verified competitor failures:
 
 1. **Hooks must never stall the agent.** claude-supermemory's Windows hooks hang Claude Code for the full 30-second timeout `[R]`; Rifja's hook snippets must be `timeout`-bounded, output-bounded, and fail open (no output on error) — the SessionStart injection is best-effort decoration, never load-bearing.
-2. **Injection must respect the authority model.** What a hook injects is *agent-visible historical evidence*, not instructions — it already renders through the same authority-separating render path (`briefing.py`/`render.py`), preserving quote fencing and superseded-generation exclusion. Memory bloat (§2.5) is the failure mode to design against: bounded export sizes (already enforced, 24k chars `[V]`) are a feature to advertise, not a limit to lift.
+2. **Injection stays in a data-only channel.** Transcript-derived text is untrusted model input: escaping and section labels do not stop a target agent from *following* instructions hidden inside it. Hook output and MCP tool results present content as quoted historical evidence through the authority-separating render path (`briefing.py`/`render.py`) — never inside instruction-priority files (`CLAUDE.md`, `AGENTS.md`), and memory fields carry only operator-accepted entries, never raw transcript text. Adversarial SessionStart fixtures (transcript text containing instructions) are part of the acceptance tests. Memory bloat (§2.5) is the failure mode to design against: bounded export sizes (already enforced, 24k chars `[V]`) are a feature to advertise, not a limit to lift.
+3. **Injection must respect the authority model.** What a hook injects is *agent-visible historical evidence*, not instructions — preserving quote fencing and superseded-generation exclusion is what keeps imported authority conditional, exactly as the CLI contract already guarantees.
 
 Preserved boundary: adapters remain format-parsers in `adapters.py`; they never gain network or execution behavior; the MCP server is read-only over the same store.
 
@@ -335,7 +338,7 @@ The genuinely defensible moat is the evidence discipline (authority separation, 
 |---|---|---|
 | Producer format churn — **explicitly anticipated by Claude Code's docs** ("scripts that parse these files directly can break on any release" `[R]`); Codex rollouts undocumented/unstable | High | Treat breakage as scheduled: adapter-version registry surfaced in `doctor`; tolerate/flag unknown shapes (partial coverage + diagnostics already built `[V]`); pinned test corpora per format version; fail as *partial coverage*, never silent corruption |
 | Dashboard weakens the "no network endpoint" threat-model claim | High if careless | Loopback-only + per-launch token + read-only GET v1; update threat model doc with the UI as an explicit entry point |
-| MCP/server code adds a second concurrency surface against the writer lock | Medium | Reuse `Store` locking unchanged; MCP handlers are just `App` calls; explicit busy contract (exit 4 semantics) |
+| MCP/server code adds a second concurrency surface against the writer lock | Medium | Reuse `Store` locking unchanged; MCP handlers are just `App` calls; per-request `isError: true` contract with stable codes and retry guidance — server never exits on contention (§9) |
 | Maintenance breadth: 3 platforms × formats × versions | Medium | Thin adapters only; no per-platform business logic; drop-platform is cheap by design |
 | Scope creep into orchestrator/executor | Medium | §13 non-goals are binding; every PR names its layer |
 | Presentation layer rework regresses automation (`--json` consumers) | Low | JSON envelope frozen; ANSI only on TTY; snapshot tests for JSON outputs |
@@ -361,7 +364,7 @@ The genuinely defensible moat is the evidence discipline (authority separation, 
 
 | Phase | Scope | Exit evidence |
 |---|---|---|
-| **0 — Storefront** (first) | §6 CLI presentation layer; TZ detection fix; error hint map; human renderers for all JSON-dumping commands; refresh progress; bare-`rifja` overview | Every command has a human mode indistinguishable in quality from `tasks`; refresh shows progress; JSON snapshot tests unchanged |
+| **0 — Storefront** (first) | §6 CLI presentation layer; TZ detection fix; error hint map + versioned JSON error envelope; human renderers for all JSON-dumping commands; refresh progress; bare-`rifja` overview | Every command has a human mode indistinguishable in quality from `tasks`; refresh shows progress; existing success-payload JSON snapshots unchanged; the new error envelope ships as its own versioned contract with snapshot tests |
 | **1 — Onboarding** | `rifja init` wizard (§7); discovery-to-registration menu; empty-state hints; doctor as first-run gate | Fresh machine → useful state in <5 min, all steps confirmed, zero network |
 | **2 — Ecosystem in** | MCP server (search/resume/explain/memory, read-only); CC SessionStart hook + skill (timeout-bounded, fail-open); Codex `config.toml` + AGENTS.md docs; CC `CLAUDE.md` pointer (not AGENTS.md `[R]`); Hermes briefing snippet | Agent in each platform answers a "where was I" question via Rifja with provenance intact; hooks provably cannot stall a session (bounded-fail-open tests) |
 | **3 — Dashboard** | `rifja ui` read-only (§8): overview/timeline/sessions/search/evidence/memory | Loopback+token; GET-only; every figure traceable to an App method; threat model updated |
@@ -373,7 +376,7 @@ Phases 0–1 before any ecosystem work: the storefront problem is the adoption b
 
 ## 15. Final Recommendation
 
-Proceed with **shared core → CLI + optional local dashboard + thin MCP-based ecosystem adapters**, in that order. The architecture audit found the expensive part already done: `App` is a genuine service layer, so every proposed surface is presentation-only. The competitive audit found the opposite of a crowded gap in our specific cell: memory plugins are LLM-dependent and visibly unreliable; observability tools don't do retrospective transcript history; platforms prune short-horizon and stay single-vendor. Rifja's restraint (no LLM, no cloud, explicit scope, provenance) is not a limitation to hide — it is the differentiator, and phases 0–1 (storefront + onboarding) are the prerequisite to any of it being discoverable.
+Proceed with **shared core → CLI + optional local dashboard + thin MCP-based ecosystem adapters**, in that order. The architecture audit found the expensive part already done: `App` is a genuine service layer, so every proposed surface is thin — surfaces may orchestrate `App` calls (including state-changing ones like `rifja init`'s setup/registration/first refresh), while persistence, policy, and redaction stay owned by the core (`App`/`Store`/`privacy`), never reimplemented in a surface. The competitive audit found the opposite of a crowded gap in our specific cell: memory plugins are LLM-dependent and visibly unreliable; observability tools don't do retrospective transcript history; platforms prune short-horizon and stay single-vendor. Rifja's restraint (no LLM, no cloud, explicit scope, provenance) is not a limitation to hide — it is the differentiator, and phases 0–1 (storefront + onboarding) are the prerequisite to any of it being discoverable.
 
 ---
 

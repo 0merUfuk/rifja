@@ -1,10 +1,14 @@
-# Session Visualizer
+# Rifja
 
-Session Visualizer is a local CLI for resuming engineering work across agent sessions, projects and Git worktrees. It imports explicitly selected Codex, Claude Code and Hermes sources, preserves evidence references, and keeps user instructions, agent claims, recorded results and current Git observations separate.
+**Recover the context. Continue the work.**
 
-[![CI](https://github.com/0merUfuk/session-visualizer/actions/workflows/ci.yml/badge.svg)](https://github.com/0merUfuk/session-visualizer/actions/workflows/ci.yml)
+Named from Icelandic *rifja upp*: recall and review what you know. See the [naming decision and migration contract](docs/identity.md).
 
-Version **0.1.1**. Licensed under [MIT](LICENSE). Runtime collection and queries
+Rifja is a local CLI for resuming engineering work across agent sessions, projects and Git worktrees. It imports explicitly selected Codex, Claude Code and Hermes sources, preserves evidence references, and keeps user instructions, agent claims, recorded results and current Git observations separate.
+
+[![CI](https://github.com/0merUfuk/rifja/actions/workflows/ci.yml/badge.svg)](https://github.com/0merUfuk/rifja/actions/workflows/ci.yml)
+
+Version **0.2.0**. Licensed under [MIT](LICENSE). Runtime collection and queries
 need no network, model service or paid account.
 
 ## Install
@@ -12,8 +16,8 @@ need no network, model service or paid account.
 With [Homebrew](https://brew.sh) installed and on PATH:
 
 ```sh
-brew install 0merUfuk/thematrix/session-visualizer
-session-visualizer --version
+brew install 0merUfuk/thematrix/rifja
+rifja --version
 ```
 
 Homebrew manages Python 3.14, Git and the private application environment. You
@@ -22,15 +26,17 @@ required. Initial installation can download Homebrew dependencies.
 
 ```sh
 brew update
-brew upgrade 0merUfuk/thematrix/session-visualizer
-brew uninstall --force 0merUfuk/thematrix/session-visualizer
+brew upgrade 0merUfuk/thematrix/rifja
+brew uninstall --force 0merUfuk/thematrix/rifja
 ```
 
-Uninstall preserves application state, exports and backups. To move from an older
-private `session-visualizer/local` installation, remove all its installed versions with `brew uninstall --force session-visualizer/local/session-visualizer` first,
-then run the public install command above; your state stays in place.
+Uninstall preserves application state, exports and backups. Existing public
+`session-visualizer` installations migrate through Homebrew’s formula rename on
+`brew update` followed by `brew upgrade 0merUfuk/thematrix/rifja`.
+The former command remains an alias. Private local-tap users follow the
+[migration instructions](docs/identity.md#upgrading-existing-installations).
 
-[GitHub Releases](https://github.com/0merUfuk/session-visualizer/releases) also
+[GitHub Releases](https://github.com/0merUfuk/rifja/releases) also
 provide a wheel, source archive, checksums and an installer bundle. Extract the
 Homebrew bundle and run `./install.sh` if you need a specific release through a
 local tap. Do not install both tap variants at once. A source checkout requires
@@ -41,6 +47,8 @@ x86-64 with Homebrew. Consult the linked CI run for executed results. Windows is
 unsupported because the implementation uses POSIX locking and file traversal.
 Other platforms and Linux arm64 are not release-certified. This is a Homebrew-
 managed Python CLI; it is not a self-contained native executable.
+Intel macOS passed the release checks, but Homebrew no longer supports that
+platform upstream; dependency compilation may make initial installation slow.
 See [release verification and Homebrew delivery](docs/homebrew.md).
 
 ## Start with one project
@@ -48,23 +56,23 @@ See [release verification and Homebrew delivery](docs/homebrew.md).
 Replace the example repository and transcript paths with directories you intend to import. Discovery only shows candidate locations; it does not import them.
 
 ```sh
-session-visualizer setup --timezone Europe/Istanbul
-session-visualizer project add "/path/to/project" --name harbor
-session-visualizer document add harbor
-session-visualizer source discover
-session-visualizer source add codex "/path/to/codex/sessions"
-session-visualizer refresh
-session-visualizer source list
-session-visualizer daily --project harbor
-session-visualizer resume harbor
+rifja setup --timezone Europe/Istanbul
+rifja project add "/path/to/project" --name harbor
+rifja document add harbor
+rifja source discover
+rifja source add codex "/path/to/codex/sessions"
+rifja refresh
+rifja source list
+rifja daily --project harbor
+rifja resume harbor
 ```
 
 `document add` opts one registered worktree into bounded README, status, verification and architecture documents. `resume` combines purpose, current Git state, pending work and its conditions, decisions, accepted memory and uncertainty. Documented purpose is separate from a current user objective. Recorded results and document claims do not certify current code. Use `resume harbor --cached` for stored Git observations; documents change only through explicit `refresh`.
 
 ```sh
-session-visualizer search "parser fixture" --project harbor --json
-session-visualizer daily 2026-09-01 --to 2026-09-05 --project harbor
-session-visualizer export harbor --format markdown --output "./harbor-handoff.md"
+rifja search "parser fixture" --project harbor --json
+rifja daily 2026-09-01 --to 2026-09-05 --project harbor
+rifja export harbor --format markdown --output "./harbor-handoff.md"
 ```
 
 Output files must not already exist. Exports include accepted project/global memory, keep imported excerpts labeled as untrusted context, and disclose omissions within the chosen size limit. Inspect those notices before passing context to another agent.
@@ -80,8 +88,8 @@ Output files must not already exist. Exports include accepted project/global mem
 - [Development checks and release procedure](docs/development.md)
 - [Contributing](CONTRIBUTING.md) and [security reports](SECURITY.md)
 
-`session-visualizer --help` and each subcommand's `--help` list the available options. `--json` and `--home PATH` work before or after subcommands. Normal successful JSON responses include `schema_version`, `command` and `data`; errors are written to stderr.
+`rifja --help` and each subcommand's `--help` list the available options. `--json` and `--home PATH` work before or after subcommands. Normal successful JSON responses include `schema_version`, `command` and `data`; errors are written to stderr.
 
-On macOS, state defaults to `~/Library/Application Support/SessionVisualizer`. On other supported Unix environments it defaults to `$XDG_DATA_HOME/session-visualizer`, or `~/.local/share/session-visualizer` when that variable is unset. Set `SESSION_VISUALIZER_HOME` or pass `--home PATH` to use a separate state directory.
+On macOS, state defaults to `~/Library/Application Support/Rifja`. On other supported Unix environments it defaults to `$XDG_DATA_HOME/rifja`, or `~/.local/share/rifja` when that variable is unset. Set `RIFJA_HOME` or pass `--home PATH` to use a separate state directory. Existing legacy state is reused in place and `SESSION_VISUALIZER_HOME` remains supported. If both default directories exist, select one explicitly; Rifja will not silently merge or discard either. See the [precedence rules](docs/identity.md#state-and-command-compatibility).
 
 Source transcripts and repository contents are read-only inputs. The application writes its own local state, explicit exports and backups. Secret redaction is best effort, not encryption or a guarantee that every sensitive value is removed. Review exports before sharing them. Deleting the program does not delete its state, backups, exports or producer transcripts.

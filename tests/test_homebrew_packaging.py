@@ -18,11 +18,11 @@ spec.loader.exec_module(packaging)
 
 def wheel(tmp_path, dependencies=""):
     version = tomllib.loads((packaging.ROOT / "pyproject.toml").read_text())["project"]["version"]
-    path = tmp_path / f"session_visualizer-{version}-py3-none-any.whl"
+    path = tmp_path / f"rifja-{version}-py3-none-any.whl"
     with zipfile.ZipFile(path, "w") as archive:
         archive.writestr(
-            f"session_visualizer-{version}.dist-info/METADATA",
-            f"Metadata-Version: 2.4\nName: session-visualizer\nVersion: {version}\n"
+            f"rifja-{version}.dist-info/METADATA",
+            f"Metadata-Version: 2.4\nName: rifja\nVersion: {version}\n"
             "Requires-Python: >=3.14\nLicense-Expression: MIT\n" + dependencies,
         )
     return path

@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from session_visualizer.adapters import hermes_signature, iter_hermes, normalize
-from session_visualizer.models import Diagnostic, Record
+from rifja.adapters import hermes_signature, iter_hermes, normalize
+from rifja.models import Diagnostic, Record
 
 FIXTURES = Path(__file__).parent / "fixtures" / "providers"
 

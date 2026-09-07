@@ -1,10 +1,10 @@
 import json
 import subprocess
 
-from session_visualizer.app import App
-from session_visualizer.ingest import Ingestor
-from session_visualizer.render import bounded_export, resume_markdown
-from session_visualizer.store import Store
+from rifja.app import App
+from rifja.ingest import Ingestor
+from rifja.render import bounded_export, resume_markdown
+from rifja.store import Store
 
 
 def test_moved_repository_preserves_previously_observed_event_identity(tmp_path):

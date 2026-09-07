@@ -13,8 +13,8 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from session_visualizer.extract import extract
-from session_visualizer.models import Record
+from rifja.extract import extract
+from rifja.models import Record
 
 CORPUS_PATH = Path(__file__).parent / "corpus" / "continuity.json"
 CORPUS = json.loads(CORPUS_PATH.read_text())

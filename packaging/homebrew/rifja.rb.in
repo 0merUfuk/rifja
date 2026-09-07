@@ -1,8 +1,8 @@
-class SessionVisualizer < Formula
+class Rifja < Formula
   include Language::Python::Virtualenv
 
   desc "Offline, evidence-aware continuity for local agent sessions and Git"
-  homepage "https://github.com/0merUfuk/session-visualizer"
+  homepage "https://github.com/0merUfuk/rifja"
   url @@URL@@, using: :nounzip
   version @@VERSION@@
   sha256 @@SHA256@@
@@ -20,10 +20,10 @@ class SessionVisualizer < Formula
   end
 
   test do
-    ENV["SESSION_VISUALIZER_HOME"] = (testpath/"state").to_s
-    assert_equal version.to_s, shell_output("#{bin}/session-visualizer --version").strip
-    system bin/"session-visualizer", "setup", "--timezone", "Europe/Istanbul"
-    system bin/"session-visualizer", "doctor"
+    ENV["RIFJA_HOME"] = (testpath/"state").to_s
+    assert_equal version.to_s, shell_output("#{bin}/rifja --version").strip
+    system bin/"rifja", "setup", "--timezone", "Europe/Istanbul"
+    system bin/"rifja", "doctor"
     system libexec/"bin/python", "-c", <<~PYTHON
       import sqlite3
       from compression import zstd

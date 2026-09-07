@@ -5,8 +5,8 @@ from pathlib import Path
 import pytest
 from test_resilience import app, encoded, isolated_environment, message, repository, run_git, source
 
-from session_visualizer.app import App
-from session_visualizer.ingest import Ingestor
+from rifja.app import App
+from rifja.ingest import Ingestor
 
 __all__ = ["app", "isolated_environment"]
 
@@ -176,7 +176,7 @@ def test_daily_older_sqlite_uses_existing_resolution_path(
     source(app, tmp_path, message("current", "TASK: Retain backend compatibility."))
     Ingestor(app.store).refresh()
     expected = app.daily("2025-01-02")
-    monkeypatch.setattr("session_visualizer.app.sqlite3.sqlite_version_info", (3, 24, 0))
+    monkeypatch.setattr("rifja.app.sqlite3.sqlite_version_info", (3, 24, 0))
     monkeypatch.setattr(
         app, "_daily_candidates", lambda *_: pytest.fail("Older SQLite requires the prior path")
     )

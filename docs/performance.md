@@ -66,7 +66,7 @@ Runtime package fingerprint: `d70c9f7cecfc972d5bd0d7b293ae97763867caa53b46b7ea18
 Evidence is retained in `.local/benchmark-installed-candidate-1/result.json`, `measurements.json`, `corpus.json`, the exact `generator.py` snapshot, and individual command output files. Exact executable paths are recorded privately in command evidence. The invocation was:
 
 ```sh
-.venv/bin/python tools/benchmark.py --preset large --output .local/benchmark-installed-candidate-1 --repetitions 7 --cli /path/to/installed/venv/bin/session-visualizer
+.venv/bin/python tools/benchmark.py --preset large --output .local/benchmark-installed-candidate-1 --repetitions 7 --cli /path/to/installed/venv/bin/rifja
 ```
 
 These results apply to the fingerprinted installed candidate and the described workload. The earlier baseline failed its query gate; this reference does not erase that failure. Subsequent runtime changes require their own verification. In particular, this JSONL performance corpus does not measure compressed-source throughput or full Hermes-database ingestion.

@@ -6,8 +6,8 @@ import pytest
 from test_independent_continuity import independent_cli as _independent_cli
 from test_independent_continuity import register_documents
 
-from session_visualizer.extract import extract
-from session_visualizer.models import Record
+from rifja.extract import extract
+from rifja.models import Record
 
 independent_cli = _independent_cli
 

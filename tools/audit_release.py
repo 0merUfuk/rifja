@@ -72,8 +72,8 @@ def main() -> None:
     root = Path(__file__).resolve().parents[1]
     version = tomllib.loads((root / "pyproject.toml").read_text())["project"]["version"]
     current_names = {
-        f"session_visualizer-{version}-py3-none-any.whl",
-        f"session_visualizer-{version}.tar.gz",
+        f"rifja-{version}-py3-none-any.whl",
+        f"rifja-{version}.tar.gz",
     }
     findings: list[dict] = []
     synthetic_matches: list[dict] = []
@@ -123,11 +123,9 @@ def main() -> None:
             findings.append(
                 {"scope": "git_index", "file": name, "rule": "outside_release_allowlist"}
             )
-    commits = git("rev-list", "--all", "--max-count=21").decode().splitlines()
-    if len(commits) > 20:
-        findings.append(
-            {"scope": "history", "rule": "history_exceeds_fresh_repository_audit_bound"}
-        )
+    # Audit all reachable history as the released repository grows; never silently
+    # truncate to the original fresh-repository commit budget.
+    commits = git("rev-list", "--all").decode().splitlines()
     history_files = 0
     for commit in commits:
         inspect("commit-metadata", git("show", "-s", "--format=fuller", commit), "history")
@@ -152,7 +150,7 @@ def main() -> None:
                         )
             for name, content in members.items():
                 inspect(name, content, path.name)
-                if name.startswith("session_visualizer/"):
+                if name.startswith(("rifja/", "session_visualizer/")):
                     if current and source.get("src/" + name) != content:
                         findings.append(
                             {"scope": path.name, "file": name, "rule": "wheel_source_mismatch"}
@@ -211,9 +209,9 @@ def main() -> None:
     if {a["file"] for a in archives if a["matches_current_version"]} != current_names:
         findings.append({"scope": "archives", "rule": "current_release_artifact_missing"})
     runtime = {
-        Path(name).name: content
+        name: content
         for name, content in source.items()
-        if name.startswith("src/session_visualizer/") and name.endswith(".py")
+        if name.startswith(("src/rifja/", "src/session_visualizer/")) and name.endswith(".py")
     }
     runtime_digest = hashlib.sha256()
     for name, content in sorted(runtime.items()):
@@ -226,6 +224,7 @@ def main() -> None:
         "source_files": len(source),
         "source_fingerprint": digest_files(source),
         "runtime_fingerprint": runtime_digest.hexdigest(),
+        "runtime_files": sorted(runtime),
         "tracked_files": len(list(filter(None, tracked))),
         "history_commits": len(commits),
         "history_files": history_files,

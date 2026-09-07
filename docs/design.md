@@ -4,7 +4,7 @@ Status: detailed design pressure-tested; implementation authorized by the commis
 
 ## Runtime and scope
 
-Use Python 3.14+ with SQLite FTS5, argparse, dataclasses and standard-library runtime dependencies. Use Python 3.14 to read established Zstandard archives with the standard library; development initially validated uncompressed workflows on 3.13 and final candidate validation uses 3.14. Develop on macOS arm64 Python 3.14; support claims require executed evidence. The distribution and executable command are both `session-visualizer`. The 0.1 series is MIT licensed and uses Homebrew-managed Python delivery with GitHub release artifacts. CLI/versioned JSON and bounded Markdown are the interoperability boundary. MCP would add server lifecycle and tool authorization surface without improving required offline workflows; defer it, keep application queries separate from rendering.
+Use Python 3.14+ with SQLite FTS5, argparse, dataclasses and standard-library runtime dependencies. Use Python 3.14 to read established Zstandard archives with the standard library; development initially validated uncompressed workflows on 3.13 and final candidate validation uses 3.14. Develop on macOS arm64 Python 3.14; support claims require executed evidence. The distribution and executable command are both `rifja`. The 0.1 series is MIT licensed and uses Homebrew-managed Python delivery with GitHub release artifacts. CLI/versioned JSON and bounded Markdown are the interoperability boundary. MCP would add server lifecycle and tool authorization surface without improving required offline workflows; defer it, keep application queries separate from rendering.
 
 ## Identity and persistence
 

@@ -1,3 +1,3 @@
-"""Local, evidence-aware engineering continuity."""
+"""Legacy module entry point; application implementation lives in rifja."""
 
-__version__ = "0.1.1"
+from rifja import __version__ as __version__

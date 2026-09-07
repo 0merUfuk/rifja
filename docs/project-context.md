@@ -7,13 +7,13 @@ network service is required. Extraction remains deterministic and bounded.
 ## Select documents
 
 ```sh
-session-visualizer project add /path/to/repository --name harbor
-session-visualizer document add harbor
-session-visualizer document list --json
-session-visualizer refresh
-session-visualizer resume harbor
-session-visualizer export harbor --format markdown --output ./harbor-handoff.md
-session-visualizer export harbor --format json --output ./harbor-handoff.json
+rifja project add /path/to/repository --name harbor
+rifja document add harbor
+rifja document list --json
+rifja refresh
+rifja resume harbor
+rifja export harbor --format markdown --output ./harbor-handoff.md
+rifja export harbor --format json --output ./harbor-handoff.json
 ```
 
 Default document names start with README, STATUS, VERIFICATION, ARCHITECTURE,
@@ -21,7 +21,7 @@ DECISION(S) or RELEASE(S), at the root or under `docs`. Supported content is UTF
 Markdown/text, plus an extensionless README. A different allowlist is explicit:
 
 ```sh
-session-visualizer document add harbor --include README.md --include STATUS.md --include docs/verification.md --max-files 12 --max-bytes 65536 --max-depth 2
+rifja document add harbor --include README.md --include STATUS.md --include docs/verification.md --max-files 12 --max-bytes 65536 --max-depth 2
 ```
 
 This replaces that worktree's document selection; it does not add another scan.

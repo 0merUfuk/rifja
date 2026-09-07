@@ -17,10 +17,10 @@ from pathlib import Path
 
 import pytest
 
-from session_visualizer import __version__
+from rifja import __version__
 
 ROOT = Path(__file__).resolve().parents[1]
-CONSOLE = Path(sys.executable).parent / "session-visualizer"
+CONSOLE = Path(sys.executable).parent / "rifja"
 
 
 class Console:
@@ -40,7 +40,7 @@ class Console:
                 (str(Path(sys.executable).parent), str(Path(git_binary).parent), "/usr/bin", "/bin")
             ),
             "HOME": str(self.home),
-            "SESSION_VISUALIZER_HOME": str(self.state),
+            "RIFJA_HOME": str(self.state),
             "XDG_DATA_HOME": str(self.home / "xdg data"),
             "CODEX_HOME": str(self.home / "codex candidate"),
             "CLAUDE_CONFIG_DIR": str(self.home / "claude candidate"),
@@ -199,11 +199,11 @@ def test_json_and_home_flags_before_or_after_nested_commands(cli, flags_first):
 
 
 def test_default_state_path_uses_the_controlled_home(cli):
-    del cli.env["SESSION_VISUALIZER_HOME"]
+    del cli.env["RIFJA_HOME"]
     expected = (
-        cli.home / "Library" / "Application Support" / "SessionVisualizer"
+        cli.home / "Library" / "Application Support" / "Rifja"
         if sys.platform == "darwin"
-        else Path(cli.env["XDG_DATA_HOME"]) / "session-visualizer"
+        else Path(cli.env["XDG_DATA_HOME"]) / "rifja"
     )
     assert cli.data("setup")["state_directory"] == str(expected)
     assert not cli.state.exists()

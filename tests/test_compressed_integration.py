@@ -2,9 +2,9 @@ import json
 import subprocess
 from compression import zstd
 
-from session_visualizer.app import App
-from session_visualizer.ingest import Ingestor
-from session_visualizer.store import Store
+from rifja.app import App
+from rifja.ingest import Ingestor
+from rifja.store import Store
 
 
 def test_compressed_rollout_complete_connector_and_archived_copy(tmp_path):

@@ -28,13 +28,13 @@ def main() -> None:
         expected_version = BytesParser().parsebytes(archive.read(metadata_path))["Version"]
     evidence = args.evidence.resolve()
     evidence.mkdir(parents=True, exist_ok=False, mode=0o700)
-    root = Path(tempfile.mkdtemp(prefix="session-visualizer-rc-"))
+    root = Path(tempfile.mkdtemp(prefix="rifja-rc-"))
     for name in ("home", "cwd", "sources"):
         (root / name).mkdir(mode=0o700)
     environment = root / "venv"
     venv.EnvBuilder(with_pip=True).create(environment)
     python = environment / "bin" / "python"
-    cli = environment / "bin" / "session-visualizer"
+    cli = environment / "bin" / "rifja"
     env = {
         "HOME": str(root / "home"),
         "PATH": f"{environment / 'bin'}:/opt/homebrew/bin:/usr/bin:/bin",
@@ -87,15 +87,23 @@ def main() -> None:
 
     run("install", [str(python), "-m", "pip", "install", "--no-index", "--no-deps", str(wheel)])
     assert run("version", [str(cli), "--version"]).strip() == expected_version
+    assert (
+        run("legacy-command", [str(environment / "bin/session-visualizer"), "--version"]).strip()
+        == expected_version
+    )
+    assert (
+        run("legacy-module", [str(python), "-I", "-m", "session_visualizer", "--version"]).strip()
+        == expected_version
+    )
     origin = run(
         "package-origin",
-        [str(python), "-I", "-c", "import session_visualizer; print(session_visualizer.__file__)"],
+        [str(python), "-I", "-c", "import rifja; print(rifja.__file__)"],
     ).strip()
     assert str(environment) in origin and "site-packages" in origin
     packages = json.loads(
         run("installed-packages", [str(python), "-m", "pip", "list", "--format=json"])
     )
-    assert {p["name"] for p in packages} <= {"pip", "setuptools", "session-visualizer"}
+    assert {p["name"] for p in packages} <= {"pip", "setuptools", "rifja"}
     network_denied = False
     if sandbox:
         canary = "import socket; s=socket.socket(); s.settimeout(1)\ntry:\n s.connect(('192.0.2.1',443))\n raise SystemExit(9)\nexcept PermissionError:\n print('OS_NETWORK_DENIED')"
@@ -269,7 +277,7 @@ def main() -> None:
     assert hashlib.sha256(source.read_bytes()).hexdigest() == source_hash
     # Index/process persistence was used for every command above. Uninstall touches no memory.
     before = hashlib.sha256((root / "state" / "state.sqlite3").read_bytes()).hexdigest()
-    run("uninstall", [str(python), "-m", "pip", "uninstall", "-y", "session-visualizer"])
+    run("uninstall", [str(python), "-m", "pip", "uninstall", "-y", "rifja"])
     after = hashlib.sha256((root / "state" / "state.sqlite3").read_bytes()).hexdigest()
     assert before == after
     run("reinstall", [str(python), "-m", "pip", "install", "--no-index", "--no-deps", str(wheel)])

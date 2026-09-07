@@ -8,7 +8,7 @@ initial setup may fetch them. From a clean checkout:
 uv sync --locked
 make check
 make dist
-uv run python tools/verify_install.py --wheel dist/session_visualizer-0.1.1-py3-none-any.whl --evidence .local/development-install
+uv run python tools/verify_install.py --wheel dist/rifja-0.2.0-py3-none-any.whl --evidence .local/development-install
 uv run python tools/audit_release.py --output .local/development-audit.json
 ```
 
@@ -27,7 +27,7 @@ must not depend on real provider transcripts or credentials.
 
 ## Release procedure
 
-1. Update the version in `pyproject.toml` and `src/session_visualizer/__init__.py`,
+1. Update the version in `pyproject.toml` and `src/rifja/__init__.py`,
    update release notes and current-version examples, then run `uv lock`.
    Use `0.x.yrcN` for candidates and `0.x.y` for normal releases. CLI, file format
    and schema changes must be described explicitly; never replace released bytes.

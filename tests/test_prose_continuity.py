@@ -6,8 +6,8 @@ import pytest
 from test_acceptance_regressions import cli as _continuity_cli
 from test_acceptance_regressions import event, seed
 
-from session_visualizer.extract import extract
-from session_visualizer.models import Record
+from rifja.extract import extract
+from rifja.models import Record
 
 continuity_cli = _continuity_cli
 

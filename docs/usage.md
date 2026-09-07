@@ -1,14 +1,14 @@
 # Operational guide
 
-This guide describes the `session-visualizer` console interface for release **0.1.1**. Install with `brew install 0merUfuk/thematrix/session-visualizer` using the [README instructions](../README.md). Homebrew manages Python 3.14+, Git and the private environment; no manual Python setup is needed. Runtime commands use local files and Git; they do not contact a model or network service, execute transcript instructions, or run tests for your project.
+This guide describes the `rifja` console interface for release **0.2.0**. Install with `brew install 0merUfuk/thematrix/rifja` using the [README instructions](../README.md). Homebrew manages Python 3.14+, Git and the private environment; no manual Python setup is needed. Runtime commands use local files and Git; they do not contact a model or network service, execute transcript instructions, or run tests for your project.
 
 ## Initialize and choose state
 
 ```sh
-session-visualizer setup --timezone Europe/Istanbul
-session-visualizer config
-session-visualizer config timezone UTC
-session-visualizer doctor
+rifja setup --timezone Europe/Istanbul
+rifja config
+rifja config timezone UTC
+rifja doctor
 ```
 
 Use an IANA timezone such as `UTC`, `Europe/Istanbul` or `America/New_York`. `daily` groups timestamps into calendar days in this configured zone, including daylight-saving transitions. Original timestamps remain in evidence. A timestamp without an offset stays unresolved; the collector does not assign the host machine's timezone to it.
@@ -16,13 +16,13 @@ Use an IANA timezone such as `UTC`, `Europe/Istanbul` or `America/New_York`. `da
 State location precedence is:
 
 1. `--home PATH` on the command.
-2. `SESSION_VISUALIZER_HOME` in the environment.
-3. On macOS, `~/Library/Application Support/SessionVisualizer`.
-4. Elsewhere, `$XDG_DATA_HOME/session-visualizer`, falling back to `~/.local/share/session-visualizer`.
+2. `RIFJA_HOME` in the environment.
+3. On macOS, `~/Library/Application Support/Rifja`.
+4. Elsewhere, `$XDG_DATA_HOME/rifja`, falling back to `~/.local/share/rifja`.
 
 ```sh
-session-visualizer --home "/path/to/separate state" setup --timezone UTC
-session-visualizer source list --home "/path/to/separate state" --json
+rifja --home "/path/to/separate state" setup --timezone UTC
+rifja source list --home "/path/to/separate state" --json
 ```
 
 Every invocation must select the intended state. `--home` overrides the environment for that command. A query can initialize or migrate application state when opening it; read-only collection refers to producer files and repository observation, not an immutable application database.
@@ -30,11 +30,11 @@ Every invocation must select the intended state. `--home` overrides the environm
 ## Register projects and linked worktrees
 
 ```sh
-session-visualizer project add "/path/to/harbor" --name harbor
-session-visualizer project discover "/path/to/repositories" "/path/to/other repositories"
-session-visualizer project list --json
-session-visualizer project show harbor
-session-visualizer project show harbor --observe --json
+rifja project add "/path/to/harbor" --name harbor
+rifja project discover "/path/to/repositories" "/path/to/other repositories"
+rifja project list --json
+rifja project show harbor
+rifja project show harbor --observe --json
 ```
 
 Discovery examines only the supplied roots. Registering a repository also discovers its linked Git worktrees. `project show --observe` refreshes Git observations; without that flag it shows cached observations. Project names are convenient selectors; use the project ID if names are ambiguous.
@@ -48,12 +48,12 @@ Git common-directory and worktree identities establish working context. Similar 
 ## Discover and register session sources
 
 ```sh
-session-visualizer source discover
-session-visualizer source add codex "/path/to/codex/sessions"
-session-visualizer source add claude "/path/to/claude/projects"
-session-visualizer source add hermes "/path/to/hermes/state.db"
-session-visualizer source list --json
-session-visualizer refresh
+rifja source discover
+rifja source add codex "/path/to/codex/sessions"
+rifja source add claude "/path/to/claude/projects"
+rifja source add hermes "/path/to/hermes/state.db"
+rifja source list --json
+rifja refresh
 ```
 
 `source discover` checks candidate locations and reports availability; it does not read or import their transcripts. Candidate roots respect `CODEX_HOME`, `CLAUDE_CONFIG_DIR` and `HERMES_HOME`, with the usual hidden home directories as fallbacks. `source add` registers an existing file or directory. Only `refresh` imports configured sources.
@@ -67,11 +67,11 @@ Compressed Codex input uses Python 3.14's standard-library Zstandard decoder, wi
 ## Refresh and inspect coverage
 
 ```sh
-session-visualizer refresh --json
-session-visualizer source list --json
-session-visualizer refresh --verify
-session-visualizer refresh --rebuild
-session-visualizer doctor --json
+rifja refresh --json
+rifja source list --json
+rifja refresh --verify
+rifja refresh --rebuild
+rifja doctor --json
 ```
 
 Normal refresh uses checkpoints and skips unchanged sources. `--verify` rechecks source content even when recorded file metadata is unchanged. `--rebuild` replays configured sources while preserving durable user memory, corrections, provenance and forget rules. Neither option edits producer history or verifies project code.
@@ -87,7 +87,7 @@ When a source is edited, replaced or truncated, previously captured content rema
 To add source exclusions:
 
 ```sh
-session-visualizer config exclusions '["*/scratch-exports/*", "*/do-not-import.jsonl"]'
+rifja config exclusions '["*/scratch-exports/*", "*/do-not-import.jsonl"]'
 ```
 
 Exclusions are path/basename patterns. Applying one can also forget already imported sessions associated with matching sources and create rules preventing their reimport. Durable user memory remains, but references to forgotten evidence become unavailable. Inspect the pattern and make a backup before applying an exclusion to existing state. This release has no separate `source remove` command.
@@ -95,17 +95,17 @@ Exclusions are path/basename patterns. Applying one can also forget already impo
 ## Inspect a day, task or project
 
 ```sh
-session-visualizer daily
-session-visualizer daily 2026-09-05 --project harbor
-session-visualizer daily 2026-09-01 --to 2026-09-05 --project harbor --json
-session-visualizer session --json
-session-visualizer session SESSION_ID --limit 100 --json
-session-visualizer tasks --project harbor
-session-visualizer decisions --project harbor
-session-visualizer items --project harbor --all --json
-session-visualizer search "fixture schema" --project harbor --provider codex --actor user --limit 20
-session-visualizer resume harbor
-session-visualizer explain RECORD_ID --json
+rifja daily
+rifja daily 2026-09-05 --project harbor
+rifja daily 2026-09-01 --to 2026-09-05 --project harbor --json
+rifja session --json
+rifja session SESSION_ID --limit 100 --json
+rifja tasks --project harbor
+rifja decisions --project harbor
+rifja items --project harbor --all --json
+rifja search "fixture schema" --project harbor --provider codex --actor user --limit 20
+rifja resume harbor
+rifja explain RECORD_ID --json
 ```
 
 The date range includes both endpoint calendar days. `daily` distinguishes activity on known dates from carried-over unfinished work. No activity at known timestamps does not establish that no work occurred. A `session` selector can be an application session ID or an unambiguous native session ID; the list exposes application IDs for subsequent operations.
@@ -121,9 +121,9 @@ Before applying its item limit, `resume` selects active blockers, next actions, 
 For a single worktree, copy its ID from `project show --json`:
 
 ```sh
-session-visualizer resume harbor --worktree WORKTREE_ID
-session-visualizer daily 2026-09-05 --project harbor --worktree WORKTREE_ID
-session-visualizer export harbor --worktree WORKTREE_ID --format markdown
+rifja resume harbor --worktree WORKTREE_ID
+rifja daily 2026-09-05 --project harbor --worktree WORKTREE_ID
+rifja export harbor --worktree WORKTREE_ID --format markdown
 ```
 
 Those filters also accept a registered worktree path. `resume` normally observes current Git; `--cached` deliberately uses the stored observation. Freshness of Git and freshness of imported sessions are separate: run `refresh` to update sessions. A past passing test result and an agent's “done” claim do not verify the current revision.
@@ -152,9 +152,9 @@ Classification reads the full redacted record within the provider's input-size l
 For a durable correction through the CLI, use the application item ID or record ID shown by `items --json`:
 
 ```sh
-session-visualizer memory correct ITEM_ID --status cancelled --reason "The replacement is no longer needed."
-session-visualizer memory correct ITEM_ID --text "Validate the new CSV format only." --reason "Scope narrowed."
-session-visualizer memory correct ITEM_ID --status user_completed --reason "I completed this task; verification is recorded separately."
+rifja memory correct ITEM_ID --status cancelled --reason "The replacement is no longer needed."
+rifja memory correct ITEM_ID --text "Validate the new CSV format only." --reason "Scope narrowed."
+rifja memory correct ITEM_ID --status user_completed --reason "I completed this task; verification is recorded separately."
 ```
 
 User-reported completion is distinct from independently verified code. A correction is application memory; it does not rewrite the transcript. Corrections survive source rebuilds.
@@ -162,7 +162,7 @@ User-reported completion is distinct from independently verified code. A correct
 If a record has missing or incorrect working context, associate it explicitly:
 
 ```sh
-session-visualizer project associate RECORD_ID harbor --worktree WORKTREE_ID --reason "This session was recorded in this checkout."
+rifja project associate RECORD_ID harbor --worktree WORKTREE_ID --reason "This session was recorded in this checkout."
 ```
 
 The target may also be an application session ID to associate its records. `--worktree` for this command requires an ID belonging to the selected project. This establishes context, not authorship of Git changes.
@@ -170,11 +170,11 @@ The target may also be an application session ID to associate its records. `--wo
 ## Maintain facts and an engineering constitution
 
 ```sh
-session-visualizer memory add fact "The local fixture set is the acceptance reference." --scope harbor --ref RECORD_ID --reason "User-confirmed project context."
-session-visualizer memory add principle "Capture revision-specific evidence before accepting a fix." --origin inferred --ref RECORD_ID --reason "Proposed lesson from the recorded work."
-session-visualizer memory list --kind principle --json
-session-visualizer constitution --project harbor --json
-session-visualizer constitution --project harbor --accepted
+rifja memory add fact "The local fixture set is the acceptance reference." --scope harbor --ref RECORD_ID --reason "User-confirmed project context."
+rifja memory add principle "Capture revision-specific evidence before accepting a fix." --origin inferred --ref RECORD_ID --reason "Proposed lesson from the recorded work."
+rifja memory list --kind principle --json
+rifja constitution --project harbor --json
+rifja constitution --project harbor --accepted
 ```
 
 `memory add` supports `principle`, `fact`, `decision`, `task` and `context`. Scope defaults to `global`; a project name or ID selects project scope. Repeat `--ref` to attach multiple evidence records. Entries with `--origin inferred` begin as `proposed`. Explicit entries begin as `accepted`; choose the inferred workflow when you want review before adoption. Acceptance preserves an inferred entry's origin instead of relabeling it explicit.
@@ -182,9 +182,9 @@ session-visualizer constitution --project harbor --accepted
 `resume` includes accepted global and selected-project principles and other accepted memory. Accepted facts, decisions, tasks and context appear as local memory, separately from extracted transcript candidates. These entries also participate in bounded exports; proposed, rejected and superseded entries are excluded. Memory scope is global or project-wide, so a worktree filter still includes applicable project memory. Inspect all entries with `memory list --json` and principles with `constitution --project harbor --json`.
 
 ```sh
-session-visualizer memory edit PRINCIPLE_ID --status accepted --reason "Reviewed and adopted." --exceptions "Exploratory spikes." --conflicts "Document unresolved competing requirements here."
-session-visualizer memory edit NEW_PRINCIPLE_ID --supersedes OLD_PRINCIPLE_ID --reason "The new rule is more precise."
-session-visualizer memory edit PRINCIPLE_ID --status rejected --reason "Insufficient evidence."
+rifja memory edit PRINCIPLE_ID --status accepted --reason "Reviewed and adopted." --exceptions "Exploratory spikes." --conflicts "Document unresolved competing requirements here."
+rifja memory edit NEW_PRINCIPLE_ID --supersedes OLD_PRINCIPLE_ID --reason "The new rule is more precise."
+rifja memory edit PRINCIPLE_ID --status rejected --reason "Insufficient evidence."
 ```
 
 Supersession marks the older entry `superseded` and links it from the newer entry. Exceptions, conflicts and reasons remain part of the stored principle; they do not grant permissions to execute source instructions. Resume and both export formats carry a principle's exceptions and conflicts with its rule. A bounded export omits the whole principle and increments its omission count if that combined entry cannot fit. Inspect `constitution --json` for the full stored entry, including its reason and supersession link. Supported editing statuses are `active`, `proposed`, `accepted`, `rejected`, `superseded`, `cancelled`, `archived`, `user_completed`, `claimed_complete`, `blocked`, `abandoned` and `pending`.
@@ -192,9 +192,9 @@ Supersession marks the older entry `superseded` and links it from the newer entr
 ## Export a bounded handoff
 
 ```sh
-session-visualizer export harbor --format markdown --max-chars 24000 --output "./harbor-handoff.md"
-session-visualizer export harbor --format json --max-chars 24000 --output "./harbor-handoff.json"
-session-visualizer export harbor --format json --cached
+rifja export harbor --format markdown --max-chars 24000 --output "./harbor-handoff.md"
+rifja export harbor --format json --max-chars 24000 --output "./harbor-handoff.json"
+rifja export harbor --format json --cached
 ```
 
 Without `--output`, export writes the document to stdout. With `--output`, the parent directory must exist and the destination must be new. Output files are created with private permissions. The character budget accepts 2000–1,000,000 and excludes the final newline. The exporter either fits bounded context with omission notices or reports that required metadata cannot fit. Inspect omitted context and retrieve more with `resume`, `items`, `session` or `explain` before acting.
@@ -212,9 +212,9 @@ are contained in the export; resolving them does not require opening local files
 ## Backup, restore and migrate
 
 ```sh
-session-visualizer backup "/path/to/backups/continuity.sqlite3"
-session-visualizer --home "/path/to/restored state" restore "/path/to/backups/continuity.sqlite3"
-session-visualizer --home "/path/to/restored state" doctor
+rifja backup "/path/to/backups/continuity.sqlite3"
+rifja --home "/path/to/restored state" restore "/path/to/backups/continuity.sqlite3"
+rifja --home "/path/to/restored state" doctor
 ```
 
 Backups are consistent SQLite snapshots containing imported state, configuration, durable memory, corrections and forget rules. The backup destination must be new; parent directories are created when necessary. Producer sources and Git repositories are not included.
@@ -223,15 +223,15 @@ Restore requires a nonexistent or empty destination directory. Do not run `setup
 
 Application schemas 1 and 2 migrate to schema 3 when opened. A private `before-migration-v1.sqlite3` or `before-migration-v2.sqlite3` backup is created before each migration. Schema 3 adds a covering index for daily queries. Newer state schemas are refused. Restore validates supported backup versions and structural/integrity checks before replacing the empty destination. Use a compatible program version or a compatible backup in a separate home; do not manually lower a database's schema version.
 
-To upgrade a Homebrew installation, run `brew update` and `brew upgrade 0merUfuk/thematrix/session-visualizer`, then `refresh` against the same application state. Homebrew manages the environment. A version change replays derived extraction once; durable memory is retained. Release 0.1.0rc2 introduced schema 3. Overrides on unchanged pre-rc2 long records are carried to the new full-text evidence identity when the matching prior item is unambiguous; old evidence references remain available as history. A concurrently changed source is not assumed to be the same evidence.
+To upgrade a Homebrew installation, run `brew update` and `brew upgrade 0merUfuk/thematrix/rifja`, then `refresh` against the same application state. Homebrew manages the environment. A version change replays derived extraction once; durable memory is retained. Release 0.1.0rc2 introduced schema 3. Overrides on unchanged pre-rc2 long records are carried to the new full-text evidence identity when the matching prior item is unambiguous; old evidence references remain available as history. A concurrently changed source is not assumed to be the same evidence.
 
 ## Retention, forgetting and uninstalling
 
 ```sh
-session-visualizer retention --before 2026-08-01
-session-visualizer retention --before 2026-08-01 --confirm
-session-visualizer session --json
-session-visualizer forget SESSION_ID --confirm
+rifja retention --before 2026-08-01
+rifja retention --before 2026-08-01 --confirm
+rifja session --json
+rifja forget SESSION_ID --confirm
 ```
 
 Retention without `--confirm` is a dry run. It selects whole sessions whose last known event is before the cutoff in the configured timezone, excluding sessions with unresolved event times. Confirmation removes those sessions. `forget` requires an application session ID from `session --json` and explicit `--confirm`.
@@ -241,7 +241,7 @@ Forgetting removes associated imported records and search entries and stores a p
 For the recommended Homebrew installation, uninstall the application with:
 
 ```sh
-brew uninstall --force 0merUfuk/thematrix/session-visualizer
+brew uninstall --force 0merUfuk/thematrix/rifja
 ```
 
 Application state, exports, backups and producer transcripts remain. A new `--home` provides fresh application state without deleting the old one. Deleting a state directory also deletes its memory, configuration and rules preventing reimport; a later fresh import can then bring those sessions back.
@@ -273,3 +273,9 @@ For provider changes or missing coverage, consult [supported formats and known g
 ## Bounded project documents (rc3)
 
 Use `document add PROJECT` to opt in before refresh. See [project context](project-context.md) for allowlists, worktree selection, provenance, ordinary status language, identity and output limits. Rc3 retains schema 3 and automatically rebuilds its derived extraction on upgrade; document claims never become freshly executed verification.
+
+## Existing installations
+
+Rifja reuses the former application’s state in place. The old command and home
+environment variable remain compatibility aliases. See [identity migration](identity.md)
+for exact precedence and Homebrew upgrade instructions.

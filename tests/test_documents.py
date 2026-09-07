@@ -9,10 +9,10 @@ from pathlib import Path
 
 import pytest
 
-from session_visualizer import documents
-from session_visualizer.app import App
-from session_visualizer.ingest import Ingestor
-from session_visualizer.store import Store
+from rifja import documents
+from rifja.app import App
+from rifja.ingest import Ingestor
+from rifja.store import Store
 
 
 def git(path: Path, *args: str) -> str:

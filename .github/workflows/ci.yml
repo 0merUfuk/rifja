@@ -29,7 +29,7 @@ jobs:
       - run: uv sync --locked --python python
       - run: make check
       - run: make dist
-      - run: uv run python tools/verify_install.py --wheel dist/session_visualizer-$(uv run python -c 'import session_visualizer; print(session_visualizer.__version__)')-py3-none-any.whl --evidence .local/ci-install
+      - run: uv run python tools/verify_install.py --wheel dist/rifja-$(uv run python -c 'import rifja; print(rifja.__version__)')-py3-none-any.whl --evidence .local/ci-install
       - run: uv run python tools/audit_release.py --output .local/ci-audit.json
       - name: Homebrew installation lifecycle
         env:
@@ -40,10 +40,10 @@ jobs:
             eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           fi
           ./install.sh
-          session-visualizer --version
-          brew test session-visualizer/local/session-visualizer
+          rifja --version
+          brew test rifja/local/rifja
           ./install.sh --reinstall
-          brew uninstall --force session-visualizer/local/session-visualizer
+          brew uninstall --force rifja/local/rifja
           ./install.sh
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()

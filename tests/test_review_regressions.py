@@ -12,10 +12,10 @@ from pathlib import Path
 
 import pytest
 
-from session_visualizer.app import App
-from session_visualizer.ingest import Ingestor
-from session_visualizer.models import GitSnapshot
-from session_visualizer.store import Store, restore
+from rifja.app import App
+from rifja.ingest import Ingestor
+from rifja.models import GitSnapshot
+from rifja.store import Store, restore
 
 
 def test_hermes_executable_view_cannot_hold_refresh_without_a_bound(tmp_path: Path) -> None:
@@ -38,18 +38,18 @@ def test_hermes_executable_view_cannot_hold_refresh_without_a_bound(tmp_path: Pa
                 'Task: synthetic view content' AS content,
                 1735819200 AS timestamp;
         """)
-    import session_visualizer
+    import rifja
 
-    package_parent = str(Path(session_visualizer.__file__).resolve().parent.parent)
+    package_parent = str(Path(rifja.__file__).resolve().parent.parent)
     user_home = tmp_path / "synthetic-home"
     user_home.mkdir()
     child = """
 import json,sys
 from pathlib import Path
 sys.path.insert(0,sys.argv[1])
-from session_visualizer.app import App
-from session_visualizer.ingest import Ingestor
-from session_visualizer.store import Store
+from rifja.app import App
+from rifja.ingest import Ingestor
+from rifja.store import Store
 with Store(Path(sys.argv[3])) as store:
     app=App(store)
     app.setup()
@@ -166,7 +166,7 @@ def test_refresh_rejects_fifo_source_instead_of_waiting_forever(app: App, tmp_pa
     app.source_add("claude", directory)
     # Discovery must reject special files before a blocking open. This assertion
     # avoids hanging the test process while exercising the actual discovery path.
-    from session_visualizer.ingest import iter_sources
+    from rifja.ingest import iter_sources
 
     found = list(iter_sources(directory, app.store.home, []))
     assert fifo not in found, "A named pipe currently reaches blocking os.open without a timeout."
@@ -329,7 +329,7 @@ def test_many_active_blockers_preserve_supported_actions_and_honest_omissions(
     app: App, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """The bounded view must retain both kinds of continuity evidence under load."""
-    from session_visualizer.render import bounded_export
+    from rifja.render import bounded_export
 
     for name in list(os.environ):
         if name.startswith("GIT_"):
@@ -393,7 +393,7 @@ def test_many_active_blockers_preserve_supported_actions_and_honest_omissions(
 def test_concurrent_commit_during_observation_has_controlled_busy_result(
     app: App, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from session_visualizer.store import BusyError
+    from rifja.store import BusyError
 
     project, _ = _review_project(app, tmp_path)
     observation = app.project(project)["worktrees"][0]["observation"]
@@ -403,7 +403,7 @@ def test_concurrent_commit_during_observation_has_controlled_busy_result(
             concurrent.set_config("concurrent_review_marker", True)
             return GitSnapshot(**observation)
 
-        monkeypatch.setattr("session_visualizer.app.inspect_repository", observe)
+        monkeypatch.setattr("rifja.app.inspect_repository", observe)
         try:
             app.resume(project)
         except BusyError:
@@ -440,7 +440,7 @@ def test_superseded_transcript_cancellation_does_not_resolve_current_task(
 
 
 def test_resume_markdown_escapes_observed_filename_markup(app: App, tmp_path: Path) -> None:
-    from session_visualizer.render import resume_markdown
+    from rifja.render import resume_markdown
 
     project, _ = _review_project(app, tmp_path)
     data = app.resume(project, observe=False)

@@ -8,7 +8,7 @@ initial setup may fetch them. From a clean checkout:
 uv sync --locked
 make check
 make dist
-uv run python tools/verify_install.py --wheel dist/rifja-0.2.0-py3-none-any.whl --evidence .local/development-install
+uv run python tools/verify_install.py --wheel dist/rifja-0.2.1-py3-none-any.whl --evidence .local/development-install
 uv run python tools/audit_release.py --output .local/development-audit.json
 ```
 

@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.2.1
+
+Documents the canonical-formula trust required by current Homebrew when a fresh
+installation uses the legacy `session-visualizer` formula alias. The primary
+`brew install 0merUfuk/thematrix/rifja` experience is unchanged. Legacy install
+scripts can first run `brew trust --formula 0merUfuk/thematrix/rifja`; this trusts
+only the intended package. The public tap tests this flow explicitly.
+
+Also clarifies that physically moved registered inputs need their canonical
+locations re-registered; a checkout symlink does not bypass source safety checks.
+Runtime behavior, compatibility entry points and schema remain unchanged.
+
 ## 0.2.0
 
 The product is now **Rifja**: recover grounded engineering context and continue

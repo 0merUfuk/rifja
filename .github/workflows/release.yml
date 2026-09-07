@@ -52,4 +52,4 @@ jobs:
         run: |
           flags=()
           if [[ "$RELEASE_TAG" == *rc* ]]; then flags+=(--prerelease); fi
-          gh release create "$RELEASE_TAG" --verify-tag --title "Session Visualizer $RELEASE_TAG" --notes-file dist/release/RELEASE-NOTES.md "${flags[@]}" dist/release/*.whl dist/release/*.tar.gz dist/release/*.rb dist/release/SHA256SUMS
+          gh release create "$RELEASE_TAG" --verify-tag --title "Rifja $RELEASE_TAG" --notes-file dist/release/RELEASE-NOTES.md "${flags[@]}" dist/release/*.whl dist/release/*.tar.gz dist/release/*.rb dist/release/SHA256SUMS

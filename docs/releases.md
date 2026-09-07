@@ -1,5 +1,22 @@
 # Release notes
 
+## 0.2.0
+
+The product is now **Rifja**: recover grounded engineering context and continue
+work across projects, worktrees and agent sessions. Repository, Python package,
+primary command, Homebrew formula and active documentation use `rifja`.
+
+Install with `brew install 0merUfuk/thematrix/rifja`. Existing public Homebrew
+users run `brew update` then `brew upgrade 0merUfuk/thematrix/rifja`. The old
+`session-visualizer` command and `SESSION_VISUALIZER_HOME` remain compatible.
+Existing default state is reused without moving files; new installations use
+Rifja’s default directory. Conflicting default directories require an explicit
+selection. Schema 3, record identities, stored memory and backup formats are
+unchanged. A version-triggered extraction replay remains the existing behavior.
+
+See [migration details](identity.md). Earlier release notes below describe the
+product under its historical name; published tags and artifacts are preserved.
+
 ## 0.1.1
 
 Corrects removal and migration instructions for Homebrew installations retaining

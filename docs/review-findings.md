@@ -25,7 +25,7 @@ Severity describes the original defect with its realistic prerequisite, not an o
 | RF-011 | Medium | A Hermes `messages` view exposed the expected columns but evaluated a nonterminating recursive scalar. Actual refresh held its writer lock beyond the test harness's three-second timeout. Requires a hostile selected producer database, not transcript prose alone. | `adapters._columns` rejects views/virtual definitions before evaluation. `_open_db` adds `trusted_schema=OFF`, an 8 MiB page-cache target and a cooperative 100 million SQLite-operation / 30-second budget. The reader emits partial coverage on interruption. The actual App/Ingestor child-process regression now finishes with partial status and zero imported records. |
 | RF-012 | Medium | A crowded project had 50 active blockers and 50 explicit next actions. Blocker-first ordering filled the default 50-item window and resume returned no next action. A later export budget could repeat the loss. The lead found this during final benchmark validation; an independent two-session native-ingestion/real-Git fixture reproduced it. | `App.items` reserves up to five action slots before filling the remaining priority window. `render.bounded_export` preserves the recommended action selection before other candidates. The same regression verifies blockers and current supported actions in live resume, both default 24,000-character export formats, and exact/disclosed omissions. It passes without expanding either bound. |
 
-Source anchors: [application](../src/session_visualizer/app.py), [storage](../src/session_visualizer/store.py), [ingestion](../src/session_visualizer/ingest.py), [privacy](../src/session_visualizer/privacy.py), [context](../src/session_visualizer/context.py), [rendering](../src/session_visualizer/render.py), [adapters](../src/session_visualizer/adapters.py). Exact independent cases are in [test_review_regressions.py](../tests/test_review_regressions.py).
+Source anchors: [application](../src/rifja/app.py), [storage](../src/rifja/store.py), [ingestion](../src/rifja/ingest.py), [privacy](../src/rifja/privacy.py), [context](../src/rifja/context.py), [rendering](../src/rifja/render.py), [adapters](../src/rifja/adapters.py). Exact independent cases are in [test_review_regressions.py](../tests/test_review_regressions.py).
 
 ## Verification evidence
 
@@ -81,7 +81,7 @@ The fixture uses two temporary native Claude sessions, an actual temporary Git r
 
 ## Distribution evidence at this source checkpoint
 
-The reviewed older wheel is `dist/session_visualizer-0.1.0rc1-py3-none-any.whl`, SHA-256 `b75183d0ad09e30729e9abea27f4a3e4324da56db202967fc08147e82817d954`. Its corresponding sdist SHA-256 is `82fe1fcb40ca8b283924dbba9e43d1ba6944337c3ae2fb3870472bfebe3c8046`.
+The reviewed older wheel is `dist/rifja-0.1.0rc1-py3-none-any.whl`, SHA-256 `b75183d0ad09e30729e9abea27f4a3e4324da56db202967fc08147e82817d954`. Its corresponding sdist SHA-256 is `82fe1fcb40ca8b283924dbba9e43d1ba6944337c3ae2fb3870472bfebe3c8046`.
 
 Independent archive inspection found 20 wheel members: 15 Python modules and five distribution metadata files. The sdist had 44 members. Neither artifact contained `.local`, `.git`, `.venv`, bytecode caches, credential-named files, or symlinks. Metadata requires Python >=3.14 with no `Requires-Dist`. An isolated Python invocation from `/tmp` loaded the external installation, did not include the checkout on `sys.path`, and confirmed all 15 installed module bytes matched the wheel. These results apply only to these artifact hashes.
 
@@ -104,14 +104,14 @@ SHA-256 sampled at **20:23:26 UTC**. The working tree remains mutable; later cha
 
 | File | SHA-256 |
 |---|---|
-| `src/session_visualizer/app.py` | `77a58ab7db28ac3850c845724beea8eacf065c9365d96de5e675026707d57571` |
-| `src/session_visualizer/store.py` | `0d9a86d315f2665ca3754b8626d219cb604e022fc5fcb3e340aafcb41690ee17` |
-| `src/session_visualizer/ingest.py` | `55a117180b38cad14e9bccacfd2f6c8649bd88411bdec50343f3dab36faab92c` |
-| `src/session_visualizer/privacy.py` | `249d02777849d1acbdf49ca623a7cfce6f232a4267a2b24caefc8787fae08a17` |
-| `src/session_visualizer/context.py` | `8fe60e99fec2c029d39dab1e4d47ae81d0855eefe2d2bc44313f4f8ba537607e` |
-| `src/session_visualizer/render.py` | `337d6c33f42c22962cb4d851d842168f4c631cbf7558cce2eb1b99b87e02ef17` |
-| `src/session_visualizer/cli.py` | `e16f97b207ba2c8a03077f2ed37afddc0a7bf3b8603bada41aade1d4a0abf88d` |
-| `src/session_visualizer/adapters.py` | `563dc9efbd19dc5a905f8090febf46f0ad54c18acc406b04e1b7968f99717ac3` |
+| `src/rifja/app.py` | `77a58ab7db28ac3850c845724beea8eacf065c9365d96de5e675026707d57571` |
+| `src/rifja/store.py` | `0d9a86d315f2665ca3754b8626d219cb604e022fc5fcb3e340aafcb41690ee17` |
+| `src/rifja/ingest.py` | `55a117180b38cad14e9bccacfd2f6c8649bd88411bdec50343f3dab36faab92c` |
+| `src/rifja/privacy.py` | `249d02777849d1acbdf49ca623a7cfce6f232a4267a2b24caefc8787fae08a17` |
+| `src/rifja/context.py` | `8fe60e99fec2c029d39dab1e4d47ae81d0855eefe2d2bc44313f4f8ba537607e` |
+| `src/rifja/render.py` | `337d6c33f42c22962cb4d851d842168f4c631cbf7558cce2eb1b99b87e02ef17` |
+| `src/rifja/cli.py` | `e16f97b207ba2c8a03077f2ed37afddc0a7bf3b8603bada41aade1d4a0abf88d` |
+| `src/rifja/adapters.py` | `563dc9efbd19dc5a905f8090febf46f0ad54c18acc406b04e1b7968f99717ac3` |
 | `tests/test_review_regressions.py` | `9e7e7de26e8b960356a6b7b76d35551440b00051702fa2812326a3bcdee42c46` |
 
 ## Residual boundaries

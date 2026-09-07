@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from session_visualizer import git as collector
+from rifja import git as collector
 
 
 @pytest.fixture(autouse=True)

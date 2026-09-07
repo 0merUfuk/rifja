@@ -21,10 +21,10 @@ from typing import Any
 
 import pytest
 
-from session_visualizer.app import App
-from session_visualizer.ingest import Ingestor
-from session_visualizer.privacy import MAX_DEPTH, MAX_RECORD_BYTES
-from session_visualizer.store import (
+from rifja.app import App
+from rifja.ingest import Ingestor
+from rifja.privacy import MAX_DEPTH, MAX_RECORD_BYTES
+from rifja.store import (
     MIGRATION_V2,
     SCHEMA_V1,
     SCHEMA_VERSION,
@@ -271,8 +271,8 @@ def test_hard_process_exit_preserves_committed_checkpoint(app: App, tmp_path: Pa
     script = """
 import os, sys
 from pathlib import Path
-from session_visualizer.ingest import Ingestor
-from session_visualizer.store import Store
+from rifja.ingest import Ingestor
+from rifja.store import Store
 original = Ingestor.record
 def stop(self, *args):
     original(self, *args)
@@ -712,7 +712,7 @@ def test_many_oversized_records_keep_diagnostics_within_the_bound(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     path = source(app, tmp_path, message("one", "Task: valid neighbor."))
-    monkeypatch.setattr("session_visualizer.ingest.MAX_RECORD_BYTES", 512)
+    monkeypatch.setattr("rifja.ingest.MAX_RECORD_BYTES", 512)
     with path.open("ab") as handle:
         handle.write((b'{"padding":"' + b"x" * 1024 + b'"}\n') * 80)
     report = Ingestor(app.store).refresh()

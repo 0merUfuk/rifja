@@ -22,8 +22,8 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
-TAP = "session-visualizer/local"
-OWNER = "session-visualizer-local-installer-v1"
+TAP = "rifja/local"
+OWNER = "rifja-local-installer-v1"
 
 
 def digest(path: Path) -> str:
@@ -39,11 +39,11 @@ def wheel_info(wheel: Path) -> str:
         meta = BytesParser().parsebytes(archive.read(names[0]))
     version = str(meta["Version"])
     if (
-        meta["Name"] != "session-visualizer"
+        meta["Name"] != "rifja"
         or not re.fullmatch(r"\d+\.\d+\.\d+(?:rc\d+)?", version)
         or meta.get_all("Requires-Dist")
         or meta["Requires-Python"] != ">=3.14"
-        or wheel.name != f"session_visualizer-{version}-py3-none-any.whl"
+        or wheel.name != f"rifja-{version}-py3-none-any.whl"
     ):
         raise ValueError("unsupported_wheel_metadata_or_filename")
     return version
@@ -65,7 +65,7 @@ def formula(wheel: Path, url: str) -> str:
         raise ValueError("formula_url_filename_must_match_wheel")
     if parsed.query or parsed.fragment:
         raise ValueError("formula_url_must_be_immutable_without_query_or_fragment")
-    result = (ROOT / "packaging/homebrew/session-visualizer.rb.in").read_text()
+    result = (ROOT / "packaging/homebrew/rifja.rb.in").read_text()
     for key, value in {
         "URL": url,
         "VERSION": version,
@@ -113,8 +113,8 @@ def install(wheel: Path, reinstall: bool = False) -> None:
     ):
         os.environ[key] = "1"
     repository = Path(run(brew, "--repository"))
-    tap = repository / "Library/Taps/session-visualizer/homebrew-local"
-    marker = tap / ".session-visualizer-owner"
+    tap = repository / "Library/Taps/rifja/homebrew-local"
+    marker = tap / ".rifja-owner"
     if tap.exists():
         if tap.is_symlink() or not marker.is_file() or marker.read_text() != OWNER:
             raise ValueError("existing_local_tap_is_not_owned_by_this_installer")
@@ -124,22 +124,22 @@ def install(wheel: Path, reinstall: bool = False) -> None:
     target = tap / "releases" / wheel.name
     checked_copy(wheel, target)
     text = formula(target, target.as_uri())
-    path = tap / "Formula/session-visualizer.rb"
+    path = tap / "Formula/rifja.rb"
     if path.is_symlink():
         raise ValueError("refusing_symlink_formula")
     path.write_text(text)
     # Homebrew handles dependencies, isolation, linking and version comparison.
-    package = f"{TAP}/session-visualizer"
+    package = f"{TAP}/rifja"
     installed = subprocess.run(
         [brew, "list", "--versions", package], capture_output=True, text=True, check=False
     )
     action = "reinstall" if reinstall else "upgrade" if installed.stdout.strip() else "install"
     run(brew, action, package)
     prefix = Path(run(brew, "--prefix", package))
-    actual = run(str(prefix / "bin/session-visualizer"), "--version")
+    actual = run(str(prefix / "bin/rifja"), "--version")
     if actual != wheel_info(wheel):
         raise ValueError("installed_version_does_not_match_selected_release")
-    print("Ready: session-visualizer --help")
+    print("Ready: rifja --help")
 
 
 def bundle(wheel: Path, output: Path) -> Path:
@@ -148,12 +148,11 @@ def bundle(wheel: Path, output: Path) -> Path:
     if version != project_version:
         raise ValueError("installer_bundle_requires_current_project_version")
     output.mkdir(parents=True, exist_ok=True)
-    archive_path = output / f"session-visualizer-{version}-homebrew.tar.gz"
+    archive_path = output / f"rifja-{version}-homebrew.tar.gz"
     members = {
         "install.sh": ROOT / "install.sh",
         "tools/homebrew.py": ROOT / "tools/homebrew.py",
-        "packaging/homebrew/session-visualizer.rb.in": ROOT
-        / "packaging/homebrew/session-visualizer.rb.in",
+        "packaging/homebrew/rifja.rb.in": ROOT / "packaging/homebrew/rifja.rb.in",
         "pyproject.toml": ROOT / "pyproject.toml",
         "README.md": ROOT / "README.md",
         "NOTICE": ROOT / "NOTICE",
@@ -163,7 +162,7 @@ def bundle(wheel: Path, output: Path) -> Path:
         if (ROOT / name).is_file():
             members[name] = ROOT / name
     members.update({f"docs/{p.name}": p for p in (ROOT / "docs").glob("*.md")})
-    prefix = f"session-visualizer-{version}"
+    prefix = f"rifja-{version}"
     # Stable bytes across rebuilds; no local absolute paths, user IDs or timestamps.
     with (
         archive_path.open("xb") as raw,
@@ -189,9 +188,7 @@ def main() -> None:
     parser.add_argument("--reinstall", action="store_true")
     args = parser.parse_args()
     version = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["version"]
-    wheel = (
-        args.wheel or ROOT / "dist" / f"session_visualizer-{version}-py3-none-any.whl"
-    ).resolve()
+    wheel = (args.wheel or ROOT / "dist" / f"rifja-{version}-py3-none-any.whl").resolve()
     if not wheel.is_file():
         parser.error(
             "Release wheel missing. Use the supplied Homebrew bundle; maintainers run make dist."

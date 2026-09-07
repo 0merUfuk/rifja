@@ -14,10 +14,10 @@ Out of scope: actual private transcripts, other `.local` data, remote accounts, 
 
 ### Primary components
 
-- `cli.main` parses explicit commands and state paths, invokes `App`/`Ingestor`, renders versioned JSON or readable text and maps errors to exit codes. No network service appears in these entrypoints. [CLI](../src/session_visualizer/cli.py)
-- `Ingestor.refresh` enumerates configured roots, reads JSONL, Codex Zstandard JSONL or Hermes SQLite, normalizes/redacts records and commits source generations/checkpoints. `adapters` performs shape/role/schema handling; imported commands remain text. [Ingestion](../src/session_visualizer/ingest.py), [adapters](../src/session_visualizer/adapters.py)
-- `Store` owns private SQLite state, FTS, schema migrations, snapshot transactions, refresh locking, backup and restore. User memory, corrections and forget tombstones are distinct from source-derived records. [Storage](../src/session_visualizer/store.py)
-- `App` and `context.details` compose current observations, source generations, historical evidence, user authority and uncertainty. Renderers escape dynamic Markdown and bound exports with omission notices. [Application](../src/session_visualizer/app.py), [context](../src/session_visualizer/context.py), [rendering](../src/session_visualizer/render.py)
+- `cli.main` parses explicit commands and state paths, invokes `App`/`Ingestor`, renders versioned JSON or readable text and maps errors to exit codes. No network service appears in these entrypoints. [CLI](../src/rifja/cli.py)
+- `Ingestor.refresh` enumerates configured roots, reads JSONL, Codex Zstandard JSONL or Hermes SQLite, normalizes/redacts records and commits source generations/checkpoints. `adapters` performs shape/role/schema handling; imported commands remain text. [Ingestion](../src/rifja/ingest.py), [adapters](../src/rifja/adapters.py)
+- `Store` owns private SQLite state, FTS, schema migrations, snapshot transactions, refresh locking, backup and restore. User memory, corrections and forget tombstones are distinct from source-derived records. [Storage](../src/rifja/store.py)
+- `App` and `context.details` compose current observations, source generations, historical evidence, user authority and uncertainty. Renderers escape dynamic Markdown and bound exports with omission notices. [Application](../src/rifja/app.py), [context](../src/rifja/context.py), [rendering](../src/rifja/render.py)
 - Hatchling builds a Python >=3.14 package with a console script and no third-party runtime requirements. Development/build tools are a separate trust boundary. The inspected wheel contains 15 Python modules and metadata; it has no private data or checkout runtime path dependency. This applies to the reviewed hash, not a future rebuild. [Manifest](../pyproject.toml), [artifact evidence](review-findings.md)
 
 ### Data flows and trust boundaries
@@ -120,14 +120,14 @@ Priority denotes review focus using the original demonstrated impact; gaps state
 
 | Path | Why it matters | Related Threat IDs |
 |---|---|---|
-| `src/session_visualizer/store.py` | Treat restored schema as executable input and preserve transaction semantics | TM-001, TM-008 |
-| `src/session_visualizer/ingest.py` | Bind selected source identity to read objects and atomic generations | TM-002, TM-003, TM-005 |
-| `src/session_visualizer/privacy.py` | Keep no-follow regular reads and redaction boundaries | TM-002, TM-004, TM-006 |
-| `src/session_visualizer/adapters.py` | Reject executable producer schema and bound query effort | TM-003, TM-005 |
-| `src/session_visualizer/app.py` | Preserve observations, authority, freshness and priority | TM-004, TM-005, TM-006, TM-008 |
-| `src/session_visualizer/context.py` | Avoid unsupported goals and stale source authority | TM-005 |
-| `src/session_visualizer/render.py` | Escape metadata/excerpts and disclose omissions | TM-004, TM-007 |
-| `src/session_visualizer/cli.py` | Keep explicit source/output actions and safe errors | TM-002, TM-006, TM-008 |
+| `src/rifja/store.py` | Treat restored schema as executable input and preserve transaction semantics | TM-001, TM-008 |
+| `src/rifja/ingest.py` | Bind selected source identity to read objects and atomic generations | TM-002, TM-003, TM-005 |
+| `src/rifja/privacy.py` | Keep no-follow regular reads and redaction boundaries | TM-002, TM-004, TM-006 |
+| `src/rifja/adapters.py` | Reject executable producer schema and bound query effort | TM-003, TM-005 |
+| `src/rifja/app.py` | Preserve observations, authority, freshness and priority | TM-004, TM-005, TM-006, TM-008 |
+| `src/rifja/context.py` | Avoid unsupported goals and stale source authority | TM-005 |
+| `src/rifja/render.py` | Escape metadata/excerpts and disclose omissions | TM-004, TM-007 |
+| `src/rifja/cli.py` | Keep explicit source/output actions and safe errors | TM-002, TM-006, TM-008 |
 | `pyproject.toml` | Define runtime requirements and bounded distribution contents | TM-009 |
 | `tests/test_review_regressions.py` | Preserve independent reproductions and artifact verification | TM-001–TM-009 |
 

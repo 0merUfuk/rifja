@@ -10,10 +10,10 @@ from pathlib import Path
 
 import pytest
 
-from session_visualizer.app import App
-from session_visualizer.identity import IDENTITY_REASON, MOVE_REASON, reconcile_moves
-from session_visualizer.ingest import Ingestor
-from session_visualizer.store import Store
+from rifja.app import App
+from rifja.identity import IDENTITY_REASON, MOVE_REASON, reconcile_moves
+from rifja.ingest import Ingestor
+from rifja.store import Store
 
 
 def git(path: Path, *args: str) -> None:
@@ -487,7 +487,7 @@ def test_malformed_uri_in_context_remains_unresolved(fixture: Fixture):
 
 
 def test_execution_bound_withholds_automatic_association(fixture: Fixture, monkeypatch):
-    from session_visualizer import identity
+    from rifja import identity
 
     monkeypatch.setattr(identity, "MAX_EXECUTIONS", 1)
     report = fixture.ingest(fixture.transcript())

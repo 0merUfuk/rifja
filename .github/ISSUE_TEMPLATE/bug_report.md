@@ -4,7 +4,7 @@ about: Report an installation, parsing or continuity problem using synthetic dat
 ---
 
 **Version and environment**
-`session-visualizer --version`, operating system/architecture, installation method.
+`rifja --version`, operating system/architecture, installation method.
 
 **Reproduction**
 Commands and minimal synthetic input. Remove private paths, transcripts and secrets.

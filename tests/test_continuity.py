@@ -15,10 +15,10 @@ from pathlib import Path
 
 import pytest
 
-from session_visualizer.app import App
-from session_visualizer.ingest import Ingestor
-from session_visualizer.render import bounded_export
-from session_visualizer.store import Store
+from rifja.app import App
+from rifja.ingest import Ingestor
+from rifja.render import bounded_export
+from rifja.store import Store
 
 CORPUS = json.loads((Path(__file__).parent / "corpus" / "continuity.json").read_text())
 PROVIDERS = {"provider-a": "codex", "provider-b": "claude", "provider-c": "hermes"}

@@ -7,11 +7,11 @@ from datetime import datetime, timedelta
 import pytest
 from test_cli import Console
 
-from session_visualizer import ingest
-from session_visualizer.app import App
-from session_visualizer.ingest import Ingestor
-from session_visualizer.privacy import clean_text
-from session_visualizer.store import Store
+from rifja import ingest
+from rifja.app import App
+from rifja.ingest import Ingestor
+from rifja.privacy import clean_text
+from rifja.store import Store
 
 
 def event(text, number=0, actor="user", day="2026-09-05"):

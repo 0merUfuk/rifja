@@ -10,17 +10,17 @@ from pathlib import Path
 
 import pytest
 
-from session_visualizer import documents
-from session_visualizer import ingest as ingest_module
-from session_visualizer.adapters import normalize
-from session_visualizer.app import App
-from session_visualizer.briefing import build_brief
-from session_visualizer.extract import extract
-from session_visualizer.ingest import Ingestor
-from session_visualizer.models import Record
-from session_visualizer.privacy import MAX_DEPTH, MAX_EXCERPT, clean
-from session_visualizer.render import bounded_export, resume_markdown
-from session_visualizer.store import Store, restore
+from rifja import documents
+from rifja import ingest as ingest_module
+from rifja.adapters import normalize
+from rifja.app import App
+from rifja.briefing import build_brief
+from rifja.extract import extract
+from rifja.ingest import Ingestor
+from rifja.models import Record
+from rifja.privacy import MAX_DEPTH, MAX_EXCERPT, clean
+from rifja.render import bounded_export, resume_markdown
+from rifja.store import Store, restore
 
 
 def candidates(text: str, actor: str = "document") -> list[dict]:

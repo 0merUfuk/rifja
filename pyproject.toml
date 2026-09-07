@@ -3,8 +3,8 @@ requires = ["hatchling==1.32.0"]
 build-backend = "hatchling.build"
 
 [project]
-name = "session-visualizer"
-version = "0.1.1"
+name = "rifja"
+version = "0.2.0"
 description = "Offline, evidence-aware engineering continuity for local agent sessions and Git"
 readme = "README.md"
 requires-python = ">=3.14"
@@ -19,20 +19,21 @@ classifiers = [
 dependencies = []
 
 [project.urls]
-Homepage = "https://github.com/0merUfuk/session-visualizer"
-Repository = "https://github.com/0merUfuk/session-visualizer"
-Documentation = "https://github.com/0merUfuk/session-visualizer/blob/main/docs/usage.md"
-Issues = "https://github.com/0merUfuk/session-visualizer/issues"
-Changelog = "https://github.com/0merUfuk/session-visualizer/blob/main/docs/releases.md"
+Homepage = "https://github.com/0merUfuk/rifja"
+Repository = "https://github.com/0merUfuk/rifja"
+Documentation = "https://github.com/0merUfuk/rifja/blob/main/docs/usage.md"
+Issues = "https://github.com/0merUfuk/rifja/issues"
+Changelog = "https://github.com/0merUfuk/rifja/blob/main/docs/releases.md"
 
 [project.scripts]
-session-visualizer = "session_visualizer.cli:main"
+rifja = "rifja.cli:main"
+session-visualizer = "rifja.cli:main"
 
 [dependency-groups]
 dev = ["pytest>=8,<10", "ruff>=0.12,<1", "mypy>=1.15,<2", "build>=1.2,<2", "hatchling==1.32.0"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/session_visualizer"]
+packages = ["src/rifja", "src/session_visualizer"]
 
 [tool.hatch.build.targets.sdist]
 include = ["src/", "tests/", "docs/", "tools/", "packaging/", "install.sh", "Makefile", ".github/", ".gitignore", "README.md", "NOTICE", "LICENSE", "CONTRIBUTING.md", "SECURITY.md", "pyproject.toml", "uv.lock"]
@@ -48,4 +49,4 @@ line-length = 100
 [tool.mypy]
 python_version = "3.14"
 check_untyped_defs = true
-files = ["src/session_visualizer"]
+files = ["src/rifja"]

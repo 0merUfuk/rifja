@@ -52,7 +52,8 @@ SKIP_DIRECTORIES = frozenset(
         ".nuxt",
         ".cache",
         ".Trash",
-        ".session-visualizer",
+        ".rifja",
+        ".session-visualizer",  # Historical state remains excluded from discovery.
         ".ssh",
         ".aws",
         ".gnupg",

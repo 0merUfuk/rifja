@@ -72,8 +72,8 @@ def main() -> None:
     root = Path(__file__).resolve().parents[1]
     version = tomllib.loads((root / "pyproject.toml").read_text())["project"]["version"]
     current_names = {
-        f"session_visualizer-{version}-py3-none-any.whl",
-        f"session_visualizer-{version}.tar.gz",
+        f"rifja-{version}-py3-none-any.whl",
+        f"rifja-{version}.tar.gz",
     }
     findings: list[dict] = []
     synthetic_matches: list[dict] = []
@@ -152,7 +152,7 @@ def main() -> None:
                         )
             for name, content in members.items():
                 inspect(name, content, path.name)
-                if name.startswith("session_visualizer/"):
+                if name.startswith(("rifja/", "session_visualizer/")):
                     if current and source.get("src/" + name) != content:
                         findings.append(
                             {"scope": path.name, "file": name, "rule": "wheel_source_mismatch"}
@@ -213,7 +213,7 @@ def main() -> None:
     runtime = {
         Path(name).name: content
         for name, content in source.items()
-        if name.startswith("src/session_visualizer/") and name.endswith(".py")
+        if name.startswith("src/rifja/") and name.endswith(".py")
     }
     runtime_digest = hashlib.sha256()
     for name, content in sorted(runtime.items()):

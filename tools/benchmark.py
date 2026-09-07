@@ -121,13 +121,9 @@ class Harness:
         self.root.mkdir(mode=0o700)
         for name in ("home", "state", "cwd", "evidence", "sources", "repos", "worktrees"):
             (root / name).mkdir(mode=0o700)
-        installed = sorted(
-            (cli.parent.parent / "lib").glob("python*/site-packages/session_visualizer")
-        )
+        installed = sorted((cli.parent.parent / "lib").glob("python*/site-packages/rifja"))
         self.code_root = (
-            installed[0]
-            if installed
-            else Path(__file__).resolve().parents[1] / "src" / "session_visualizer"
+            installed[0] if installed else Path(__file__).resolve().parents[1] / "src" / "rifja"
         )
         self.code_scope = "installed_package" if installed else "checkout_editable_fallback"
         generator = Path(__file__).read_bytes()
@@ -954,7 +950,7 @@ def main() -> int:
         parser.error("output already exists; choose a fresh directory")
     if args.repetitions < 3:
         parser.error("at least three measured repetitions are required")
-    cli = (args.cli or workspace / ".venv" / "bin" / "session-visualizer").absolute()
+    cli = (args.cli or workspace / ".venv" / "bin" / "rifja").absolute()
     if not cli.is_file():
         parser.error("installed CLI is missing")
     local.mkdir(exist_ok=True)

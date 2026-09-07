@@ -14,7 +14,7 @@ import unittest
 from compression import zstd
 from unittest.mock import patch
 
-from session_visualizer import compressed
+from rifja import compressed
 
 
 class ShortReads(io.BytesIO):

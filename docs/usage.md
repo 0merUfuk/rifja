@@ -13,6 +13,8 @@ rifja doctor
 
 Use an IANA timezone such as `UTC`, `Europe/Istanbul` or `America/New_York`. `daily` groups timestamps into calendar days in this configured zone, including daylight-saving transitions. Original timestamps remain in evidence. A timestamp without an offset stays unresolved; the collector does not assign the host machine's timezone to it.
 
+Without `--timezone`, setup detects the zone instead of assuming UTC. The chain is: the `TZ` environment variable first, then the `/etc/localtime` symlink target; each value is validated as an IANA key, and a set-but-invalid `TZ` value ends the chain. If neither step resolves, setup applies UTC and human output marks it `(fallback — pass --timezone to set it explicitly)`. Human output always marks the origin as `(explicit)`, `(detected)` or `(fallback)`; JSON keeps the single `timezone` key holding the zone setup actually applied.
+
 State location precedence is:
 
 1. `--home PATH` on the command.
@@ -75,6 +77,8 @@ rifja doctor --json
 ```
 
 Normal refresh uses checkpoints and skips unchanged sources. `--verify` rechecks source content even when recorded file metadata is unchanged. `--rebuild` replays configured sources while preserving durable user memory, corrections, provenance and forget rules. Neither option edits producer history or verifies project code.
+
+Refresh prints progress to stderr as `refresh: …` lines (sources processed, records parsed and inserted, current path). On an interactive terminal one line updates in place at a bounded cadence; a redirected run appends plain lines at the same bounded cadence. The global `--quiet` flag suppresses progress output; the final report on stdout is unaffected, and in `--json` mode progress still goes to stderr while the envelope stays on stdout. The human summary names sources that finished `partial`, `failed` or `missing`; inspect them with `source list --json`.
 
 An incomplete final JSONL record waits for a later refresh. Malformed records, missing sources and unsupported formats leave diagnostics and may yield partial coverage while valid captured records remain usable. Check `source list` for source paths, statuses and diagnostic codes. `doctor` checks application state integrity and source availability; a passing integrity check is not a claim that every source is complete.
 
@@ -248,16 +252,32 @@ Application state, exports, backups and producer transcripts remain. A new `--ho
 
 ## Automation, output and diagnostics
 
-Global `--json` and `--home PATH` can appear before or after subcommands. Successful ordinary JSON responses have `schema_version: 1`, `command` and `data`. Human-readable output is plain text/Markdown with terminal control sequences removed. Errors go to stderr; do not expect a JSON error envelope.
+Global `--json`, `--home PATH` and `--quiet` can appear before or after subcommands. Successful ordinary JSON responses have `schema_version: 1`, `command` and `data`. Human-readable output is plain text/Markdown with terminal control sequences removed; every command renders short lines in human mode, and JSON remains available for all of them with `--json`.
+
+Errors keep their exit codes in both modes. Human mode writes the contract label plus next-action hints to stderr:
+
+```text
+Error: project_not_found
+  - Registered projects: `rifja project list`.
+  - Register one: `rifja project add PATH`.
+```
+
+In `--json` mode the error is a versioned envelope on stdout, so automation reads machine-readable hints:
+
+```json
+{"schema_version":1,"command":"resume","error":{"code":"project_not_found","hints":["Registered projects: `rifja project list`.","Register one: `rifja project add PATH`."]}}
+```
+
+`hints` is empty for labels without a specific next action. `code` is the contract label (or the exception class name for local I/O/database errors, and `busy` for writer contention). Parse-level usage errors such as an unknown command or a malformed flag remain argparse text on stderr with exit 2. A bare `rifja` invocation prints an overview with grouped commands and exits 2; with `--json` it emits the error envelope with code `no_command`.
 
 Resume and handoff Markdown escape source Markdown/HTML syntax and display embedded newlines as `↵`, preserving the boundary between document structure and imported text. JSON keeps structured text fields for machine use. These presentation controls do not make source content authoritative or safe to execute.
 
 | Exit | Meaning | Next step |
 | --- | --- | --- |
 | 0 | Command completed | Inspect returned coverage and evidence limits where relevant. |
-| 2 | Invalid input or local operation error | Read stderr; correct the path, selector, value or state issue. |
+| 2 | Invalid input or local operation error | Read the error hints (stderr in human mode, `error.hints` in `--json`); correct the path, selector, value or state issue. |
 | 3 | Refresh completed with partial coverage | Inspect `source list --json`, restore available inputs and retry. |
-| 4 | Application writer is busy | Wait for the other writer, then retry. |
+| 4 | Application writer is busy | Wait for the other writer, then retry (`error.code` is `busy` in `--json`). |
 | 130 | Interrupted | Committed state is retained; retry refresh. |
 
 There is no background monitor, network upload, provider write-back or implicit transcript scan. Schedule explicit commands in your own environment if needed. Keep source roots narrow and use a separate application state directory for experiments.

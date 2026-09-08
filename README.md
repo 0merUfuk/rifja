@@ -63,19 +63,25 @@ Replace the example repository and transcript paths with directories you intend 
 
 ```sh
 rifja init
-rifja project add "/path/to/project" --name harbor
-rifja document add harbor
-rifja source discover
-rifja source add codex "/path/to/codex/sessions"
-rifja refresh
-rifja source list
+rifja document add harbor        # separate opt-in for project documents
 rifja daily --project harbor
 rifja resume harbor
 ```
 
-Non-interactive setup (`rifja setup --timezone ZONE`) stays available; see
-[getting started](docs/getting-started.md#2-guided-setup--rifja-init) for the
-exact split between the wizard and the primitive.
+`init` already registered your project and sources; the remaining commands are
+idempotent, so rerunning the manual flow is an equivalent alternative:
+
+```sh
+rifja setup --timezone Europe/Istanbul
+rifja project add "/path/to/project" --name harbor
+rifja source discover
+rifja source add codex "/path/to/codex/sessions"
+rifja refresh
+rifja source list
+```
+
+See [getting started](docs/getting-started.md#2-guided-setup--rifja-init) for
+the exact split between the wizard and the primitives.
 
 `document add` opts one registered worktree into bounded README, status, verification and architecture documents. `resume` combines purpose, current Git state, pending work and its conditions, decisions, accepted memory and uncertainty. Documented purpose is separate from a current user objective. Recorded results and document claims do not certify current code. Use `resume harbor --cached` for stored Git observations; documents change only through explicit `refresh`.
 

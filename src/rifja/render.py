@@ -721,7 +721,11 @@ def _init_lines(data: dict[str, Any], extra: dict[str, Any], tty: bool) -> list[
 
 def _doctor_lines(data: dict[str, Any], extra: dict[str, Any], tty: bool) -> list[str]:
     lines = [f"Doctor: {status_word(data['status'], tty)}"]
-    lines += [f"  {check['name']}: {status_word(check['status'], tty)}" for check in data["checks"]]
+    lines += [
+        f"  {check['name']}: {status_word(check['status'], tty)}"
+        + (f" — {check['note']}" if check.get("note") else "")
+        for check in data["checks"]
+    ]
     lines.append(
         f"  Schema: {data['schema_version']}; SQLite: {data['sqlite']}; "
         f"offline runtime: {'yes' if data['offline_runtime'] else 'no'}"
@@ -920,6 +924,13 @@ def _config_lines(data: dict[str, Any], extra: dict[str, Any], tty: bool) -> lis
     ]
 
 
+def _mcp_lines(data: dict[str, Any], extra: dict[str, Any], tty: bool) -> list[str]:
+    return [
+        f"MCP stdio session ended: {data.get('requests', 0)} request(s) served.",
+        "Transport was stdin/stdout only; no network listener existed.",
+    ]
+
+
 def _memory_lines(data: dict[str, Any], extra: dict[str, Any], tty: bool) -> list[str]:
     if "memory" in data:
         entries = data["memory"]
@@ -1008,6 +1019,7 @@ _RENDERERS: dict[str, _Renderer] = {
     "forget": _simple_lines,
     "init": _init_lines,
     "memory": _memory_lines,
+    "mcp": _mcp_lines,
     "project": _project_lines,
     "refresh": _refresh_lines,
     "retention": _simple_lines,

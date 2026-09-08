@@ -749,3 +749,16 @@ def iter_hermes(path: Path, after_id: int = 0) -> Iterator[Record | Diagnostic]:
     finally:
         if conn is not None:
             conn.close()
+
+
+# Registry of supported producer formats, surfaced by `rifja doctor`. Producer
+# formats are officially unstable (Claude Code's docs say third-party parsers
+# "can break on any release"; Codex rollouts are undocumented), so breakage is
+# a scheduled event: pin expectations here, fail as partial coverage, never as
+# silent corruption.
+ADAPTER_VERSIONS: dict[str, str] = {
+    "codex_jsonl": "Codex rollout JSONL (unofficial format; parsed read-only)",
+    "codex_zstd": "Codex compressed rollout stream (.jsonl.zst)",
+    "claude_jsonl": "Claude Code transcript JSONL (unofficial format; changes between releases)",
+    "hermes_sqlite": "Hermes state.db (supported local SQLite shape)",
+}

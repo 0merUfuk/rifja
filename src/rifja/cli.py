@@ -73,7 +73,7 @@ COMMAND_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
         "Inspect",
         ("daily", "resume", "session", "tasks", "decisions", "items", "search", "explain"),
     ),
-    ("Deliver", ("export", "memory", "constitution", "backup", "restore")),
+    ("Deliver", ("export", "memory", "constitution", "backup", "restore", "mcp")),
 )
 
 
@@ -509,6 +509,10 @@ def parser() -> argparse.ArgumentParser:
     retention = sub.add_parser("retention", help="Preview or apply historical session forgetting")
     retention.add_argument("--before", required=True)
     retention.add_argument("--confirm", action="store_true")
+    sub.add_parser(
+        "mcp",
+        help="Read-only MCP tool server over stdio (spawned by agent hosts; no network)",
+    )
     return p
 
 
@@ -729,6 +733,12 @@ def _execute(args: argparse.Namespace, store: Store) -> tuple[Any, int, dict[str
         return app.forget(args.session, args.confirm), 0, {}
     if cmd == "retention":
         return app.retain(args.before, args.confirm), 0, {}
+    if cmd == "mcp":
+        from .mcp_server import serve
+
+        # Blocks until the agent host closes stdin; stdout stays protocol-only,
+        # so the post-run summary is routed to stderr.
+        return serve(store), 0, {"to_stderr": True}
     raise ValueError("unknown_command")
 
 
@@ -796,7 +806,8 @@ def main(argv: list[str] | None = None) -> int:
             text = result
         else:
             text = readable(args.command, result, extra, _decorated(sys.stdout))
-        print(safe_output(text))
+        stream = sys.stderr if extra.get("to_stderr") else sys.stdout
+        print(safe_output(text), file=stream)
         return code
     except BrokenPipeError:
         return 0

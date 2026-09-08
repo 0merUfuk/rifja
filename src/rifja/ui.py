@@ -372,9 +372,27 @@ def render_sources(app: App) -> str:
     )
 
 
+class LoopbackServer(HTTPServer):
+    """HTTPServer without the reverse-DNS lookup in server_bind.
+
+    ``socket.getfqdn()`` on a loopback address is useless for this server and
+    can block for many seconds on hosts with slow resolvers (observed on macOS
+    CI). A loopback-only dashboard never names itself via DNS.
+    """
+
+    def server_bind(self) -> None:
+        import socket
+
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.socket.bind(self.server_address)
+        self.server_address = self.socket.getsockname()[:2]
+        self.server_name = "127.0.0.1"
+        self.server_port = self.server_address[1]
+
+
 def build_server(store: Store, port: int) -> HTTPServer:
     """Bind loopback only and fail loudly when the port is taken."""
-    server = HTTPServer(("127.0.0.1", port), UiHandler)
+    server = LoopbackServer(("127.0.0.1", port), UiHandler)
     server.app = App(store)  # type: ignore[attr-defined]
     server.store = store  # type: ignore[attr-defined]
     server.sessions = {}  # type: ignore[attr-defined,misc]

@@ -121,3 +121,28 @@ rollout files are undocumented. Rifja treats breakage as a scheduled event:
 (`adapter_*` checks), unknown shapes fail as partial coverage with
 diagnostics, and pinned synthetic corpora cover each format in the test
 suite.
+
+### Injection posture (read before installing the hook)
+
+SessionStart output becomes agent context, and the injected resume contains
+imported transcript evidence. The design keeps that content as bounded,
+escaped, fenced *evidence* — the host timeout and output cap bound it, and
+`BEGIN/END IMPORTED UNTRUSTED CONTEXT` plus the trust notice mark its
+authority as conditional. Fences do not prevent a model from following text
+embedded in them; that residual is inherent to any context injection. The
+control is consent and scope: the hook is opt-in per settings file, scoped by
+`RIFJA_PROJECT`, prints nothing on any failure, and is fully removable.
+Operators who want zero untrusted content at session start should install the
+MCP server only and use the pull model — the agent (or operator) explicitly
+calls `rifja resume`/`search` when context is wanted, so every injection is an
+explicit action.
+
+## Claude Code plugin packaging
+
+For marketplace distribution instead of hand-configured snippets,
+`packaging/claude-plugin/` in this repository carries the plugin manifest
+(`.claude-plugin/plugin.json`), a one-plugin `marketplace.json`, the
+SessionStart hook bundle (`hooks/hooks.json` + the same fail-open script) and
+the plugin-level `.mcp.json`. The plugin wraps the Homebrew-installed `rifja`
+binary — it ships no binary or environment of its own — and its version fields
+are bumped with each release and covered by the packaging tests.

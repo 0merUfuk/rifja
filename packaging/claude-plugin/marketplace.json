@@ -1,0 +1,18 @@
+{
+  "name": "rifja",
+  "owner": {
+    "name": "0merUfuk"
+  },
+  "plugins": [
+    {
+      "name": "rifja",
+      "source": "./",
+      "description": "Read-only MCP server (search/resume/explain/memory) plus a bounded, fail-open SessionStart hook over the locally installed `rifja` CLI.",
+      "version": "0.2.1",
+      "category": "productivity",
+      "strict": false,
+      "hooks": "./hooks/hooks.json",
+      "mcpServers": "./.mcp.json"
+    }
+  ]
+}

@@ -121,3 +121,13 @@ rollout files are undocumented. Rifja treats breakage as a scheduled event:
 (`adapter_*` checks), unknown shapes fail as partial coverage with
 diagnostics, and pinned synthetic corpora cover each format in the test
 suite.
+
+## Claude Code plugin packaging
+
+For marketplace distribution instead of hand-configured snippets,
+`packaging/claude-plugin/` in this repository carries the plugin manifest
+(`.claude-plugin/plugin.json`), a one-plugin `marketplace.json`, the
+SessionStart hook bundle (`hooks/hooks.json` + the same fail-open script) and
+the plugin-level `.mcp.json`. The plugin wraps the Homebrew-installed `rifja`
+binary — it ships no binary or environment of its own — and its version fields
+are bumped with each release and covered by the packaging tests.

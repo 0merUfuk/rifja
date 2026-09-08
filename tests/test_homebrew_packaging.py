@@ -85,3 +85,26 @@ def test_bundle_is_reproducible_relocatable_and_allowlisted(tmp_path):
         assert installer.mode == 0o755
     with pytest.raises(FileExistsError):
         packaging.bundle(source, tmp_path / "one")
+
+
+def test_claude_plugin_manifests_match_the_release_version() -> None:
+    """Plugin distribution manifests must ship the released identity."""
+    import json
+
+    root = Path(__file__).parents[1] / "packaging" / "claude-plugin"
+    plugin = json.loads((root / ".claude-plugin" / "plugin.json").read_text())
+    marketplace = json.loads((root / "marketplace.json").read_text())
+    mcp = json.loads((root / ".mcp.json").read_text())
+    hooks = json.loads((root / "hooks" / "hooks.json").read_text())
+    version = tomllib.loads((packaging.ROOT / "pyproject.toml").read_text())["project"]["version"]
+    assert plugin["name"] == "rifja" and plugin["version"] == version
+    assert marketplace["plugins"][0]["version"] == version
+    assert marketplace["plugins"][0]["name"] == "rifja"
+    assert mcp["mcpServers"]["rifja"] == {"command": "rifja", "args": ["mcp"]}
+    hook = hooks["hooks"]["SessionStart"][0]["hooks"][0]
+    assert hook["timeout"] == 10
+    assert "${CLAUDE_PLUGIN_ROOT}" in hook["command"]
+    shipped = (root / "hooks" / "session-start.sh").read_text()
+    canonical = (packaging.ROOT / "packaging" / "hooks" / "session-start.sh").read_text()
+    assert shipped == canonical, "the plugin hook must match the canonical fail-open script"
+    assert "exit 0" in shipped and "head -c" in shipped

@@ -27,8 +27,10 @@ must not depend on real provider transcripts or credentials.
 
 ## Release procedure
 
-1. Update the version in `pyproject.toml` and `src/rifja/__init__.py`,
-   update release notes and current-version examples, then run `uv lock`.
+1. Update the version in `pyproject.toml` and `src/rifja/__init__.py`, the
+   version fields in `packaging/claude-plugin/.claude-plugin/plugin.json` and
+   `packaging/claude-plugin/marketplace.json`, update release notes and
+   current-version examples, then run `uv lock`.
    Use `0.x.yrcN` for candidates and `0.x.y` for normal releases. CLI, file format
    and schema changes must be described explicitly; never replace released bytes.
 2. Run the commands above and inspect the diff, source/history audit and generated

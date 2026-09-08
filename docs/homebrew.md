@@ -83,3 +83,42 @@ a matching immutable HTTPS URL and a new output path. It does not publish.
 CI targets macOS 15 arm64/x86-64 and Ubuntu 24.04 x86-64. Successful runs are the
 compatibility evidence; configuration alone is not a platform certification.
 Windows and Linux arm64 remain outside the release matrix.
+
+## Tap rename decision and transition contract
+
+Decision (2026-09, delegated): the public tap `0merUfuk/thematrix` will be
+renamed to `0merUfuk/rifja`. The current name is a company-collection artifact
+(the tap also hosts `morp`, `neo`, `oracle`, `rifja`, `skuggsja` and
+`trinity`); the product's canonical identity is `rifja`, and a formula named
+`rifja` should live in a tap that does not require a mnemonic. This follows the
+same migration discipline as the product rename recorded in
+[identity](identity.md).
+
+The rename is executed by the owner as a GitHub repository rename
+(Settings → General → Repository name). GitHub redirects the old tap URL, so
+during the transition **both install paths keep working**:
+
+```sh
+# Old name (redirected after the rename; unchanged until the rename lands)
+brew install 0merUfuk/thematrix/rifja
+# New name (valid immediately after the rename)
+brew install 0merUfuk/rifja/rifja
+```
+
+Existing installations keep updating through either name because `brew update`
+follows the redirect; a one-time explicit re-tap removes the indirection:
+
+```sh
+brew untap 0merUfuk/thematrix
+brew tap 0merUfuk/rifja https://github.com/0merUfuk/rifja-tap
+brew upgrade 0merUfuk/rifja/rifja
+```
+
+(Application state, exports and backups are untouched by any of these steps.)
+
+Ordering contract: the repository documentation switches its qualified
+`brew` commands to the new tap name only in the first release **after** the
+physical rename lands — never before, so no documented command can dangle.
+The release procedure's tap-publish step (`tools/release.py publish-tap`)
+must target the new tap from that release onward, and the release notes must
+carry the migration block above verbatim.

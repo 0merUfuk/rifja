@@ -132,3 +132,13 @@ checks may reject it. The product rename itself does not relocate user inputs.
 
 The local checkout is named `rifja`; the former checkout path is a compatibility
 symlink for existing bookmarks and running tasks. It is not a second checkout.
+
+## Tap rename follows the product identity (2026-09)
+
+The same identity discipline that renamed the product now renames its public
+tap: `0merUfuk/thematrix` → `0merUfuk/rifja` (owner-executed GitHub rename;
+both paths work through GitHub's redirect during the transition). The full
+ordering contract and user migration commands live in
+[Homebrew delivery](homebrew.md#tap-rename-decision-and-transition-contract).
+As with the product rename, application state is untouched: taps deliver the
+program, never the data.

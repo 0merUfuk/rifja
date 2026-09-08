@@ -1,0 +1,16 @@
+{
+  "name": "rifja",
+  "description": "Offline continuity and evidence for coding-agent sessions and Git: resume context, provenance search and operator memory via a read-only MCP server and a bounded SessionStart hook.",
+  "version": "0.2.1",
+  "author": {
+    "name": "0merUfuk"
+  },
+  "homepage": "https://github.com/0merUfuk/rifja",
+  "license": "MIT",
+  "keywords": [
+    "continuity",
+    "session-history",
+    "mcp",
+    "local-first"
+  ]
+}

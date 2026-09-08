@@ -53,10 +53,16 @@ See [release verification and Homebrew delivery](docs/homebrew.md).
 
 ## Start with one project
 
+The guided path is `rifja init`: in an interactive terminal it proposes each
+step and asks before every state change (timezone detection, discovered
+sources, project directories, first refresh). Without a terminal it prints the
+plan and applies nothing. A full walkthrough with verbatim session output is
+in [the first-session guide](docs/getting-started.md).
+
 Replace the example repository and transcript paths with directories you intend to import. Discovery only shows candidate locations; it does not import them.
 
 ```sh
-rifja setup --timezone Europe/Istanbul
+rifja init
 rifja project add "/path/to/project" --name harbor
 rifja document add harbor
 rifja source discover
@@ -66,6 +72,10 @@ rifja source list
 rifja daily --project harbor
 rifja resume harbor
 ```
+
+Non-interactive setup (`rifja setup --timezone ZONE`) stays available; see
+[getting started](docs/getting-started.md#2-guided-setup--rifja-init) for the
+exact split between the wizard and the primitive.
 
 `document add` opts one registered worktree into bounded README, status, verification and architecture documents. `resume` combines purpose, current Git state, pending work and its conditions, decisions, accepted memory and uncertainty. Documented purpose is separate from a current user objective. Recorded results and document claims do not certify current code. Use `resume harbor --cached` for stored Git observations; documents change only through explicit `refresh`.
 

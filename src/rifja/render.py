@@ -191,8 +191,16 @@ def resume_markdown(data: dict[str, Any]) -> str:
             lines.append(
                 "  Observation limitations: " + "; ".join(_inline(d) for d in obs["diagnostics"])
             )
+    # Everything between these markers is imported, transcript-derived
+    # evidence: quoted, escaped and never authority (the export format uses
+    # the same markers).
+    lines += ["", "BEGIN IMPORTED UNTRUSTED CONTEXT", ""]
     lines += _brief_lines(data)
-    lines += ["", "## Unfinished work and blockers (untrusted source excerpts)", ""]
+    lines += [
+        "",
+        "## Unfinished work and blockers (untrusted source excerpts)",
+        "",
+    ]
     visible_unfinished = [i for i in data["unfinished"] if i["category"] != "documented_pending"]
     lines += [_item(item) for item in visible_unfinished[:8]] or [
         "No additional unfinished session work identified in supported explicit statements."
@@ -222,7 +230,7 @@ def resume_markdown(data: dict[str, Any]) -> str:
         )
         for item in data["claims"][:3]
     ] or ["No completion claim or captured result identified."]
-    lines += ["", "## Recent sessions", ""]
+    lines += ["", "END IMPORTED UNTRUSTED CONTEXT", "", "## Recent sessions", ""]
     lines += [
         f"- {s['provider']} {s['id']} — last known event {s['last_event'] or 'unknown'}; {s['records']} records"
         for s in data["sessions"]

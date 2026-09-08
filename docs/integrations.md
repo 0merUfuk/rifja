@@ -63,7 +63,9 @@ For session history and continuation context, run `rifja resume <project>`
 ```
 
 SessionStart hook (bounded, fail-open; the script ships at
-`packaging/hooks/session-start.sh`):
+`packaging/hooks/session-start.sh`). Scope it where it should apply: project
+`.claude/settings.json` (shared, project-scoped), `.claude/settings.local.json`
+(personal, project-scoped) or `~/.claude/settings.json` (user-wide):
 
 ```json
 {
@@ -99,8 +101,16 @@ equivalent of the `CLAUDE.md` note above.
 ### Hermes
 
 Hermes consumes the native briefing channel; the CLI `resume`/`export`
-Markdown is the payload, and the same MCP server is available wherever an
-MCP-capable runtime is configured.
+Markdown is the payload. Where a Hermes profile supports MCP clients, the same
+stdio server registers under its `mcp_servers` configuration, e.g.:
+
+```yaml
+# ~/.hermes/config.yaml (illustrative; follow the profile's current schema)
+mcp_servers:
+  rifja:
+    command: rifja
+    args: [mcp]
+```
 
 ## Producer-format honesty
 

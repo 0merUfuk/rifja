@@ -136,3 +136,53 @@ Priority denotes review focus using the original demonstrated impact; gaps state
 The discovered source, restore, memory, query, rendering, concurrency and package entrypoints are represented, every stated trust boundary has a threat, runtime and development dependencies are separated, and deployment assumptions are explicit. Exact tested fingerprints and artifact/benchmark acceptance requirements are in [review findings](review-findings.md). Other reviewers own Git/compression certification. No broader platform or perfect-redaction guarantee follows from these tests.
 
 Hermes progress limits are cooperative and its page-cache setting is not a total-memory cap. Missing sources and finite context limits remain visible uncertainty, not proof of inactivity. A canonical backup schema does not authenticate the truth of supplied records. SQLite defense-in-depth is described in its [security guidance](https://www.sqlite.org/security.html) and [trusted-schema documentation](https://www.sqlite.org/pragma.html#pragma_trusted_schema); canonical schema validation remains necessary.
+
+## Phase 2–3 surfaces update (2026-09): MCP stdio server and the local dashboard
+
+The component note "no network service appears in these entrypoints" described
+the pre-dashboard CLI. The 2026 roadmap phases add two operator-facing entry
+points; this section records their trust boundaries and supersedes that note.
+
+**`rifja mcp` (stdio only, Phase 2).** A JSON-RPC 2.0 tool server on
+stdin/stdout, spawned by an agent host. It opens no socket, so the
+"no unauthenticated network endpoint" property continues to hold by
+construction: whoever can spawn the process already holds the operator's local
+authority. Tools are read-only `App` queries; transcript-derived tool output
+returns through the same escaped, fenced render paths as the CLI (a data-only
+channel — it is never written to instruction-priority files), and per-request
+failures, including writer contention, are returned as `isError` results with
+stable codes so the server never exits on them.
+
+**`rifja ui` (loopback dashboard, Phase 3).** An opt-in, read-only local web
+dashboard bound to `127.0.0.1` on an explicit port, refusing to start when the
+port is taken. The threat-model claim is preserved deliberately:
+
+- The printed URL carries a **one-time bootstrap token** that a browser
+  exchanges exactly once for a scoped, expiring `HttpOnly` + `SameSite=strict`
+  session cookie; the token is invalidated immediately and never reused. Every
+  route — static assets included — requires the session; there is no
+  unauthenticated endpoint on the listener.
+- v1 is **GET-only**: no mutation endpoints exist, so no CSRF surface exists.
+  Any future mutation endpoint must ship fail-closed CSRF validation (session-
+  bound token, exact `Origin` match, `Sec-Fetch-Site` check) with negative
+  tests before merge.
+- Every response carries `Cache-Control: no-store`, `Referrer-Policy:
+  no-referrer`, `X-Content-Type-Options: nosniff` and a restrictive CSP
+  (`default-src 'none'` with a minimal style policy); there is no inline
+  script and no inline style.
+- **Output encoding is a renderer invariant:** transcript-derived content is
+  adversarial (TM-007 applies unchanged). All HTML body/attribute
+  interpolation passes context-specific escapers, and every URL sink passes a
+  scheme policy that rejects `javascript:`, `vbscript:` and unsafe
+  `data:`/`blob:` values *before* escaping; rejections are fixture-tested.
+- The dashboard executes the same `App` methods as the CLI — it adds no
+  persistence, no policy and no export-to-disk.
+
+**Residual risks.** A local process able to read the browser's cookie store or
+memory can reuse a live dashboard session; this is within the existing "OS
+compromise is out of scope" assumption. The one-time link visible in the
+terminal or shell scrollback is single-use and expires on first exchange, but
+operators on shared machines should treat the printed URL as a secret.
+Read-only exposure still leaks transcripts to anything that can reach the
+loopback listener AND hold a valid session; loopback binding alone is not the
+control — the session is.

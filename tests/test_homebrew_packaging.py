@@ -103,7 +103,12 @@ def test_claude_plugin_manifests_match_the_release_version() -> None:
     assert mcp["mcpServers"]["rifja"] == {"command": "rifja", "args": ["mcp"]}
     hook = hooks["hooks"]["SessionStart"][0]["hooks"][0]
     assert hook["timeout"] == 10
-    assert "${CLAUDE_PLUGIN_ROOT}" in hook["command"]
+    assert hook["command"] == ('${CLAUDE_PLUGIN_ROOT}/hooks/session-start.sh "${RIFJA_PROJECT:-}"')
+    # With strict=false the marketplace entry is the complete definition: the
+    # hook bundle and MCP server must be declared on both manifests.
+    for manifest in (plugin, marketplace["plugins"][0]):
+        assert manifest["hooks"] == "./hooks/hooks.json"
+        assert manifest["mcpServers"] == "./.mcp.json"
     shipped = (root / "hooks" / "session-start.sh").read_text()
     canonical = (packaging.ROOT / "packaging" / "hooks" / "session-start.sh").read_text()
     assert shipped == canonical, "the plugin hook must match the canonical fail-open script"

@@ -17,6 +17,11 @@ Contents:
   SessionStart hook (10 s host timeout, 12 KiB output cap, exit 0 on every
   failure path). Set `RIFJA_PROJECT` or edit the command's argument to select
   the project whose continuation context is injected as data-only evidence.
+  The injected text is escaped, fenced untrusted evidence; fences mark
+  authority as conditional rather than preventing a model from reading it, so
+  operators who want no untrusted content at session start should omit the
+  hook and keep the MCP server (the pull model, where each retrieval is an
+  explicit action).
 - `.mcp.json` — registers the read-only MCP stdio server (`rifja mcp`) so
   Claude Code can call `search`, `resume`, `explain` and `memory`.
 

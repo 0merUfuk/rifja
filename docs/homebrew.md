@@ -110,7 +110,7 @@ follows the redirect; a one-time explicit re-tap removes the indirection:
 
 ```sh
 brew untap 0merUfuk/thematrix
-brew tap 0merUfuk/rifja https://github.com/0merUfuk/rifja-tap
+brew tap 0merUfuk/rifja https://github.com/0merUfuk/homebrew-rifja
 brew upgrade 0merUfuk/rifja/rifja
 ```
 
@@ -120,5 +120,7 @@ Ordering contract: the repository documentation switches its qualified
 `brew` commands to the new tap name only in the first release **after** the
 physical rename lands — never before, so no documented command can dangle.
 The release procedure's tap-publish step (`tools/release.py publish-tap`)
-must target the new tap from that release onward, and the release notes must
-carry the migration block above verbatim.
+must target the new tap from that release onward — the first post-rename
+release also updates `TAP_REPOSITORY` in `tools/release.py` to
+`0merUfuk/homebrew-rifja` in the same commit as the documentation switch —
+and the release notes must carry the migration block above verbatim.

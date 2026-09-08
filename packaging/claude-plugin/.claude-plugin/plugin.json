@@ -12,5 +12,7 @@
     "session-history",
     "mcp",
     "local-first"
-  ]
+  ],
+  "hooks": "./hooks/hooks.json",
+  "mcpServers": "./.mcp.json"
 }

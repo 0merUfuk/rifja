@@ -218,6 +218,15 @@ rifja mcp
 
 `rifja mcp` runs a read-only MCP tool server speaking newline-delimited JSON-RPC 2.0 on stdin/stdout. It exposes `search`, `resume`, `explain` and `memory` over the same local state the CLI uses, with the same provenance and bounded excerpts. There is no TCP listener and no daemon: an agent host spawns the server, and it ends when stdin closes. Per-request failures — writer contention, invalid selectors — come back as MCP `isError` results with stable codes and retry guidance; the server never exits on them. See [agent ecosystem integrations](integrations.md) for Claude Code, Codex and Hermes configuration, hook snippets and the data-only injection rules.
 
+## Optional local dashboard
+
+```sh
+rifja ui
+rifja ui --port 42970 --open
+```
+
+`rifja ui` serves a read-only dashboard on `127.0.0.1` (default port 41970, overridable with `--port`; a taken port is an error, never a silent fallback). It prints a one-time sign-in URL: the first open exchanges the embedded token for an `HttpOnly` + `SameSite=strict` session cookie and invalidates the token, so the link cannot be replayed. Every page — static assets included — requires that session, responses carry `Cache-Control: no-store` and a restrictive CSP, and the browser is opened only with `--open`. The dashboard is GET-only: there are no mutation endpoints, so `refresh`, registration and forgetting stay CLI operations. Pages (overview, timeline, sessions, search, evidence, memory, sources) render the same `App` data as the CLI, with transcript-derived content escaped and no inline script. Stop with Ctrl-C; the server exists only while the command runs. The trust boundary is documented in [the threat model](rifja-threat-model.md).
+
 Document excerpts in JSON can share provenance through `evidence.observation_ref`.
 Resolve that key in `document_observations` for the observation time, Git revision,
 working-tree scope, modification status and worktree ID. Path, line references,

@@ -73,7 +73,7 @@ COMMAND_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
         "Inspect",
         ("daily", "resume", "session", "tasks", "decisions", "items", "search", "explain"),
     ),
-    ("Deliver", ("export", "memory", "constitution", "backup", "restore", "mcp")),
+    ("Deliver", ("export", "memory", "constitution", "backup", "restore", "mcp", "ui")),
 )
 
 
@@ -246,6 +246,9 @@ ERROR_HINTS: dict[str, tuple[str, ...]] = {
     ),
     "document_changed_during_read": (
         "Re-run `rifja refresh`; a document changed while it was read.",
+    ),
+    "ui_port_unavailable_pass_--port": (
+        "Pass --port with a free port; the dashboard never falls back to another port silently.",
     ),
 }
 
@@ -513,6 +516,11 @@ def parser() -> argparse.ArgumentParser:
         "mcp",
         help="Read-only MCP tool server over stdio (spawned by agent hosts; no network)",
     )
+    ui = sub.add_parser("ui", help="Read-only local dashboard on loopback (opt-in)")
+    ui.add_argument(
+        "--port", type=int, default=41970, help="TCP port on 127.0.0.1 (refuses taken ports)"
+    )
+    ui.add_argument("--open", action="store_true", help="Open the printed URL in a browser")
     return p
 
 
@@ -733,12 +741,17 @@ def _execute(args: argparse.Namespace, store: Store) -> tuple[Any, int, dict[str
         return app.forget(args.session, args.confirm), 0, {}
     if cmd == "retention":
         return app.retain(args.before, args.confirm), 0, {}
+    if cmd == "ui":
+        from .ui import serve as serve_ui
+
+        # Blocks until interrupted; the one-time URL is printed at startup.
+        return serve_ui(store, args.port, args.open), 0, {}
     if cmd == "mcp":
-        from .mcp_server import serve
+        from .mcp_server import serve as serve_mcp
 
         # Blocks until the agent host closes stdin; stdout stays protocol-only,
         # so the post-run summary is routed to stderr.
-        return serve(store), 0, {"to_stderr": True}
+        return serve_mcp(store), 0, {"to_stderr": True}
     raise ValueError("unknown_command")
 
 

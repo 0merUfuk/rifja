@@ -772,3 +772,24 @@ def test_partial_refresh_names_attention_sources_in_human_mode(cli):
     envelope = json.loads(cli.run("refresh", code=3).stdout)
     assert envelope["data"]["status"] == "partial"
     assert envelope["schema_version"] == 1
+
+
+def test_init_without_terminal_prints_plan_and_mutates_nothing(cli):
+    plan = cli.run("init", code=2, json_output=False)
+    assert "nothing below has been applied" in plan.stdout
+    assert "non-interactive primitive" in plan.stdout or "rifja setup" in plan.stdout
+    assert cli.data("config") == {}  # no configuration or registration was applied
+    envelope = json.loads(cli.run("init", code=2).stdout)
+    assert envelope["command"] == "init" and envelope["data"]["applied"] is False
+    assert envelope["data"]["plan"] and "explicit consent" in " ".join(envelope["data"]["plan"])
+    assert cli.data("config") == {}
+
+
+def test_empty_state_commands_hint_the_guided_path(cli):
+    human = cli.run("source", "list", json_output=False).stdout
+    assert human.startswith("No state yet")
+    assert "`rifja init`" in human and "`rifja setup`" in human
+    assert cli.data("source", "list")["configured"] == []
+    session_human = cli.run("session", json_output=False).stdout
+    assert session_human.startswith("No state yet")
+    assert "0 sessions:" in session_human

@@ -685,6 +685,40 @@ def _setup_lines(data: dict[str, Any], extra: dict[str, Any], tty: bool) -> list
     ]
 
 
+_INIT_ORIGINS = {"explicit": "(explicit)", "detected": "(detected)", "fallback": "(fallback)"}
+
+
+def _init_lines(data: dict[str, Any], extra: dict[str, Any], tty: bool) -> list[str]:
+    if data.get("aborted"):
+        steps = data.get("steps_applied") or []
+        if not steps:
+            return ["Init aborted at the first prompt; nothing was changed."]
+        return [
+            "Init aborted; already confirmed steps remain applied.",
+            "Applied steps: " + ", ".join(steps),
+            "Re-run `rifja init` any time; it is idempotent.",
+        ]
+    if not data.get("applied"):
+        if "plan" in data:
+            return [*(data["plan"]), "", "Exit code 2: run `rifja init` in a terminal to apply."]
+        return [f"rifja init changed nothing: {data.get('reason', 'declined')}."]
+    lines = [
+        "Init complete.",
+        f"State directory: {data['state_directory']}",
+        f"Timezone: {data['timezone']} {_INIT_ORIGINS.get(data.get('timezone_origin', ''), '')}".rstrip(),
+    ]
+    if data.get("sources_registered"):
+        lines.append(f"Sources registered: {data['sources_registered']}")
+    for project in data.get("projects", []):
+        lines.append(f"Project: {project['name']} (id {project['id']})")
+    if data.get("refresh"):
+        lines.append(f"Refresh: {status_word(data['refresh'], tty)}")
+    lines.append(f"Doctor: {status_word(data['doctor'], tty)}")
+    lines.append("Start here:")
+    lines += [f"  - {step}" for step in data.get("next", [])]
+    return lines
+
+
 def _doctor_lines(data: dict[str, Any], extra: dict[str, Any], tty: bool) -> list[str]:
     lines = [f"Doctor: {status_word(data['status'], tty)}"]
     lines += [f"  {check['name']}: {status_word(check['status'], tty)}" for check in data["checks"]]
@@ -972,6 +1006,7 @@ _RENDERERS: dict[str, _Renderer] = {
     "explain": _explain_lines,
     "export": _simple_lines,
     "forget": _simple_lines,
+    "init": _init_lines,
     "memory": _memory_lines,
     "project": _project_lines,
     "refresh": _refresh_lines,
@@ -1025,7 +1060,12 @@ def readable(kind: str, data: Any, extra: dict[str, Any] | None = None, tty: boo
         return "\n".join(_item(i) for i in data["items"]) or data.get("meaning", "No items.")
     handler = _RENDERERS.get(kind)
     if handler is not None and isinstance(data, dict):
-        return "\n".join(handler(data, extra or {}, tty))
+        lines = handler(data, extra or {}, tty)
+        if (extra or {}).get("uninitialized"):
+            lines.insert(
+                0, "No state yet — run `rifja init` (guided) or `rifja setup` (non-interactive)."
+            )
+        return "\n".join(lines)
     return json.dumps(data, ensure_ascii=False, indent=2)
 
 

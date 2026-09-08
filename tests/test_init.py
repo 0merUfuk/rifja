@@ -184,6 +184,34 @@ def test_declining_configuration_changes_nothing(workspace):
     store.close()
 
 
+def test_aborting_before_any_confirmation_reports_no_changes(workspace):
+    store = fresh_store(workspace)
+    result, code, _, _ = wizard(store, [])  # EOF at the very first prompt
+    assert code == 2
+    assert result["applied"] is False and result["aborted"] is True
+    assert result["steps_applied"] == []
+    assert store.config("timezone") is None
+    assert "nothing was changed" in readable("init", result)
+    store.close()
+
+
+def test_quiet_suppresses_wizard_refresh_progress_but_not_prompts(workspace):
+    store = fresh_store(workspace)
+    output = io.StringIO()
+    result, code, _ = run_init(
+        App(store),
+        store,
+        output,
+        answers=iter(["y", "y", "y", "y", "y", str(workspace["repo"]), "", "", "y"]),
+        interactive=True,
+        quiet=True,
+    )
+    assert code == 0 and result["refresh"] == "passed"
+    assert "refresh: " not in output.getvalue()  # progress suppressed
+    assert "Run refresh now? [Y/n]" in output.getvalue()  # consent prompts remain
+    store.close()
+
+
 def test_aborting_midway_keeps_confirmed_steps_only(workspace):
     store = fresh_store(workspace)
     result, code, _, _ = wizard(

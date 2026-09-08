@@ -689,16 +689,19 @@ _INIT_ORIGINS = {"explicit": "(explicit)", "detected": "(detected)", "fallback":
 
 
 def _init_lines(data: dict[str, Any], extra: dict[str, Any], tty: bool) -> list[str]:
+    if data.get("aborted"):
+        steps = data.get("steps_applied") or []
+        if not steps:
+            return ["Init aborted at the first prompt; nothing was changed."]
+        return [
+            "Init aborted; already confirmed steps remain applied.",
+            "Applied steps: " + ", ".join(steps),
+            "Re-run `rifja init` any time; it is idempotent.",
+        ]
     if not data.get("applied"):
         if "plan" in data:
             return [*(data["plan"]), "", "Exit code 2: run `rifja init` in a terminal to apply."]
         return [f"rifja init changed nothing: {data.get('reason', 'declined')}."]
-    if data.get("aborted"):
-        return [
-            "Init aborted; already confirmed steps remain applied.",
-            "Applied steps: " + (", ".join(data.get("steps_applied", [])) or "none"),
-            "Re-run `rifja init` any time; it is idempotent.",
-        ]
     lines = [
         "Init complete.",
         f"State directory: {data['state_directory']}",

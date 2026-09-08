@@ -20,8 +20,13 @@ from .ingest import Ingestor
 from .store import Store
 
 # Producers with a known deletion policy get one honest line at offer time.
+# Registration stores only the path; the durable copy exists after refresh.
 DELETION_NOTES = {
-    "claude": "Claude Code deletes old transcripts automatically (30 days by default); a registered copy survives.",
+    "claude": (
+        "Claude Code deletes old transcripts automatically (30 days by default). "
+        "A durable copy exists only once `rifja refresh` imports this source; "
+        "refresh before that window expires."
+    ),
 }
 
 
@@ -121,6 +126,7 @@ def run_init(
     timezone_arg: str | None = None,
     answers: Iterator[str] | None = None,
     interactive: bool | None = None,
+    quiet: bool = False,
 ) -> tuple[dict[str, Any], int, dict[str, Any]]:
     """Run the wizard. Returns (result, exit_code, extra) for the CLI printer."""
     responder = _Answers(answers, output)
@@ -130,9 +136,10 @@ def run_init(
         return {"applied": False, "plan": plan_lines(store, timezone_arg)}, 2, {}
     steps: dict[str, Any] = {"steps_applied": []}
     try:
-        return _guided(app, store, responder, output, timezone_arg, steps)
+        return _guided(app, store, responder, output, timezone_arg, steps, quiet)
     except _Aborted:
-        return {"applied": True, "aborted": True, **steps}, 2, {}
+        # An abort before any confirmation changed nothing; report it honestly.
+        return {"applied": bool(steps["steps_applied"]), "aborted": True, **steps}, 2, {}
 
 
 def _guided(
@@ -142,6 +149,7 @@ def _guided(
     output: TextIO,
     timezone_arg: str | None,
     steps: dict[str, Any],
+    quiet: bool,
 ) -> tuple[dict[str, Any], int, dict[str, Any]]:
     home = str(store.home)
     if store.config("timezone") is not None and not responder.confirm(
@@ -216,7 +224,7 @@ def _guided(
             "authorize this step.\n"
         )
         if responder.confirm("Run refresh now?", True):
-            progress = RefreshProgress(quiet=False)
+            progress = RefreshProgress(quiet=quiet)
             refreshed = Ingestor(store).refresh(progress=progress)
             progress.finish(refreshed)
             steps["steps_applied"].append("refresh")

@@ -540,6 +540,7 @@ def _execute(args: argparse.Namespace, store: Store) -> tuple[Any, int, dict[str
             sys.stdout,
             timezone_arg=args.timezone,
             interactive=sys.stdin.isatty() and not args.json,
+            quiet=args.quiet,
         )
     if cmd == "setup":
         zone, origin = (args.timezone, "explicit") if args.timezone else detect_timezone()

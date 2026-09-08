@@ -20,6 +20,7 @@ from __future__ import annotations
 import html
 import re
 import secrets
+import sys
 import time
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -540,16 +541,23 @@ class UiHandler(BaseHTTPRequestHandler):
         self._respond(200, body)
 
 
-def serve(store: Store, port: int, open_browser: bool = False) -> dict[str, Any]:
+def serve(
+    store: Store, port: int, open_browser: bool = False, machine_output: bool = False
+) -> dict[str, Any]:
     """Run until interrupted; never falls back to another port."""
+    if not 1 <= int(port) <= 65535:
+        raise ValueError("ui_port_out_of_range")
     try:
         server = build_server(store, port)
     except OSError:
         raise ValueError("ui_port_unavailable_pass_--port") from None
     bound = server.server_address[1]
     url = f"http://127.0.0.1:{bound}/?t={server.bootstrap_token}"  # type: ignore[attr-defined]
-    print(f"Rifja UI (read-only): {url}")
-    print("The link signs in one browser session and then expires. Ctrl-C to stop.")
+    stream = sys.stderr if machine_output else sys.stdout
+    # In --json mode stdout stays reserved for the envelope; keep startup
+    # messages on stderr so automation never parses interleaved text.
+    print(f"Rifja UI (read-only): {url}", file=stream)
+    print("The link signs in one browser session and then expires. Ctrl-C to stop.", file=stream)
     if open_browser:
         import webbrowser
 

@@ -250,6 +250,7 @@ ERROR_HINTS: dict[str, tuple[str, ...]] = {
     "ui_port_unavailable_pass_--port": (
         "Pass --port with a free port; the dashboard never falls back to another port silently.",
     ),
+    "ui_port_out_of_range": ("Pass --port between 1 and 65535.",),
 }
 
 
@@ -745,7 +746,7 @@ def _execute(args: argparse.Namespace, store: Store) -> tuple[Any, int, dict[str
         from .ui import serve as serve_ui
 
         # Blocks until interrupted; the one-time URL is printed at startup.
-        return serve_ui(store, args.port, args.open), 0, {}
+        return serve_ui(store, args.port, args.open, machine_output=args.json), 0, {}
     if cmd == "mcp":
         from .mcp_server import serve as serve_mcp
 

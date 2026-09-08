@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from test_cli import Console
+from test_cli import CONSOLE, Console
 
 from rifja.ui import build_server, esc_attr, render_search, safe_url
 
@@ -257,3 +257,37 @@ def test_mcp_and_ui_surfaces_documented(cli):
     assert "one-time bootstrap token" in threat
     assert "GET-only" in threat
     assert json.dumps({"checked": True})  # keep imports meaningful
+
+
+@pytest.mark.parametrize("port", [0, -1, 65536, 70000])
+def test_ui_rejects_out_of_range_ports(cli, port):
+    from rifja.store import Store
+    from rifja.ui import serve
+
+    store = Store(Path(cli.state))
+    with pytest.raises(ValueError, match="ui_port_out_of_range"):
+        serve(store, port, open_browser=False)
+    store.close()
+
+
+def test_json_mode_keeps_stdout_reserved_for_the_envelope(cli):
+    import socket
+    import subprocess
+    import time as time_module
+
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        free = probe.getsockname()[1]
+    process = subprocess.Popen(
+        [str(CONSOLE), "--json", "ui", "--port", str(free)],
+        cwd=cli.cwd,
+        env=cli.env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    time_module.sleep(2)
+    process.terminate()
+    out, err = process.communicate(timeout=10)
+    assert out.strip() == "", "stdout must stay machine-readable in --json mode"
+    assert f"http://127.0.0.1:{free}/?t=" in err

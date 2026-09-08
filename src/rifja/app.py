@@ -1255,6 +1255,11 @@ class App:
                     "status": "passed" if Path(source["path"]).exists() else "unavailable",
                 }
             )
+        from .adapters import ADAPTER_VERSIONS
+
+        for name, note in sorted(ADAPTER_VERSIONS.items()):
+            # Producer formats are officially unstable; surface expectations.
+            checks.append({"name": f"adapter_{name}", "status": "info", "note": note})
         return {
             "checks": checks,
             "schema_version": SCHEMA_VERSION,

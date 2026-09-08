@@ -210,6 +210,14 @@ The bounded document contains project identity, generation time, known objective
 
 The JSON export is a document with `kind: "context_export"`. Adding the global `--json` flag to an export printed to stdout wraps that document text in the normal CLI response's `data` string; omit global `--json` when you want the JSON export document directly. Export selects the entire project unless `--worktree WORKTREE_ID` or a registered worktree path narrows it.
 
+## Serve coding agents (MCP over stdio)
+
+```sh
+rifja mcp
+```
+
+`rifja mcp` runs a read-only MCP tool server speaking newline-delimited JSON-RPC 2.0 on stdin/stdout. It exposes `search`, `resume`, `explain` and `memory` over the same local state the CLI uses, with the same provenance and bounded excerpts. There is no TCP listener and no daemon: an agent host spawns the server, and it ends when stdin closes. Per-request failures — writer contention, invalid selectors — come back as MCP `isError` results with stable codes and retry guidance; the server never exits on them. See [agent ecosystem integrations](integrations.md) for Claude Code, Codex and Hermes configuration, hook snippets and the data-only injection rules.
+
 Document excerpts in JSON can share provenance through `evidence.observation_ref`.
 Resolve that key in `document_observations` for the observation time, Git revision,
 working-tree scope, modification status and worktree ID. Path, line references,

@@ -67,7 +67,7 @@ def detect_timezone() -> tuple[str, str]:
 
 
 COMMAND_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("Setup", ("setup", "config", "doctor")),
+    ("Setup", ("init", "setup", "config", "doctor")),
     ("Data", ("source", "document", "project", "refresh", "retention", "forget")),
     (
         "Inspect",
@@ -123,7 +123,8 @@ def overview_text() -> str:
     lines += [
         "",
         "Start here:",
-        "  rifja setup                        initialize state (timezone is detected)",
+        "  rifja init                         guided setup (confirms every step)",
+        "  rifja setup                        non-interactive setup (timezone is detected)",
         "  rifja project add PATH             register a repository to resume",
         "  rifja source add PROVIDER PATH     register producer transcripts or databases",
         "  rifja refresh                      import configured sources",
@@ -371,6 +372,10 @@ def parser() -> argparse.ArgumentParser:
         metavar="COMMAND",
         parser_class=argparse.ArgumentParser,
     )
+    init = sub.add_parser("init", help="Guided first-run setup (interactive terminal)")
+    init.add_argument(
+        "--timezone", help="IANA zone; detected from TZ or /etc/localtime when omitted"
+    )
     setup = sub.add_parser("setup", help="Initialize local configuration")
     setup.add_argument(
         "--timezone", help="IANA zone; detected from TZ or /etc/localtime when omitted"
@@ -508,11 +513,34 @@ def parser() -> argparse.ArgumentParser:
 
 
 def execute(args: argparse.Namespace, store: Store) -> tuple[Any, int, dict[str, Any]]:
+    result, code, extra = _execute(args, store)
+    # Empty state orients toward the guided path; JSON payloads stay untouched.
+    if (
+        args.command
+        in {"source", "project", "session", "daily", "search", "tasks", "decisions", "items"}
+        and store.config("timezone") is None
+    ):
+        extra["uninitialized"] = True
+    return result, code, extra
+
+
+def _execute(args: argparse.Namespace, store: Store) -> tuple[Any, int, dict[str, Any]]:
     app = App(store)
     cmd = args.command
     result: Any
     if hasattr(args, "limit") and not 1 <= args.limit <= 1000:
         raise ValueError("limit_must_be_1_to_1000")
+    if cmd == "init":
+        from .onboarding import run_init
+
+        # --json callers get the plan, never an interactive session on stdout.
+        return run_init(
+            app,
+            store,
+            sys.stdout,
+            timezone_arg=args.timezone,
+            interactive=sys.stdin.isatty() and not args.json,
+        )
     if cmd == "setup":
         zone, origin = (args.timezone, "explicit") if args.timezone else detect_timezone()
         return app.setup(zone), 0, {"timezone_origin": origin}

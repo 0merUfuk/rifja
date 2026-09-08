@@ -5,11 +5,14 @@ This guide describes the `rifja` console interface for release **0.2.1**. Instal
 ## Initialize and choose state
 
 ```sh
+rifja init
 rifja setup --timezone Europe/Istanbul
 rifja config
 rifja config timezone UTC
 rifja doctor
 ```
+
+`rifja init` is the guided first-run path for an interactive terminal. It proposes each step and asks before every state change: writing the configuration with a detected or explicitly chosen timezone, registering each discovered session source, registering project directories you name, and running the first refresh as a separate explicit consent step. Registering a source reads nothing; only `refresh` imports. When Claude Code's source is offered, the wizard discloses its transcript deletion window (30 days by default) in one line, because registering is what makes that history survive. Without an interactive terminal (or with `--json`) `init` prints this plan, changes nothing and exits 2; `setup` stays the non-interactive primitive. Re-running `init` is safe: already-registered sources are skipped and refresh is incremental. Commands run against uninitialized state say so and point at `rifja init` in human output.
 
 Use an IANA timezone such as `UTC`, `Europe/Istanbul` or `America/New_York`. `daily` groups timestamps into calendar days in this configured zone, including daylight-saving transitions. Original timestamps remain in evidence. A timestamp without an offset stays unresolved; the collector does not assign the host machine's timezone to it.
 

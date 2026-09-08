@@ -8,7 +8,7 @@
       "name": "rifja",
       "source": "./",
       "description": "Read-only MCP server (search/resume/explain/memory) plus a bounded, fail-open SessionStart hook over the locally installed `rifja` CLI.",
-      "version": "0.2.1",
+      "version": "0.3.0",
       "category": "productivity",
       "strict": false,
       "hooks": "./hooks/hooks.json",

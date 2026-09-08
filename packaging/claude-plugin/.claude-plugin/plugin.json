@@ -1,7 +1,7 @@
 {
   "name": "rifja",
   "description": "Offline continuity and evidence for coding-agent sessions and Git: resume context, provenance search and operator memory via a read-only MCP server and a bounded SessionStart hook.",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "author": {
     "name": "0merUfuk"
   },

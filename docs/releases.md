@@ -1,5 +1,67 @@
 # Release notes
 
+## 0.3.0
+
+Ships the five evolution-proposal phases. Existing contracts keep their
+semantics: successful JSON responses stay `{schema_version: 1, command, data}`,
+exit codes stay 0/2/3/4/130, the application schema stays 3, runtime
+dependencies stay standard-library only, and previously registered state
+upgrades in place without migration.
+
+CLI presentation
+- `setup` detects the timezone (`TZ`, then `/etc/localtime`, each validated as
+  an IANA key) instead of applying UTC silently; human output annotates
+  `(explicit)`, `(detected)` or `(fallback)`.
+- Errors carry next-action hints in human mode, and `--json` mode gains a
+  versioned error envelope on stdout: `{"schema_version": 1, "command": ...,
+  "error": {"code", "hints"}}`. `hints` is empty for labels without a
+  specific next action; parse-level usage errors remain argparse text.
+- Every command renders short human lines instead of raw JSON, with the shared
+  status vocabulary (glyphs on terminals, plain words otherwise). The
+  double-encoded `last_refresh.stats` string is decoded for display only; the
+  JSON payload keeps it byte-compatible.
+- Bare `rifja` shows a grouped overview (exit 2 preserved); `--help` groups
+  commands by workflow. Subcommand help keeps the stock argparse format.
+- `refresh` prints bounded stderr progress (`refresh: ...`); `--quiet`
+  suppresses it. In `--json` mode progress stays on stderr. Partial refreshes
+  name the sources needing attention.
+
+Onboarding
+- `rifja init` walks first-run setup and asks before every state change:
+  timezone, discovered sources, project directories, and the first refresh as
+  a separate explicit consent. Registering reads nothing. Without a terminal
+  it prints the plan, changes nothing and exits 2. `setup` remains the
+  non-interactive primitive. Empty-state commands point at `rifja init` in
+  human output.
+
+Agent integrations
+- `rifja mcp` serves read-only MCP tools (`search`, `resume`, `explain`,
+  `memory`) over newline-delimited JSON-RPC on stdin/stdout. No network
+  listener exists. Writer contention and contract errors return per-request
+  `isError` results with stable codes; the server never exits on them. Tool
+  output is escaped, framed untrusted evidence.
+- `doctor` additionally lists the supported producer-format adapters and their
+  stability expectations (`adapter_*` info checks).
+- `packaging/hooks/session-start.sh` provides a bounded, fail-open
+  SessionStart hook. See docs/integrations.md.
+
+Dashboard
+- `rifja ui` serves a read-only local dashboard on 127.0.0.1 (default port
+  41970; a taken port is an error, never a fallback). The printed one-time URL
+  exchanges its token for an `HttpOnly` + `SameSite=strict` session cookie and
+  is then invalid; every route requires the session. GET-only, no mutation
+  endpoints; responses carry `Cache-Control: no-store`, `Referrer-Policy:
+  no-referrer` and a restrictive CSP. The browser opens only with `--open`.
+  The threat model documents the boundary.
+
+Packaging and distribution
+- `packaging/claude-plugin/` carries Claude Code plugin and marketplace
+  manifests plus the hook bundle; their versions follow the release.
+- The public Homebrew tap is planned to rename `0merUfuk/thematrix` to
+  `0merUfuk/rifja`; both tap paths keep working through GitHub's redirect and
+  the migration commands are documented in docs/homebrew.md. This release
+  still publishes to the current tap.
+
 ## 0.2.1
 
 Documents the canonical-formula trust required by current Homebrew when a fresh

@@ -66,7 +66,7 @@ The tag-driven release workflow runs CI before publishing attested assets. Once
 it succeeds, an authorized maintainer with GitHub CLI access runs:
 
 ```sh
-uv run python tools/release.py publish-tap --tag v0.2.1
+uv run python tools/release.py publish-tap --tag v0.3.0
 ```
 
 Use the new release tag for later versions and run from that version's checkout.

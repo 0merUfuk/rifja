@@ -16,7 +16,7 @@ need no network, model service or paid account.
 With [Homebrew](https://brew.sh) installed and on PATH:
 
 ```sh
-brew install 0merUfuk/thematrix/rifja
+brew install 0merUfuk/rifja/rifja
 rifja --version
 ```
 
@@ -26,15 +26,16 @@ required. Initial installation can download Homebrew dependencies.
 
 ```sh
 brew update
-brew upgrade 0merUfuk/thematrix/rifja
-brew uninstall --force 0merUfuk/thematrix/rifja
+brew upgrade 0merUfuk/rifja/rifja
+brew uninstall --force 0merUfuk/rifja/rifja
 ```
 
-Uninstall preserves application state, exports and backups. Existing public
-`session-visualizer` installations migrate through Homebrew’s formula rename on
-`brew update` followed by `brew upgrade 0merUfuk/thematrix/rifja`.
-The former command remains an alias. Private local-tap users follow the
-[migration instructions](docs/identity.md#upgrading-existing-installations).
+Uninstall preserves application state, exports and backups. Rifja ships from
+its dedicated tap; earlier installations from the former shared
+`0merUfuk/thematrix` tap move over with `brew uninstall --force
+0merUfuk/thematrix/rifja`, then `brew install 0merUfuk/rifja/rifja` (state is
+untouched). Private local-tap
+users follow the [migration instructions](docs/identity.md#upgrading-existing-installations).
 
 [GitHub Releases](https://github.com/0merUfuk/rifja/releases) also
 provide a wheel, source archive, checksums and an installer bundle. Extract the

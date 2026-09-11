@@ -26,9 +26,11 @@ change replays derived extraction once and preserves durable memory. Further
 unchanged refreshes are incremental.
 
 Rifja ships from its dedicated public tap `0merUfuk/rifja`
-(github.com/0merUfuk/homebrew-rifja). It previously shipped from the shared
-`0merUfuk/thematrix` tap; installations from that tap migrate with the
-commands in [dedicated-tap migration](#dedicated-tap-migration) below. See
+(github.com/0merUfuk/homebrew-rifja). The install and upgrade commands on
+this page apply to dedicated-tap installations. An installation that still
+comes from the former shared `0merUfuk/thematrix` tap is a different case:
+`brew upgrade 0merUfuk/rifja/rifja` will not move it over — follow
+[dedicated-tap migration](#dedicated-tap-migration) instead. See
 [identity migration](identity.md) for the old private tap.
 
 If switching from the current private `rifja/local` tap, first run

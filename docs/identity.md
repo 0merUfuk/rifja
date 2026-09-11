@@ -81,18 +81,18 @@ For a public Homebrew installation:
 
 ```sh
 brew update
-brew upgrade 0merUfuk/thematrix/rifja
+brew upgrade 0merUfuk/rifja/rifja
 rifja --version
 ```
 
 The tap's `formula_renames.json` maps the old formula to Rifja. A formula alias
 also resolves old qualified install commands. On current Homebrew, a fresh install
 through that alias requires trust in the canonical formula. Prefer the normal
-`brew install 0merUfuk/thematrix/rifja` command. If retaining an old install script:
+`brew install 0merUfuk/rifja/rifja` command. If retaining an old install script:
 
 ```sh
-brew trust --formula 0merUfuk/thematrix/rifja
-brew install 0merUfuk/thematrix/session-visualizer
+brew trust --formula 0merUfuk/rifja/rifja
+brew install 0merUfuk/rifja/rifja
 ```
 
 This grants trust only to Rifja, not the whole tap. Both executable names remain present;
@@ -104,13 +104,13 @@ For the historical private local tap:
 
 ```sh
 brew uninstall --force session-visualizer/local/session-visualizer
-brew install 0merUfuk/thematrix/rifja
+brew install 0merUfuk/rifja/rifja
 ```
 
 For a current Rifja local-tap installation, the removal name is
 `rifja/local/rifja`. The private installer cache and historical ownership markers
 are not relabeled or erased. Use qualified formula names while multiple taps exist.
-Ordinary removal is `brew uninstall --force 0merUfuk/thematrix/rifja`; it leaves
+Ordinary removal is `brew uninstall --force 0merUfuk/rifja/rifja`; it leaves
 application state, backups and exports intact.
 
 ## Intentional historical identity
@@ -135,10 +135,9 @@ symlink for existing bookmarks and running tasks. It is not a second checkout.
 
 ## Tap rename follows the product identity (2026-09)
 
-The same identity discipline that renamed the product now renames its public
-tap: `0merUfuk/thematrix` → `0merUfuk/rifja` (owner-executed GitHub rename;
-both paths work through GitHub's redirect during the transition). The full
-ordering contract and user migration commands live in
-[Homebrew delivery](homebrew.md#tap-rename-decision-and-transition-contract).
-As with the product rename, application state is untouched: taps deliver the
-program, never the data.
+The same identity discipline that renamed the product moved its distribution
+to a dedicated tap: Rifja now ships from `0merUfuk/rifja`
+(github.com/0merUfuk/homebrew-rifja) and no longer from the shared
+`0merUfuk/thematrix` tap. Migration commands live in
+[Homebrew delivery](homebrew.md). As with the product rename, application
+state is untouched: taps deliver the program, never the data.

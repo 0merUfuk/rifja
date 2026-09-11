@@ -15,7 +15,7 @@ from pathlib import Path
 from homebrew import ROOT, bundle, checked_copy, formula
 
 REPOSITORY = "0merUfuk/rifja"
-TAP_REPOSITORY = "0merUfuk/homebrew-thematrix"
+TAP_REPOSITORY = "0merUfuk/homebrew-rifja"
 
 
 def run(*args: str) -> str:

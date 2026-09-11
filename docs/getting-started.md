@@ -8,13 +8,13 @@ terminal-first tool the exact text is the screenshot.
 ## 1. Install
 
 ```sh
-brew install 0merUfuk/thematrix/rifja
+brew install 0merUfuk/rifja/rifja
 rifja --version
 ```
 
 Homebrew manages Python 3.14 and Git; there is nothing to activate. (The
-release bundle and, after the planned tap rename, the `0merUfuk/rifja` tap are
-described in [Homebrew delivery](homebrew.md).)
+dedicated `0merUfuk/rifja` tap and the release bundle are described in
+[Homebrew delivery](homebrew.md).)
 
 ## 2. Guided setup — `rifja init`
 

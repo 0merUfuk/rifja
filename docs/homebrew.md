@@ -3,7 +3,7 @@
 ## Public installation
 
 ```sh
-brew install 0merUfuk/thematrix/rifja
+brew install 0merUfuk/rifja/rifja
 rifja --help
 ```
 
@@ -14,9 +14,9 @@ is required. Application setup and source registration remain explicit user acti
 
 ```sh
 brew update
-brew upgrade 0merUfuk/thematrix/rifja
-brew reinstall 0merUfuk/thematrix/rifja
-brew uninstall --force 0merUfuk/thematrix/rifja
+brew upgrade 0merUfuk/rifja/rifja
+brew reinstall 0merUfuk/rifja/rifja
+brew uninstall --force 0merUfuk/rifja/rifja
 ```
 
 `--force` removes all installed versions of this formula; it does not remove
@@ -25,9 +25,13 @@ Uninstall preserves state, exports and backups. The first refresh after a versio
 change replays derived extraction once and preserves durable memory. Further
 unchanged refreshes are incremental.
 
-The public formula was renamed from `session-visualizer` to `rifja`;
-`brew update` and the qualified upgrade command above migrate existing public
-installations. See [identity migration](identity.md) for the old private tap.
+Rifja ships from its dedicated public tap `0merUfuk/rifja`
+(github.com/0merUfuk/homebrew-rifja). The install and upgrade commands on
+this page apply to dedicated-tap installations. An installation that still
+comes from the former shared `0merUfuk/thematrix` tap is a different case:
+`brew upgrade 0merUfuk/rifja/rifja` will not move it over — follow
+[dedicated-tap migration](#dedicated-tap-migration) instead. See
+[identity migration](identity.md) for the old private tap.
 
 If switching from the current private `rifja/local` tap, first run
 `brew uninstall --force rifja/local/rifja`, then install from
@@ -72,7 +76,7 @@ uv run python tools/release.py publish-tap --tag v0.3.0
 Use the new release tag for later versions and run from that version's checkout.
 This command downloads the hosted wheel/formula, verifies checksums and GitHub
 attestations, regenerates the formula for comparison, updates only
-`Formula/rifja.rb` in `0merUfuk/homebrew-thematrix`, then reads it back.
+`Formula/rifja.rb` in `0merUfuk/homebrew-rifja`, then reads it back.
 It is idempotent for identical contents. This explicit authenticated handoff
 avoids storing a cross-repository personal token in Actions. A release is not
 fully distributed until the tap is updated and its hosted install is tested.
@@ -84,43 +88,24 @@ CI targets macOS 15 arm64/x86-64 and Ubuntu 24.04 x86-64. Successful runs are th
 compatibility evidence; configuration alone is not a platform certification.
 Windows and Linux arm64 remain outside the release matrix.
 
-## Tap rename decision and transition contract
+## Dedicated tap migration (executed 2026-09)
 
-Decision (2026-09, delegated): the public tap `0merUfuk/thematrix` will be
-renamed to `0merUfuk/rifja`. The current name is a company-collection artifact
-(the tap also hosts `morp`, `neo`, `oracle`, `rifja`, `skuggsja` and
-`trinity`); the product's canonical identity is `rifja`, and a formula named
-`rifja` should live in a tap that does not require a mnemonic. This follows the
-same migration discipline as the product rename recorded in
-[identity](identity.md).
+Decision (2026-09, delegated, executed): Rifja's distribution moved from the
+shared `0merUfuk/thematrix` tap to a dedicated `0merUfuk/rifja` tap
+(github.com/0merUfuk/homebrew-rifja). A formula named `rifja` belongs in a tap
+that does not require a mnemonic, and the shared tap continues to serve the
+other collection tools only. The release tooling (`TAP_REPOSITORY` in
+`tools/release.py`) targets the dedicated tap from this point onward.
 
-The rename is executed by the owner as a GitHub repository rename
-(Settings → General → Repository name). GitHub redirects the old tap URL, so
-during the transition **both install paths keep working**:
+An existing installation from the former shared tap moves over with:
 
 ```sh
-# Old name (redirected after the rename; unchanged until the rename lands)
-brew install 0merUfuk/thematrix/rifja
-# New name (valid immediately after the rename)
+brew uninstall --force 0merUfuk/thematrix/rifja
 brew install 0merUfuk/rifja/rifja
 ```
 
-Existing installations keep updating through either name because `brew update`
-follows the redirect; a one-time explicit re-tap removes the indirection:
-
-```sh
-brew untap 0merUfuk/thematrix
-brew tap 0merUfuk/rifja https://github.com/0merUfuk/homebrew-rifja
-brew upgrade 0merUfuk/rifja/rifja
-```
-
-(Application state, exports and backups are untouched by any of these steps.)
-
-Ordering contract: the repository documentation switches its qualified
-`brew` commands to the new tap name only in the first release **after** the
-physical rename lands — never before, so no documented command can dangle.
-The release procedure's tap-publish step (`tools/release.py publish-tap`)
-must target the new tap from that release onward — the first post-rename
-release also updates `TAP_REPOSITORY` in `tools/release.py` to
-`0merUfuk/homebrew-rifja` in the same commit as the documentation switch —
-and the release notes must carry the migration block above verbatim.
+Only untap the former tap (`brew untap 0merUfuk/thematrix`) if you use none of
+its other formulas. Current Homebrew requires trusting a non-core tap before
+its formulas load: `brew trust 0merUfuk/rifja` once per machine. Application
+state, exports and backups are untouched by every step above; taps deliver the
+program, never the data.

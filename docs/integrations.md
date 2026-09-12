@@ -141,7 +141,9 @@ explicit action.
 
 Published at [0merUfuk/rifja-plugin](https://github.com/0merUfuk/rifja-plugin):
 `/plugin marketplace add 0merUfuk/rifja-plugin`, then `/plugin install
-rifja@rifja`. The source manifests live in this repository:
+rifja@rifja` (if the summary does not say `Plugin is now active.`, run
+`/reload-plugins` or restart Claude Code). The source manifests live in this
+repository:
 
 `packaging/claude-plugin/` carries the plugin manifest
 (`.claude-plugin/plugin.json`), a one-plugin `marketplace.json`, the

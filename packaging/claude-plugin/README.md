@@ -7,19 +7,21 @@ environment; Homebrew remains the installer and the updater.
 **Published:** these manifests are live at
 [0merUfuk/rifja-plugin](https://github.com/0merUfuk/rifja-plugin). Users add
 them with `/plugin marketplace add 0merUfuk/rifja-plugin` and install with
-`/plugin install rifja@rifja`. That repository is a copy of this directory
-(plus a user-facing README); release updates copy the changed files and bump
-the version fields with `pyproject.toml`.
+`/plugin install rifja@rifja`; if the install summary does not say
+`Plugin is now active.`, run `/reload-plugins` or restart Claude Code. That
+repository is a copy of this directory (plus a user-facing README); release
+updates copy the changed files and bump the version fields with
+`pyproject.toml`.
 
 Contents:
 
 - `.claude-plugin/plugin.json` — the plugin manifest (identity, version,
   metadata). The version field must match the released `rifja` version.
-- `marketplace.json` — a one-plugin marketplace manifest. Publish this file
-  from a repository whose default branch hosts it (for example the
-  `0merUfuk/rifja` checkout root or a dedicated marketplace repository), then
-  users add it with `/plugin marketplace add <owner>/<repo>` and install with
-  `/plugin install rifja`.
+- `marketplace.json` — a one-plugin marketplace manifest. Claude Code reads
+  it from the hosting repository's root, which is why it lives at the root of
+  the dedicated [0merUfuk/rifja-plugin](https://github.com/0merUfuk/rifja-plugin)
+  repository (this product checkout keeps the manifests under
+  `packaging/` — not its root — so it is not itself marketplace-addable).
 - `hooks/hooks.json` + `hooks/session-start.sh` — the bounded, fail-open
   SessionStart hook (10 s host timeout, 12 KiB output cap, exit 0 on every
   failure path). Set `RIFJA_PROJECT` or edit the command's argument to select

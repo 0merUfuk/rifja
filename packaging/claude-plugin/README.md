@@ -4,6 +4,13 @@ Distribution manifests for the Claude Code plugin ecosystem. They wrap the
 locally installed `rifja` CLI — the plugin ships no binary and no Python
 environment; Homebrew remains the installer and the updater.
 
+**Published:** these manifests are live at
+[0merUfuk/rifja-plugin](https://github.com/0merUfuk/rifja-plugin). Users add
+them with `/plugin marketplace add 0merUfuk/rifja-plugin` and install with
+`/plugin install rifja@rifja`. That repository is a copy of this directory
+(plus a user-facing README); release updates copy the changed files and bump
+the version fields with `pyproject.toml`.
+
 Contents:
 
 - `.claude-plugin/plugin.json` — the plugin manifest (identity, version,

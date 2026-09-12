@@ -139,8 +139,11 @@ explicit action.
 
 ## Claude Code plugin packaging
 
-For marketplace distribution instead of hand-configured snippets,
-`packaging/claude-plugin/` in this repository carries the plugin manifest
+Published at [0merUfuk/rifja-plugin](https://github.com/0merUfuk/rifja-plugin):
+`/plugin marketplace add 0merUfuk/rifja-plugin`, then `/plugin install
+rifja@rifja`. The source manifests live in this repository:
+
+`packaging/claude-plugin/` carries the plugin manifest
 (`.claude-plugin/plugin.json`), a one-plugin `marketplace.json`, the
 SessionStart hook bundle (`hooks/hooks.json` + the same fail-open script) and
 the plugin-level `.mcp.json`. The plugin wraps the Homebrew-installed `rifja`

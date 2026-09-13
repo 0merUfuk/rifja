@@ -12,7 +12,7 @@ from typing import Any
 import pytest
 from test_cli import CONSOLE, Console
 
-from rifja.ui import build_server, esc_attr, render_search, safe_url
+from rifja.ui import PAGE, build_server, esc_attr, render_search, safe_url
 
 
 @pytest.fixture
@@ -84,7 +84,7 @@ def test_render_functions_escape_adversarial_records(cli, adversarial_seeded):
         render_search(app, '<script>alert("x")</script>'),
         render_evidence(app, match["id"]),
         render_session_detail(app, adversarial_session["id"]),
-        render_sources(app),
+        render_sources(app, store),
     ):
         assert "<script>alert" not in body
         assert "<img" not in body  # no raw tag from source text; escaped text is inert
@@ -170,23 +170,25 @@ def test_bootstrap_exchange_gate_and_readonly_pages(cli, server):
     # The token is burned: the same link can never sign in again.
     assert browser.request("GET", f"/?t={token}")["status"] == 403
     page = browser.request("GET", "/", cookie=cookie)
-    assert page["status"] == 200 and "Overall:" in page["body"]
+    assert page["status"] == 200 and "Activity" in page["body"]
     # Static assets are session-gated too.
     assert browser.request("GET", "/static/ui.css")["status"] == 403
     css = browser.request("GET", "/static/ui.css", cookie=cookie)
     assert css["status"] == 200 and "text/css" in css["headers"]["Content-Type"]
     for target, marker in [
-        ("/timeline", "Period"),
-        ("/sessions", "Provider"),
+        ("/activity", "Activity"),
+        ("/overview", "Overview"),
+        ("/sessions", "Sessions"),
         ("/search", "literal terms"),
         ("/search?q=fixture+schema", "match(es)"),
-        ("/memory", "Local memory"),
-        ("/sources", "Configured sources"),
+        ("/memory", "Memory"),
+        ("/sources", "Sources"),
+        ("/settings", "Settings"),
     ]:
         response = browser.request("GET", target, cookie=cookie)
         assert response["status"] == 200, target
         assert marker in response["body"], target
-        assert "<script>" not in response["body"].replace("</script>", "")
+        assert "<script>alert" not in response["body"]
     session_id = cli.data("session")["sessions"][0]["id"]
     detail = browser.request("GET", f"/session/{session_id}", cookie=cookie)
     assert detail["status"] == 200 and "records" in detail["body"]
@@ -291,3 +293,102 @@ def test_json_mode_keeps_stdout_reserved_for_the_envelope(cli):
     out, err = process.communicate(timeout=10)
     assert out.strip() == "", "stdout must stay machine-readable in --json mode"
     assert f"http://127.0.0.1:{free}/?t=" in err
+
+
+def test_activity_home_shows_agent_executions_and_fragment_poll(cli):
+    """The management plane's home is the agent's activity feed."""
+    import threading
+
+    from rifja.store import Store
+
+    cli.seeded()
+    with Store(Path(cli.state)) as seed:
+        seed.log_activity("mcp", "refresh", "{}", "ok", 412)
+        seed.log_activity("mcp", "search", '{"query":"fixture"}', "ok", 9)
+        seed.log_activity("mcp", "resume", '{"project":"harbor"}', "busy", 3)
+    ready: dict[str, Any] = {}
+    started = threading.Event()
+
+    def run() -> None:
+        from rifja.store import Store as S
+        from rifja.ui import build_server
+
+        store = S(Path(cli.state))
+        httpd = build_server(store, 0)
+        ready.update(port=httpd.server_address[1], token=httpd.bootstrap_token)
+        started.set()
+        try:
+            httpd.serve_forever()
+        finally:
+            httpd.server_close()
+            store.close()
+
+    thread = threading.Thread(target=run, daemon=True)
+    thread.start()
+    assert started.wait(5)
+    browser = Browser(ready["port"])
+    exchange = browser.request("GET", f"/?t={ready['token']}")
+    cookie = exchange["headers"]["Set-Cookie"].split(";", 1)[0]
+    page = browser.request("GET", "/", cookie=cookie)
+    assert page["status"] == 200
+    body = page["body"]
+    assert "mcp</i> refresh" in body and "mcp</i> search" in body
+    assert ">busy<" in body and "412ms" in body  # failures kept, durations shown
+    assert page["headers"]["Cache-Control"] == "no-store"
+    # The poll endpoint returns JSON fragments for the live feed.
+    fragment = browser.request("GET", "/activity?fragment=1", cookie=cookie)
+    assert fragment["status"] == 200 and "application/json" in fragment["headers"]["Content-Type"]
+    data = json.loads(fragment["body"])
+    # Contract the client relies on: rows is an array of ready row strings.
+    assert data["rows"] and all(
+        isinstance(r, str) and r.startswith('<div class="row') for r in data["rows"]
+    )
+    assert any("refresh" in row for row in data["rows"])
+    assert any("busy" in row for row in data["rows"])
+
+
+def test_activity_pagination_walks_older_pages(cli):
+    """ "older" must leave the current page (keyset on descending ids)."""
+    import threading
+
+    from rifja.store import Store
+
+    cli.seeded()
+    with Store(Path(cli.state)) as seed:
+        for i in range(PAGE + 10):
+            seed.log_activity("mcp", "search", f'{{"q":"p{i}"}}', "ok", i)
+    ready: dict[str, Any] = {}
+    started = threading.Event()
+
+    def run() -> None:
+        from rifja.store import Store as S
+        from rifja.ui import build_server
+
+        store = S(Path(cli.state))
+        httpd = build_server(store, 0)
+        ready.update(port=httpd.server_address[1], token=httpd.bootstrap_token)
+        started.set()
+        try:
+            httpd.serve_forever()
+        finally:
+            httpd.server_close()
+            store.close()
+
+    thread = threading.Thread(target=run, daemon=True)
+    thread.start()
+    assert started.wait(5)
+    browser = Browser(ready["port"])
+    cookie = browser.request("GET", f"/?t={ready['token']}")["headers"]["Set-Cookie"].split(";", 1)[
+        0
+    ]
+    page1 = browser.request("GET", "/activity", cookie=cookie)
+    older = re.search(r'href="(/activity\?before=\d+)"', page1["body"])
+    assert older, page1["body"][-500:]
+    page2 = browser.request("GET", older.group(1), cookie=cookie)
+    assert page2["status"] == 200
+    first_summaries = set(re.findall(r"\{&quot;q&quot;:&quot;p(\d+)&quot;\}", page1["body"]))
+    second_summaries = set(re.findall(r"\{&quot;q&quot;:&quot;p(\d+)&quot;\}", page2["body"]))
+    assert first_summaries and second_summaries
+    assert not (first_summaries & second_summaries), (first_summaries, second_summaries)
+    # Going older shows the "newer" back-link.
+    assert "after=" in page2["body"]

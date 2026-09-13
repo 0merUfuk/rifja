@@ -425,11 +425,11 @@ def _run_tool(app: App, store: Store, name: str, arguments: dict[str, Any]) -> s
             )
         return readable("memory", {"memory": rows}, None, False)
     if name == "remember":
-        scope = arguments.get("project")
+        scope_value = arguments.get("project")
         result = app.memory_add(
             str(arguments["kind"]),
             str(arguments["text"]),
-            scope or "global",
+            scope_value or "global",
             "inferred",  # agents only ever propose; acceptance is human authority
             [],
             reason=arguments.get("reason") or "proposed by agent via MCP",

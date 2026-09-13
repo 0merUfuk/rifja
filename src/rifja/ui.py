@@ -150,7 +150,12 @@ td.wide{max-width:520px;overflow-wrap:anywhere}
 /* mini day bars (overview): 14 cells, mono numbers, no chart junk */
 .days{display:flex;gap:3px;align-items:flex-end;height:56px;margin:8px 0 2px}
 .days .d{flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;min-width:0}
-.days .bar{background:var(--line-strong);height:2px;transition:height .15s}
+.days .bar{background:var(--line-strong);transition:height .15s}
+.days .b0{height:2px}.days .b1{height:4px}.days .b2{height:6px}.days .b3{height:8px}
+.days .b4{height:10px}.days .b5{height:12px}.days .b6{height:14px}.days .b7{height:16px}
+.days .b8{height:18px}.days .b9{height:20px}.days .b10{height:22px}.days .b11{height:24px}
+.days .b12{height:26px}.days .b13{height:28px}.days .b14{height:30px}.days .b15{height:32px}
+.days .b16{height:34px}.days .b17{height:36px}.days .b18{height:38px}.days .b19{height:40px}
 .days .bar.hot{background:var(--accent)}
 .days .n{font-family:var(--mono);font-size:10px;color:var(--ink-3);text-align:center;
   font-variant-numeric:tabular-nums;overflow:hidden}
@@ -199,7 +204,7 @@ JS = """
           if(String(d.since)===at)return;
           feed.dataset.since=d.since;
           var h='';
-          d.rows.forEach(function(r){h+=r.html});
+          h=d.rows.join('');
           feed.querySelector('.rows').innerHTML=h||d.empty;
         }).catch(function(){});
     };
@@ -317,12 +322,13 @@ def _stats(pairs: list[tuple[str, str, str]]) -> str:
     return f"<div class=stats>{cells}</div>"
 
 
-def _pager(path: str, before: int | None, after: int | None, shown: int, total_shown: int) -> str:
+def _pager(path: str, newer: int | None, older: int | None, shown: int, more: bool) -> str:
+    """Keyset links: `after` selects newer rows (id >), `before` selects older."""
     parts = [f"<span>{shown} shown</span>"]
-    if before:
-        parts.append(f'<a href="{safe_url(f"{path}?before={before}")}">‹ newer</a>')
-    if total_shown == PAGE:
-        parts.append(f'<a href="{safe_url(f"{path}?after={after}")}">older ›</a>')
+    if newer:
+        parts.append(f'<a href="{safe_url(f"{path}?after={newer}")}">\u2039 newer</a>')
+    if more and older:
+        parts.append(f'<a href="{safe_url(f"{path}?before={older}")}">older \u203a</a>')
     return f"<div class=pg>{''.join(parts)}</div>"
 
 
@@ -404,7 +410,7 @@ def render_activity(
                 rows[0]["id"] if rows and not at_head else None,
                 rows[-1]["id"] if rows else None,
                 len(rows),
-                PAGE if more else 0,
+                more,
             ),
         )
     )
@@ -460,7 +466,7 @@ def render_overview(app: App, store: Store) -> str:
         peak = max(peak, n)
     cells_html = "".join(
         f"<div class=d><span class=n>{n if n else '·'}</span>"
-        f'<div class="bar{" hot" if n == peak and n else ""}" style="height:{max(2, int(38 * n / peak))}px"></div></div>'
+        f'<div class="bar b{max(0, min(19, round(19 * n / peak)))}{" hot" if n == peak and n else ""}"></div></div>'
         for _, n in days_data
     )
     days = f"<div class=days>{cells_html}</div><p class=note>records per day · {esc(zone)}</p>"
@@ -525,7 +531,7 @@ def render_sessions(store: Store, before: int | None = None, after: int | None =
                 rows[0]["id"] if rows and (before or not after) else None,
                 rows[-1]["id"] if rows else None,
                 len(rows),
-                len(rows) if more else 0,
+                more,
             )
         )
     else:
@@ -832,20 +838,15 @@ class UiHandler(BaseHTTPRequestHandler):
             extra=[("Allow", "GET")],
         )
 
-    def _security_headers(self) -> list[tuple[str, str]]:
-        return [
-            ("Cache-Control", "no-store"),
-            ("Referrer-Policy", "no-referrer"),
-            ("X-Content-Type-Options", "nosniff"),
+    def _csp_header(self) -> tuple[str, str]:
+        return (
+            "Content-Security-Policy",
             (
-                "Content-Security-Policy",
-                (
-                    "default-src 'none'; style-src 'self'; script-src 'self'; "
-                    "connect-src 'self'; img-src 'self'; form-action 'self'; "
-                    "base-uri 'none'; frame-ancestors 'none'"
-                ),
+                "default-src 'none'; style-src 'self'; script-src 'self'; "
+                "connect-src 'self'; img-src 'self'; form-action 'self'; "
+                "base-uri 'none'; frame-ancestors 'none'"
             ),
-        ]
+        )
 
     def _respond(
         self,
@@ -862,12 +863,23 @@ class UiHandler(BaseHTTPRequestHandler):
         else:
             body, encoding = payload, []
         self.send_response(status)
-        headers = self._security_headers()
+        # Data pages are never stored; static assets cache privately with an
+        # ETag. Everything else (privacy headers, CSP) applies to both.
         if cacheable:
             headers = [
                 ("Cache-Control", "private, max-age=300"),
                 ("ETag", f'"{_etag(payload)}"'),
-            ] + headers[1:]
+                ("Referrer-Policy", "no-referrer"),
+                ("X-Content-Type-Options", "nosniff"),
+                self._csp_header(),
+            ]
+        else:
+            headers = [
+                ("Cache-Control", "no-store"),
+                ("Referrer-Policy", "no-referrer"),
+                ("X-Content-Type-Options", "nosniff"),
+                self._csp_header(),
+            ]
         for name, value in headers:
             self.send_header(name, value)
         for name, value in (extra or []) + encoding:

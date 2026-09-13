@@ -12,7 +12,7 @@ from typing import Any
 import pytest
 from test_cli import CONSOLE, Console
 
-from rifja.ui import build_server, esc_attr, render_search, safe_url
+from rifja.ui import PAGE, build_server, esc_attr, render_search, safe_url
 
 
 @pytest.fixture
@@ -339,5 +339,56 @@ def test_activity_home_shows_agent_executions_and_fragment_poll(cli):
     fragment = browser.request("GET", "/activity?fragment=1", cookie=cookie)
     assert fragment["status"] == 200 and "application/json" in fragment["headers"]["Content-Type"]
     data = json.loads(fragment["body"])
-    assert data["rows"] and any("refresh" in row for row in data["rows"])
+    # Contract the client relies on: rows is an array of ready row strings.
+    assert data["rows"] and all(
+        isinstance(r, str) and r.startswith('<div class="row') for r in data["rows"]
+    )
+    assert any("refresh" in row for row in data["rows"])
     assert any("busy" in row for row in data["rows"])
+
+
+def test_activity_pagination_walks_older_pages(cli):
+    """ "older" must leave the current page (keyset on descending ids)."""
+    import threading
+
+    from rifja.store import Store
+
+    cli.seeded()
+    with Store(Path(cli.state)) as seed:
+        for i in range(PAGE + 10):
+            seed.log_activity("mcp", "search", f'{{"q":"p{i}"}}', "ok", i)
+    ready: dict[str, Any] = {}
+    started = threading.Event()
+
+    def run() -> None:
+        from rifja.store import Store as S
+        from rifja.ui import build_server
+
+        store = S(Path(cli.state))
+        httpd = build_server(store, 0)
+        ready.update(port=httpd.server_address[1], token=httpd.bootstrap_token)
+        started.set()
+        try:
+            httpd.serve_forever()
+        finally:
+            httpd.server_close()
+            store.close()
+
+    thread = threading.Thread(target=run, daemon=True)
+    thread.start()
+    assert started.wait(5)
+    browser = Browser(ready["port"])
+    cookie = browser.request("GET", f"/?t={ready['token']}")["headers"]["Set-Cookie"].split(";", 1)[
+        0
+    ]
+    page1 = browser.request("GET", "/activity", cookie=cookie)
+    older = re.search(r'href="(/activity\?before=\d+)"', page1["body"])
+    assert older, page1["body"][-500:]
+    page2 = browser.request("GET", older.group(1), cookie=cookie)
+    assert page2["status"] == 200
+    first_summaries = set(re.findall(r'\{&quot;q&quot;:&quot;p(\d+)&quot;\}', page1["body"]))
+    second_summaries = set(re.findall(r'\{&quot;q&quot;:&quot;p(\d+)&quot;\}', page2["body"]))
+    assert first_summaries and second_summaries
+    assert not (first_summaries & second_summaries), (first_summaries, second_summaries)
+    # Going older shows the "newer" back-link.
+    assert "after=" in page2["body"]

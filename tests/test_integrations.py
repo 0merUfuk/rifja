@@ -124,7 +124,24 @@ def test_mcp_stdio_lifecycle_and_tool_provenance(cli, adversarial_seeded):
     assert initialized["protocolVersion"] == "2025-06-18"
     assert initialized["serverInfo"]["name"] == "rifja"
     tools = {t["name"] for t in by_id(responses, 2)["result"]["tools"]}
-    assert tools == {"search", "resume", "explain", "memory"}
+    assert tools == {
+        "status",
+        "setup",
+        "register_source",
+        "register_project",
+        "refresh",
+        "projects",
+        "search",
+        "resume",
+        "tasks",
+        "daily",
+        "explain",
+        "memory",
+        "remember",
+        "associate",
+    }
+    # The agent surface never exposes destructive operations.
+    assert not tools & {"forget", "retention", "backup", "restore"}
     search = by_id(responses, 3)["result"]
     assert not search.get("isError")
     assert "fixture schema" in search["content"][0]["text"]
@@ -281,3 +298,223 @@ def test_session_start_hook_is_bounded_and_fails_open(cli):
         ["sh", str(HOOK)], env=environment, capture_output=True, text=True, timeout=10, check=False
     )
     assert no_arguments.returncode == 0 and no_arguments.stdout == ""
+
+
+def test_mcp_operational_tools_complete_the_agent_flow(cli):
+    """The vision's core promise: an agent can set up, register, import and
+    query - every step through structured tools, every step activity-logged."""
+    repo = cli.repo()
+    source = cli.source_dir / "agent-flow.jsonl"
+    cli.source(source, repo)
+    responses = speak(
+        cli,
+        {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {"name": "setup", "arguments": {"timezone": "Europe/Istanbul"}},
+        },
+        {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {
+                "name": "register_project",
+                "arguments": {"path": str(repo), "name": "harbor"},
+            },
+        },
+        {
+            "jsonrpc": "2.0",
+            "id": 3,
+            "method": "tools/call",
+            "params": {
+                "name": "register_source",
+                "arguments": {"provider": "codex", "path": str(source)},
+            },
+        },
+        {
+            "jsonrpc": "2.0",
+            "id": 4,
+            "method": "tools/call",
+            "params": {"name": "refresh", "arguments": {}},
+        },
+        {
+            "jsonrpc": "2.0",
+            "id": 5,
+            "method": "tools/call",
+            "params": {"name": "status", "arguments": {}},
+        },
+        {
+            "jsonrpc": "2.0",
+            "id": 6,
+            "method": "tools/call",
+            "params": {"name": "projects", "arguments": {}},
+        },
+        {
+            "jsonrpc": "2.0",
+            "id": 7,
+            "method": "tools/call",
+            "params": {"name": "tasks", "arguments": {"project": "harbor"}},
+        },
+        {
+            "jsonrpc": "2.0",
+            "id": 8,
+            "method": "tools/call",
+            "params": {"name": "daily", "arguments": {"days": 3}},
+        },
+    )
+    assert "timezone: Europe/Istanbul" in by_id(responses, 1)["result"]["content"][0]["text"]
+    assert "harbor" in by_id(responses, 2)["result"]["content"][0]["text"]
+    assert "run refresh to import" in by_id(responses, 3)["result"]["content"][0]["text"]
+    refresh = by_id(responses, 4)["result"]["content"][0]["text"]
+    assert "status: passed" in refresh and "6 parsed, 6 inserted" in refresh
+    status = by_id(responses, 5)["result"]["content"][0]["text"]
+    assert "coverage: passed" in status and "sessions: 1" in status
+    assert str(repo) in by_id(responses, 6)["result"]["content"][0]["text"]
+    tasks = by_id(responses, 7)["result"]["content"][0]["text"]
+    assert tasks.startswith("IMPORTED UNTRUSTED EVIDENCE") and "total" in tasks
+    assert "records" in by_id(responses, 8)["result"]["content"][0]["text"]
+    # Every step landed in the activity feed.
+    from rifja.store import Store
+
+    with Store(Path(cli.state)) as store:
+        rows = store.rows("SELECT tool, status FROM activity ORDER BY id")
+    assert [r["tool"] for r in rows] == [
+        "setup",
+        "register_project",
+        "register_source",
+        "refresh",
+        "status",
+        "projects",
+        "tasks",
+        "daily",
+    ]
+    assert all(r["status"] == "ok" for r in rows)
+
+
+def test_agent_memory_proposals_require_human_acceptance(cli):
+    cli.seeded()
+    responses = speak(
+        cli,
+        {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+                "name": "remember",
+                "arguments": {
+                    "kind": "fact",
+                    "text": "The fixture is synthetic.",
+                    "project": "harbor",
+                },
+            },
+        },
+    )
+    text = by_id(responses, 1)["result"]["content"][0]["text"]
+    assert "status: proposed" in text and "operator accepts" in text
+    from rifja.store import Store
+
+    with Store(Path(cli.state)) as store:
+        entry = store.rows("SELECT origin, status FROM memory")[0]
+    assert entry == {"origin": "inferred", "status": "proposed"}
+    # Acceptance stays with the human.
+    accepted = cli.data(
+        "memory",
+        "edit",
+        cli.data("memory", "list")["memory"][0]["id"],
+        "--status",
+        "accepted",
+        "--reason",
+        "Reviewed",
+    )
+    assert accepted["status"] == "accepted"
+
+
+def test_failed_tool_calls_are_activity_logged(cli):
+    cli.seeded()
+    speak(
+        cli,
+        {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {"name": "search", "arguments": {"query": "x", "project": "nope"}},
+        },
+    )
+    from rifja.store import Store
+
+    with Store(Path(cli.state)) as store:
+        rows = store.rows("SELECT tool, status FROM activity")
+    assert rows and rows[0]["tool"] == "search" and rows[0]["status"] == "project_not_found"
+
+
+def test_memory_list_returns_accepted_knowledge_base(cli):
+    cli.seeded()
+    proposed_id = cli.data(
+        "memory", "add", "fact", "The fixture is synthetic.", "--origin", "inferred"
+    )["id"]
+    accepted_id = cli.data("memory", "add", "fact", "Verified project context.")["id"]
+    responses = speak(
+        cli,
+        {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {"name": "memory", "arguments": {"kind": "list"}},
+        },
+    )
+    text = by_id(responses, 1)["result"]["content"][0]["text"]
+    assert accepted_id[:12] in text and proposed_id[:12] not in text
+    assert "accepted" in text
+
+
+def test_daily_overview_buckets_in_the_configured_timezone(cli):
+    # Local midnight in Istanbul is 21:00 UTC: this record is 2026-09-06
+    # 00:30 local but 2026-09-05 in UTC - both daily views must agree.
+    repo = cli.repo()
+    cli.data("setup", "--timezone", "Europe/Istanbul")
+    cli.data("project", "add", str(repo), "--name", "harbor")
+    source = cli.source_dir / "midnight.jsonl"
+    cli.source(
+        source,
+        repo,
+        "synthetic-midnight",
+        [("m1", "user", "TASK: Buckets must follow the configured zone.")],
+    )
+    source.write_text(source.read_text().replace("2026-09-05T06:", "2026-09-05T21:"))
+    cli.data("source", "add", "codex", str(source))
+    cli.data("refresh")
+    responses = speak(
+        cli,
+        {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {"name": "daily", "arguments": {"days": 10}},
+        },
+    )
+    text = by_id(responses, 1)["result"]["content"][0]["text"]
+    assert "2026-09-06: 2 records" in text
+    assert "2026-09-05: 0 records" in text  # 21:xx UTC is already the 6th locally
+    drill = cli.data("daily", "2026-09-06", "--project", "harbor")
+    assert len(drill["projects"][0]["activity"]) == 1
+
+
+def test_malformed_argument_types_are_stable_errors_and_logged(cli):
+    cli.seeded()
+    responses = speak(
+        cli,
+        {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {"name": "search", "arguments": {"query": "fixture", "limit": None}},
+        },
+    )
+    body = by_id(responses, 1)["result"]
+    assert body["isError"] is True and "[invalid_arguments]" in body["content"][0]["text"]
+    from rifja.store import Store
+
+    with Store(Path(cli.state)) as store:
+        rows = store.rows("SELECT status FROM activity")
+    assert rows and rows[0]["status"] == "invalid_arguments"

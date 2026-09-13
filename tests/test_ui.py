@@ -386,8 +386,8 @@ def test_activity_pagination_walks_older_pages(cli):
     assert older, page1["body"][-500:]
     page2 = browser.request("GET", older.group(1), cookie=cookie)
     assert page2["status"] == 200
-    first_summaries = set(re.findall(r'\{&quot;q&quot;:&quot;p(\d+)&quot;\}', page1["body"]))
-    second_summaries = set(re.findall(r'\{&quot;q&quot;:&quot;p(\d+)&quot;\}', page2["body"]))
+    first_summaries = set(re.findall(r"\{&quot;q&quot;:&quot;p(\d+)&quot;\}", page1["body"]))
+    second_summaries = set(re.findall(r"\{&quot;q&quot;:&quot;p(\d+)&quot;\}", page2["body"]))
     assert first_summaries and second_summaries
     assert not (first_summaries & second_summaries), (first_summaries, second_summaries)
     # Going older shows the "newer" back-link.

@@ -204,7 +204,7 @@ class Store:
                     " VALUES(?,?,?,?,?,?)",
                     (now(), surface, tool, clean_text(summary, 400), status, int(duration_ms)),
                 )
-        except sqlite3.Error:
+        except BusyError, sqlite3.Error:
             pass
 
     def audit(self, action: str, target: str, details: Any) -> None:

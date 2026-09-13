@@ -28,6 +28,7 @@ import json
 import sqlite3
 import sys
 import time
+from datetime import timedelta
 from typing import Any
 
 from . import __version__
@@ -381,17 +382,25 @@ def _run_tool(app: App, store: Store, name: str, arguments: dict[str, Any]) -> s
     if name == "daily":
         project = arguments.get("project")
         pid = app.find_project(project)["id"] if project else None
-        args: list[Any] = []
-        where = "event_time IS NOT NULL"
-        if pid:
-            where += " AND project_id=?"
-            args.append(pid)
-        rows = store.rows(
-            "SELECT substr(event_time,1,10) day, count(*) n FROM records"
-            f" WHERE {where} GROUP BY day ORDER BY day DESC LIMIT ?",
-            (*args, int(arguments.get("days", 7))),
-        )
-        lines = [f"{r['day']}: {r['n']} records" for r in rows] or ["no dated records"]
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+
+        from .timeutil import date_bounds
+
+        zone = ZoneInfo(store.config("timezone", "UTC"))
+        scope = " AND project_id=?" if pid else ""
+        scope_args = (pid,) if pid else ()
+        lines = []
+        # Same configured-timezone day boundaries as App.daily's drill-down,
+        # so a record lands on one date in both views.
+        for offset in range(int(arguments.get("days", 7))):
+            local_day = (datetime.now(zone) - timedelta(days=offset)).date().isoformat()
+            first, last = date_bounds(local_day, None, store.config("timezone", "UTC"))
+            n = store.db.execute(
+                "SELECT count(*) FROM records WHERE event_time>=? AND event_time<?" + scope,
+                (first, last, *scope_args),
+            ).fetchone()[0]
+            lines.append(f"{local_day}: {n} records")
         if arguments.get("day"):
             report = app.daily(arguments["day"], None, project, None, 10)
             for group in report["projects"]:
@@ -405,10 +414,15 @@ def _run_tool(app: App, store: Store, name: str, arguments: dict[str, Any]) -> s
         return readable("explain", app.evidence(str(arguments["record"])), None, False)
     if name == "memory":
         kind = arguments.get("kind")
-        rows = store.rows(
-            "SELECT * FROM memory" + (" WHERE kind=?" if kind else "") + " ORDER BY created_at,id",
-            (kind,) if kind else (),
-        )
+        if kind == "list":
+            rows = store.rows("SELECT * FROM memory WHERE status='accepted' ORDER BY created_at,id")
+        else:
+            rows = store.rows(
+                "SELECT * FROM memory"
+                + (" WHERE kind=?" if kind else "")
+                + " ORDER BY created_at,id",
+                (kind,) if kind else (),
+            )
         return readable("memory", {"memory": rows}, None, False)
     if name == "remember":
         scope = arguments.get("project")
@@ -468,6 +482,7 @@ def _summarize(arguments: dict[str, Any]) -> str:
 def _call_tool(app: App, store: Store, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
     """One request, one result — and one activity record either way."""
     started = time.monotonic()
+    status = "internal_error"
     try:
         body = _content(_run_tool(app, store, name, arguments))
         status = "ok"
@@ -478,6 +493,11 @@ def _call_tool(app: App, store: Store, name: str, arguments: dict[str, Any]) -> 
     except KeyError as exc:
         status = "missing_argument"
         return _error_content("missing_argument", f"Missing required argument: {exc}")
+    except TypeError as exc:
+        status = "invalid_arguments"
+        return _error_content(
+            "invalid_arguments", f"Malformed argument ({exc}); check the tool schema."
+        )
     except ValueError as exc:
         label = str(exc)
         status = label

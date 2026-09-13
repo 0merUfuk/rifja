@@ -446,3 +446,75 @@ def test_failed_tool_calls_are_activity_logged(cli):
     with Store(Path(cli.state)) as store:
         rows = store.rows("SELECT tool, status FROM activity")
     assert rows and rows[0]["tool"] == "search" and rows[0]["status"] == "project_not_found"
+
+
+def test_memory_list_returns_accepted_knowledge_base(cli):
+    cli.seeded()
+    proposed_id = cli.data(
+        "memory", "add", "fact", "The fixture is synthetic.", "--origin", "inferred"
+    )["id"]
+    accepted_id = cli.data("memory", "add", "fact", "Verified project context.")["id"]
+    responses = speak(
+        cli,
+        {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {"name": "memory", "arguments": {"kind": "list"}},
+        },
+    )
+    text = by_id(responses, 1)["result"]["content"][0]["text"]
+    assert accepted_id[:12] in text and proposed_id[:12] not in text
+    assert "accepted" in text
+
+
+def test_daily_overview_buckets_in_the_configured_timezone(cli):
+    # Local midnight in Istanbul is 21:00 UTC: this record is 2026-09-06
+    # 00:30 local but 2026-09-05 in UTC - both daily views must agree.
+    repo = cli.repo()
+    cli.data("setup", "--timezone", "Europe/Istanbul")
+    cli.data("project", "add", str(repo), "--name", "harbor")
+    source = cli.source_dir / "midnight.jsonl"
+    cli.source(
+        source,
+        repo,
+        "synthetic-midnight",
+        [("m1", "user", "TASK: Buckets must follow the configured zone.")],
+    )
+    source.write_text(source.read_text().replace("2026-09-05T06:", "2026-09-05T21:"))
+    cli.data("source", "add", "codex", str(source))
+    cli.data("refresh")
+    responses = speak(
+        cli,
+        {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {"name": "daily", "arguments": {"days": 10}},
+        },
+    )
+    text = by_id(responses, 1)["result"]["content"][0]["text"]
+    assert "2026-09-06: 2 records" in text
+    assert "2026-09-05: 0 records" in text  # 21:xx UTC is already the 6th locally
+    drill = cli.data("daily", "2026-09-06", "--project", "harbor")
+    assert len(drill["projects"][0]["activity"]) == 1
+
+
+def test_malformed_argument_types_are_stable_errors_and_logged(cli):
+    cli.seeded()
+    responses = speak(
+        cli,
+        {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {"name": "search", "arguments": {"query": "fixture", "limit": None}},
+        },
+    )
+    body = by_id(responses, 1)["result"]
+    assert body["isError"] is True and "[invalid_arguments]" in body["content"][0]["text"]
+    from rifja.store import Store
+
+    with Store(Path(cli.state)) as store:
+        rows = store.rows("SELECT status FROM activity")
+    assert rows and rows[0]["status"] == "invalid_arguments"

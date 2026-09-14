@@ -8,7 +8,7 @@ Rifja is a local CLI for resuming engineering work across agent sessions, projec
 
 [![CI](https://github.com/0merUfuk/rifja/actions/workflows/ci.yml/badge.svg)](https://github.com/0merUfuk/rifja/actions/workflows/ci.yml)
 
-Version **0.3.0**. Licensed under [MIT](LICENSE). Runtime collection and queries
+Version **0.4.0**. Licensed under [MIT](LICENSE). Runtime collection and queries
 need no network, model service or paid account.
 
 ## Install
@@ -52,13 +52,22 @@ Intel macOS passed the release checks, but Homebrew no longer supports that
 platform upstream; dependency compilation may make initial installation slow.
 See [release verification and Homebrew delivery](docs/homebrew.md).
 
-## Start with one project
+## Tell your agent to use it
 
-The guided path is `rifja init`: in an interactive terminal it proposes each
-step and asks before every state change (timezone detection, discovered
-sources, project directories, first refresh). Without a terminal it prints the
-plan and applies nothing. A full walkthrough with verbatim session output is
-in [the first-session guide](docs/getting-started.md).
+The primary user of Rifja is **your AI agent**, not you. Install, wire the
+agent, then work in natural language — "what was I doing in this repo?",
+"search my sessions for the parser fix", "set up Rifja and import my Codex
+history" — and watch what it did from the dashboard:
+
+```sh
+rifja setup            # or the guided `rifja init`
+rifja agent status     # detects Claude Code / Codex on this machine
+rifja agent install claude   # or codex — idempotent MCP wiring
+rifja ui               # management plane: the agent's activity, live
+```
+
+Prefer driving the CLI yourself sometimes? Everything is the same surface —
+see the [first-session guide](docs/getting-started.md).
 
 Replace the example repository and transcript paths with directories you intend to import. Discovery only shows candidate locations; it does not import them.
 

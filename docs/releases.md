@@ -1,5 +1,53 @@
 # Release notes
 
+## 0.4.0
+
+Repositions Rifja per the ratified product vision: **the CLI is the execution
+layer your AI agent drives; the dashboard is your management and observability
+plane.** "Install the tool, tell your agent to use it, watch from the
+dashboard" is now the complete flow. Existing contracts keep their semantics:
+successful JSON responses stay `{schema_version: 1, command, data}`, exit codes
+stay 0/2/3/4/130, runtime stays standard-library-only and offline, and
+previously registered state upgrades in place (schema 3 -> 4, automatic, with
+a pre-migration backup).
+
+Agent execution layer
+- The MCP server grows from 4 read-only tools to 14: `status`, `setup`,
+  `register_source`, `register_project`, `refresh`, `projects`, `search`,
+  `resume`, `tasks`, `daily` (timezone-correct day buckets), `explain`,
+  `memory`, `remember`, `associate`. An agent can set up, register and import
+  end to end — then answer "where was I" with provenance.
+- Consent boundaries are structural: agents only *propose* memory
+  (`remember` starts `proposed`; acceptance is human), destructive operations
+  (forget, retention, backup, restore) are not exposed at all, and
+  registration stays explicit-path-only.
+- Every tool call is recorded in a new append-only activity log — failures
+  included — which becomes the dashboard's home screen.
+
+Management-plane dashboard
+- `rifja ui` is rebuilt as the operator's observability surface: **Activity**
+  (live feed of agent tool calls with status and duration), Overview (state,
+  14-day record shape, doctor), Sessions and evidence chains, Search, Memory
+  (proposals awaiting your acceptance first), Sources (paginated), Settings.
+- New "instrument" design system: dark-first, monospace-first data with
+  tabular numerals, hairline keylines instead of cards, one amber accent,
+  keyboard navigation. Bounded queries throughout (keyset pagination,
+  aggregate-first counts) with gzip and cacheable static assets.
+- The security model is unchanged: loopback-only, one-time sign-in link
+  exchanged for a session cookie, GET-only, restrictive CSP, escaped output.
+
+Agent onboarding
+- `rifja agent status` detects Claude Code / Codex environments; `rifja agent
+  install claude|codex` wires the MCP server idempotently (foreign config
+  preserved, conflicting registrations refused, nothing partially installed)
+  and appends a static usage pointer to CLAUDE.md/AGENTS.md — never transcript
+  content. A Claude Code skill (`packaging/skills/rifja/SKILL.md`) teaches
+  the agent the tool discipline.
+
+Distribution
+- Rifja ships from its dedicated `0merUfuk/rifja` Homebrew tap; the Claude
+  plugin marketplace is published at `0merUfuk/rifja-plugin`.
+
 ## 0.3.0
 
 Ships the five evolution-proposal phases. Existing contracts keep their

@@ -79,6 +79,7 @@ There is no unauthenticated network endpoint. Text alone does not create files, 
 | Context composition | `resume`, `daily`, `items` | History to actionable interpretation | Freshness, role, quotation and priority must survive query limits | `app.py:items/resume`, `context.py:details` |
 | Rendering/export | stdout or `export --output` | State to recipient interpretation | Escape imported text and metadata; retain omission notices | `render.py`, `cli.py:execute` |
 | Concurrent state operations | Multiple local processes | Shared SQLite and lock ownership | Atomic writes and controlled retry on conflicts | `store.py:transaction/writer_lock` |
+| Agent-invoked MCP mutation tools | `register_source`, `register_project`, `refresh`, `remember`, `associate`, `setup` over stdio | Agent's tool-call authority to mutable state | Same explicit-path/proposed-only rules as the CLI, now reachable without the operator typing the command; every call is activity-logged | `mcp_server.py:_call_tool`, `docs/product-vision.md` |
 | Build/install | Wheel/sdist installation | Reviewed source to installed code | Hashes and external import location must match tested artifact | `pyproject.toml`, `docs/review-findings.md` |
 
 ## Top abuse paths
@@ -108,6 +109,7 @@ Priority denotes review focus using the original demonstrated impact; gaps state
 | TM-007 | Transcript/repository text supplier | Reader interprets Markdown | Inject markup/persuasive instructions | Confuse evidence with authority | Handoff integrity | `_inline`, terminal cleaning, trust notices | Markup case fixed; recipient behavior external | Escape all dynamic fields and retain untrusted boundaries | Filename/HTML render regression | medium: routine imported content | medium: recipient-dependent influence | medium |
 | TM-008 | Concurrent local process | Commit during observation snapshot | Force snapshot-to-write conflict | Failed query or raw error | Availability/consistency | Snapshot transactions, rollback, `BusyError` | Reproduced raw exception fixed; retry may still be required | Preserve consistent snapshot and controlled busy exit | Second-connection observation regression | medium: normal concurrency | medium: local retry disruption | medium |
 | TM-009 | Release workflow error | Old wheel after source fix | Test different code from installed artifact | Ship known defects | Artifact integrity | External installation/module comparison | Old reviewed hash failed four cases; final artifact tracked separately | Rebuild/install and run regressions against exact immutable artifact | Hash, external import origin, executed package tests | medium: demonstrated during review | medium: known runtime defects reach install | medium |
+| TM-010 | Confused agent (prompt injection from a source outside Rifja's own ingested evidence — e.g. a file, page or repo the agent is separately reading) | Agent has the MCP tool-call surface wired (`rifja agent install`) | Induce the agent to call `register_source`/`register_project`/`refresh` on an attacker-suggested but locally-existing path; `remember` with attacker-authored content; or `associate` to re-scope an existing record to the wrong project/worktree | Expand ingestion scope, plant false "facts," or misattribute real evidence, without the operator directly typing the command | Ingestion scope; memory integrity; evidence attribution | Registration stays explicit-path-only (no globs/scanning) identically to the CLI; `remember` forces `origin: inferred, status: proposed` and can never auto-accept; `associate` cannot fabricate a target (requires an already-indexed record/session ID) or a new project (requires an already-registered one), but takes effect immediately, same as its CLI equivalent; destructive tools (forget/retention/backup/restore) are structurally absent from the MCP list; every call is activity-logged with an arguments-derived summary | Not yet reproduced as a fixture; existing controls bound but do not eliminate the class (a still-existing path/record/project can be named); `associate`'s immediate effect (no proposed-status gate, unlike `remember`) is the least-protected of the mutation tools | Keep proposed-only memory and the destructive-op exclusion as structural (never optional); consider whether `associate` should also land as a reviewable proposal rather than an immediate reassignment | Activity feed shows every agent-invoked tool call, arguments included, for operator review | medium: requires the agent to already be compromised by something outside Rifja | medium: bounded by explicit-scope rules, no code execution or destructive path, but `associate` has no human-review gate | medium |
 
 ## Criticality calibration
 
@@ -186,3 +188,64 @@ operators on shared machines should treat the printed URL as a secret.
 Read-only exposure still leaks transcripts to anything that can reach the
 loopback listener AND hold a valid session; loopback binding alone is not the
 control — the session is.
+
+## Agent operational MCP tools update (2026-09, vision realignment)
+
+`docs/product-vision.md` (ratified 2026-09-12) repositions the MCP server as
+the primary agent-facing execution layer, not a read-only query surface. The
+tool count grew from 4 to 14: `status`, `setup`, `register_source`,
+`register_project`, `refresh`, `projects`, `search`, `resume`, `tasks`,
+`daily`, `explain`, `memory`, `remember`, `associate`. This section
+supersedes the "Tools are read-only `App` queries" statement above — five of
+the fourteen (`setup`, `register_source`, `register_project`, `refresh`,
+`remember`/`associate`) mutate state.
+
+**What did not change.** The transport and authorization boundary is
+identical to Phase 2: stdio-only, no socket, spawned by the agent host —
+whoever can spawn the process already holds the operator's local authority,
+so "no unauthenticated network endpoint" still holds by construction.
+Mutating tools reuse the exact same rules as their CLI equivalents: source
+and project registration remain explicit-path-only (no globs, no directory
+scanning — `mcp_server.py:_tool_definitions` declares `path` as a plain
+required string, not a pattern); `refresh` only imports what is already
+registered; destructive operations (`forget`, `retention`, `backup`,
+`restore`) are structurally absent from the tool list, not merely
+undocumented — there is no code path from MCP to them.
+
+**What is new.** The caller is now the agent's own tool-calling loop, not
+only the operator's fingers on a keyboard. Two consequences:
+
+1. **Consent boundary on `remember`.** It forces
+   `origin: "inferred", status: "proposed"` unconditionally — an agent can
+   never write directly-accepted memory; the operator accepts or rejects
+   through the CLI/dashboard exactly as if a human had proposed it. This is
+   enforced in code (`app.py` raises `inferred_memory_must_start_proposed`
+   if a caller supplies any other status for an inferred origin), not by
+   tool-description convention alone, and is regression-tested
+   (`tests/test_integrations.py::test_mcp_operational_tools_complete_the_agent_flow`).
+   **`associate` has no equivalent gate** — it takes effect immediately, the
+   same as its CLI counterpart, bounded only by requiring an already-indexed
+   target and an already-registered project (it cannot fabricate either).
+   That asymmetry is intentional-by-inheritance (the CLI command is also
+   immediate) but is now reachable without the operator typing it, and is
+   the weakest link in this tool group — see TM-010.
+2. **New threat actor: a confused agent.** An agent whose broader context
+   (a file it read, a page it fetched — sources entirely outside Rifja) has
+   been adversarially manipulated could be induced to call a mutating tool
+   with attacker-suggested arguments. See TM-010. This is a property of
+   exposing any tool to an LLM-driven agent, not specific to Rifja's
+   implementation; Rifja's mitigation is that every mutating tool's blast
+   radius is already bounded by the same explicit-scope and proposed-only
+   rules that bound a careless human operator, and every call lands in the
+   append-only `activity` log (tool, argument summary, status, duration) —
+   the dashboard's Activity feed — for after-the-fact review. No fixture
+   currently exercises an actually-adversarial MCP argument (as opposed to
+   adversarial *transcript content*, which the existing fixtures do cover);
+   that is the residual gap this update records rather than closes.
+
+**Activity log as an asset.** The `activity` table is additive to the assets
+table above: it is local SQLite state with the same file permissions and
+backup/restore behavior as the rest of the store, not a new attack surface,
+but it is now the primary detection mechanism for TM-010 and should be
+treated as evidence, not decoration.
+

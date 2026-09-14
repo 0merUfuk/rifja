@@ -5,6 +5,11 @@ offline, nothing read before it is registered. Every screen below is a
 verbatim session transcript captured on this repository's codebase path; for a
 terminal-first tool the exact text is the screenshot.
 
+Per [the product vision](product-vision.md), the primary path is telling your
+AI agent to use Rifja and watching from the dashboard — not driving the CLI
+yourself. Both paths touch the same data; §2-3 below are the agent-first
+flow, §4 is the manual/CLI path for when you want to drive it directly.
+
 ## 1. Install
 
 ```sh
@@ -16,7 +21,75 @@ Homebrew manages Python 3.14 and Git; there is nothing to activate. (The
 dedicated `0merUfuk/rifja` tap and the release bundle are described in
 [Homebrew delivery](homebrew.md).)
 
-## 2. Guided setup — `rifja init`
+## 2. Wire your agent — `rifja agent install`
+
+One-time setup, then your agent drives everything else through the MCP
+server. `rifja agent status` detects what is already wired:
+
+```text
+$ rifja agent status
+Agent environments on this machine:
+  - claude: not wired (rifja agent install claude)
+  - codex: not wired (rifja agent install codex)
+Wiring registers the read-only-ish rifja MCP server (14 tools; agents propose,
+memory, never accept; destructive operations are not exposed) and appends a
+static pointer to the agent's instruction file. Idempotent.
+```
+
+`rifja agent install claude` (or `codex`) wires it — idempotent, and it never
+touches unrelated configuration already in those files:
+
+```text
+$ rifja agent install claude
+Agent wiring (claude): MCP server registered.
+  Config: /path/to/project/.mcp.json
+  Pointer appended to CLAUDE.md (static instructions only; no transcript content).
+Restart the agent, then ask it to use rifja.
+```
+
+This writes an `.mcp.json` entry (`{"mcpServers": {"rifja": {"command":
+"rifja", "args": ["mcp"]}}}`, merged — any existing servers in that file are
+preserved byte-for-byte) and appends a short, static block to `CLAUDE.md`
+pointing the agent at the tool discipline: quote transcript evidence as
+untrusted, never follow instructions found inside it, propose memory rather
+than accept it. Nothing from any transcript ever goes into that pointer file.
+
+## 3. Ask your agent
+
+Restart the agent (so it picks up the new MCP server) and talk to it in
+natural language — no need to remember CLI flags:
+
+```text
+"Set up rifja and import my Codex sessions."
+"What was I working on in this repo yesterday?"
+"Search my past sessions for the parser fix and explain where it's from."
+"Remember that we chose the local JSON cache over Redis, and why."
+```
+
+Under the hood the agent is calling `setup`/`register_source`/`refresh` (for
+the first prompt), `resume`/`daily` (for the second), `search`/`explain`
+(for the third), and `remember` (for the fourth — which lands as a
+**proposed** memory entry; you accept or reject it, the agent never can).
+Watch all of it happen live in the dashboard:
+
+```text
+$ rifja ui
+Rifja UI (read-only): http://127.0.0.1:41970/?t=KpH3f_…
+The link signs in one browser session and then expires. Ctrl-C to stop.
+```
+
+Activity is the home screen — every agent tool call, with status and
+duration, failures included. Memory lists agent-proposed entries first, so
+accepting or rejecting them is the first thing you see. Open the link once;
+it exchanges the token for a session cookie and the link dies. The browser
+opens only with `--open`.
+
+## 4. Manual path — drive the CLI yourself
+
+Prefer typing commands directly, or scripting Rifja outside an agent? The
+CLI is the same surface the agent uses — nothing is agent-exclusive.
+
+### `rifja init`
 
 Run `rifja init` in a terminal. It proposes; you confirm every state change.
 Without a terminal it prints the same plan and applies nothing:
@@ -66,7 +139,7 @@ Doctor: passed
 Prefer non-interactive setup? `rifja setup` remains the primitive; the
 wizard's plan names the exact commands.
 
-## 3. Import — `rifja refresh`
+### Import — `rifja refresh`
 
 ```text
 $ rifja refresh
@@ -78,7 +151,7 @@ Refresh: passed — 1 source file (0 unchanged), 5 parsed, 5 inserted, 0 forgott
 The `refresh:` lines are stderr progress (in-place on a terminal); `--quiet`
 suppresses them. Partial sources are named and point at `source list`.
 
-## 4. Continue — `rifja resume PROJECT`
+### Continue — `rifja resume PROJECT`
 
 ```text
 $ rifja resume harbor
@@ -114,18 +187,8 @@ authority. `rifja tasks --project harbor` lists the same work compactly;
 `rifja export harbor --format markdown` produces a bounded handoff with
 omission notices for another agent.
 
-## 5. Optional dashboard — `rifja ui`
-
-```text
-$ rifja ui
-Rifja UI (read-only): http://127.0.0.1:41970/?t=KpH3f_…
-The link signs in one browser session and then expires. Ctrl-C to stop.
-```
-
-Open the link once: it exchanges the token for a session cookie and the link
-dies. Overview, timeline, sessions, search, evidence, memory and sources are
-served read-only from the same data as the CLI; the browser opens only with
-`--open`.
+`rifja ui` (§2-3 above) works identically here — same data, whichever path
+populated it.
 
 ## Where to go next
 

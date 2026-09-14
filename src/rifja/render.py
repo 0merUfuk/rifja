@@ -932,6 +932,27 @@ def _config_lines(data: dict[str, Any], extra: dict[str, Any], tty: bool) -> lis
     ]
 
 
+def _agent_lines(data: dict[str, Any], extra: dict[str, Any], tty: bool) -> list[str]:
+    if "environments" in data:
+        return list(data["environments"])
+    lines = [
+        f"Agent wiring ({data['environment']}): MCP server registered.",
+    ]
+    if data.get("already_registered"):
+        lines[0] = f"Agent wiring ({data['environment']}): already registered, unchanged."
+    target = data.get("config") or data.get("project")
+    lines.append(f"  Config: {target}")
+    if data.get("pointer_added"):
+        lines.append(
+            f"  Pointer appended to {data['pointer_file']} (static instructions only; "
+            "no transcript content)."
+        )
+    else:
+        lines.append(f"  Pointer already present in {data['pointer_file']}.")
+    lines.append("Restart the agent, then ask it to use rifja.")
+    return lines
+
+
 def _mcp_lines(data: dict[str, Any], extra: dict[str, Any], tty: bool) -> list[str]:
     return [
         f"MCP stdio session ended: {data.get('requests', 0)} request(s) served.",
@@ -1017,6 +1038,7 @@ def _simple_lines(data: dict[str, Any], extra: dict[str, Any], tty: bool) -> lis
 
 
 _RENDERERS: dict[str, _Renderer] = {
+    "agent": _agent_lines,
     "backup": _simple_lines,
     "config": _config_lines,
     "constitution": _constitution_lines,

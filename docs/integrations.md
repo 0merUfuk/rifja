@@ -57,6 +57,22 @@ do not take the writer lock — and any per-request failure is returned as an
 MCP `isError` result with a stable code (`busy`, or a CLI contract label) and
 retry guidance. The server never exits on contention or malformed input.
 
+## `rifja agent` — one-command wiring
+
+```sh
+rifja agent status          # which agent environments exist, which are wired
+rifja agent install claude  # registers the MCP server in the project .mcp.json
+rifja agent install codex   # appends [mcp_servers.rifja] to CODEX_HOME/config.toml
+```
+
+The command is idempotent, preserves foreign configuration entries, refuses
+malformed or symlinked files (contract labels, exit 2), and appends only a
+static pointer to `CLAUDE.md`/`AGENTS.md` — guidance about using rifja, never
+transcript content. A Claude Code skill that teaches the agent the tool
+discipline (untrusted-evidence rules, propose-only memory, explicit
+registration) ships at `packaging/skills/rifja/SKILL.md`; copy it into the
+project's `.claude/skills/rifja/` to activate.
+
 ### Claude Code
 
 Add the server as an MCP client entry (project `.mcp.json` or user config):

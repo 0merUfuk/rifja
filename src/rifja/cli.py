@@ -67,7 +67,7 @@ def detect_timezone() -> tuple[str, str]:
 
 
 COMMAND_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("Setup", ("init", "setup", "config", "doctor")),
+    ("Setup", ("init", "setup", "agent", "config", "doctor")),
     ("Data", ("source", "document", "project", "refresh", "retention", "forget")),
     (
         "Inspect",
@@ -142,6 +142,17 @@ ERROR_HINTS: dict[str, tuple[str, ...]] = {
         "Initialize state with `rifja setup`, then register `rifja project add PATH`.",
     ),
     "unknown_command": ("Run `rifja --help` for the grouped command list.",),
+    "agent_config_must_not_be_symlink": (
+        "Point the agent integration at a real file instead of the symlink.",
+    ),
+    "agent_config_unreadable": (
+        "The agent config is not valid JSON/TOML for this writer; wire it manually",
+        "(docs/integrations.md shows the exact snippets).",
+    ),
+    "agent_pointer_must_not_be_symlink": (
+        "The agent instruction file must be a real file, not a symlink.",
+    ),
+    "codex_home_not_detected": ("Set CODEX_HOME or create the Codex home directory first.",),
     "project_not_found": (
         "Registered projects: `rifja project list`.",
         "Register one: `rifja project add PATH`.",
@@ -376,6 +387,12 @@ def parser() -> argparse.ArgumentParser:
         metavar="COMMAND",
         parser_class=argparse.ArgumentParser,
     )
+    agent = sub.add_parser("agent", help="Detect and wire your AI agent environment to Rifja")
+    agent_sub = agent.add_subparsers(dest="action", required=True)
+    agent_sub.add_parser("status", help="Show detected agent environments and wiring state")
+    install = agent_sub.add_parser("install", help="Register the rifja MCP server (idempotent)")
+    install.add_argument("environment", choices=["claude", "codex"])
+    install.add_argument("--project", type=Path, help="Project directory (claude; default cwd)")
     init = sub.add_parser("init", help="Guided first-run setup (interactive terminal)")
     init.add_argument(
         "--timezone", help="IANA zone; detected from TZ or /etc/localtime when omitted"
@@ -543,6 +560,19 @@ def _execute(args: argparse.Namespace, store: Store) -> tuple[Any, int, dict[str
     result: Any
     if hasattr(args, "limit") and not 1 <= args.limit <= 1000:
         raise ValueError("limit_must_be_1_to_1000")
+    if cmd == "agent":
+        from . import agent_onboarding
+
+        if args.action == "status":
+            return {"environments": agent_onboarding.status_lines()}, 0, {}
+        if args.action == "install":
+            if args.environment == "claude":
+                result = agent_onboarding.install_claude(
+                    args.project.expanduser().absolute() if args.project else Path.cwd()
+                )
+            else:
+                result = agent_onboarding.install_codex(None)
+            return result, 0, {}
     if cmd == "init":
         from .onboarding import run_init
 

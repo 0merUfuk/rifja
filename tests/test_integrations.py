@@ -6,6 +6,7 @@ from __future__ import annotations
 import fcntl
 import json
 import subprocess
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import pytest
@@ -484,13 +485,16 @@ def test_daily_overview_buckets_in_the_configured_timezone(cli):
     source.write_text(source.read_text().replace("2026-09-05T06:", "2026-09-05T21:"))
     cli.data("source", "add", "codex", str(source))
     cli.data("refresh")
+    # The fixture's records are pinned to 2026-09-05/06; request a window wide
+    # enough to still reach them no matter what "today" is when this runs.
+    window_days = (datetime.now(UTC).date() - date(2026, 9, 5)).days + 2
     responses = speak(
         cli,
         {
             "jsonrpc": "2.0",
             "id": 1,
             "method": "tools/call",
-            "params": {"name": "daily", "arguments": {"days": 10}},
+            "params": {"name": "daily", "arguments": {"days": window_days}},
         },
     )
     text = by_id(responses, 1)["result"]["content"][0]["text"]

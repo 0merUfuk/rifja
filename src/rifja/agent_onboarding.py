@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import os
+import tomllib
 from pathlib import Path
 from typing import Any
 
@@ -41,19 +42,40 @@ def _detect() -> dict[str, Path | None]:
     }
 
 
-def _claude_wired(project: Path) -> bool:
-    config = project / ".mcp.json"
-    if not config.is_file():
-        return False
+def _claude_state(config: Path) -> dict[str, Any] | None:
+    """Parsed mcpServers mapping, or None when absent/unreadable."""
+    if not (config.is_file() or config.is_symlink()):
+        return None
     try:
-        return "rifja" in json.loads(config.read_text()).get("mcpServers", {})
+        data = json.loads(config.read_text())
     except ValueError:
-        return False
+        return None
+    if not isinstance(data, dict):
+        return None
+    servers = data.get("mcpServers")
+    return servers if isinstance(servers, dict) else None
+
+
+def _claude_wired(project: Path) -> bool:
+    servers = _claude_state(project / ".mcp.json")
+    return servers is not None and servers.get("rifja") == MCP_SNIPPET
+
+
+def _codex_tables(config: Path) -> dict[str, Any] | None:
+    """Parsed mcp_servers tables, or None when absent/unreadable."""
+    if not (config.is_file() or config.is_symlink()):
+        return None
+    try:
+        data = tomllib.loads(config.read_text())
+    except ValueError, tomllib.TOMLDecodeError:
+        return None
+    servers = data.get("mcp_servers")
+    return servers if isinstance(servers, dict) else None
 
 
 def _codex_wired(codex_home: Path) -> bool:
-    config = codex_home / "config.toml"
-    return config.is_file() and "[mcp_servers.rifja]" in config.read_text()
+    tables = _codex_tables(codex_home / "config.toml")
+    return tables is not None and tables.get("rifja") == {"command": "rifja", "args": ["mcp"]}
 
 
 def status_lines() -> list[str]:
@@ -105,29 +127,34 @@ def _required(value: Path | None, label: str) -> Path:
 
 def install_claude(project: Path) -> dict[str, Any]:
     config = project / ".mcp.json"
+    pointer = project / "CLAUDE.md"
+    # Validate every target before the first write: a refusal must never
+    # leave a partial installation behind.
+    if config.is_symlink():
+        _fail("agent_config_must_not_be_symlink")
+    if pointer.is_symlink():
+        _fail("agent_pointer_must_not_be_symlink")
     data: dict[str, Any] = {}
-    if config.exists() or config.is_symlink():
-        if config.is_symlink():
-            _fail("agent_config_must_not_be_symlink")
+    if config.is_file():
         try:
-            data = json.loads(config.read_text())
+            parsed = json.loads(config.read_text())
         except ValueError:
             _fail("agent_config_unreadable")
-        if not isinstance(data, dict):
+        if not isinstance(parsed, dict):
             _fail("agent_config_unreadable")
+        data = parsed
     servers = data.get("mcpServers")
     if servers is None:
         servers = data["mcpServers"] = {}
     elif not isinstance(servers, dict):
         _fail("agent_config_unreadable")
     already = "rifja" in servers
+    if already and servers["rifja"] != MCP_SNIPPET:
+        _fail("agent_config_conflicts")
     if not already:
         servers["rifja"] = MCP_SNIPPET
         config.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
-    pointer = project / "CLAUDE.md"
     pointer_added = False
-    if pointer.is_symlink():
-        _fail("agent_pointer_must_not_be_symlink")
     current = pointer.read_text() if pointer.is_file() else ""
     if "rifja MCP tools" not in current:
         pointer.write_text(
@@ -137,6 +164,7 @@ def install_claude(project: Path) -> dict[str, Any]:
     return {
         "environment": "claude",
         "project": str(project),
+        "config": str(config),
         "mcp_registered": True,
         "already_registered": already,
         "pointer_file": "CLAUDE.md",
@@ -147,18 +175,38 @@ def install_claude(project: Path) -> dict[str, Any]:
 def install_codex(codex_home: Path | None) -> dict[str, Any]:
     home = _required(codex_home or _detect()["codex"], "codex_home_not_detected")
     config = home / "config.toml"
+    pointer = Path.cwd() / "AGENTS.md"
+    # Validate every target before the first write (see install_claude).
     if config.is_symlink():
         _fail("agent_config_must_not_be_symlink")
+    if pointer.is_symlink():
+        _fail("agent_pointer_must_not_be_symlink")
     body = config.read_text() if config.is_file() else ""
-    already = "[mcp_servers.rifja]" in body
+    parsed: dict[str, Any] = {}
+    if body:
+        try:
+            parsed = tomllib.loads(body)
+        except ValueError, tomllib.TOMLDecodeError:
+            _fail("agent_config_unreadable")
+    servers = parsed.get("mcp_servers")
+    already = isinstance(servers, dict) and "rifja" in servers
+    if already and not isinstance(servers, dict):
+        _fail("agent_config_unreadable")
+    if (
+        already
+        and servers is not None
+        and servers.get("rifja")
+        != {
+            "command": "rifja",
+            "args": ["mcp"],
+        }
+    ):
+        _fail("agent_config_conflicts")
     if not already:
         if body and not body.endswith("\n"):
             body += "\n"
         config.write_text(body + "\n" + CODEX_BLOCK)
-    pointer = Path.cwd() / "AGENTS.md"
     pointer_added = False
-    if pointer.is_symlink():
-        _fail("agent_pointer_must_not_be_symlink")
     current = pointer.read_text() if pointer.is_file() else ""
     if "rifja MCP tools" not in current:
         block = "<!-- Rifja - agent continuity layer -->\n" + CLAUDE_POINTER

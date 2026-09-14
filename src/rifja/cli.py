@@ -152,6 +152,10 @@ ERROR_HINTS: dict[str, tuple[str, ...]] = {
     "agent_pointer_must_not_be_symlink": (
         "The agent instruction file must be a real file, not a symlink.",
     ),
+    "agent_config_conflicts": (
+        "A different rifja MCP registration already exists; reconcile it manually ",
+        "(docs/integrations.md shows the expected entry).",
+    ),
     "codex_home_not_detected": ("Set CODEX_HOME or create the Codex home directory first.",),
     "project_not_found": (
         "Registered projects: `rifja project list`.",

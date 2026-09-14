@@ -88,3 +88,63 @@ def test_pointer_contains_no_transcript_content(cli):
     assert "never accept" in CLAUDE_POINTER  # memory authority rule
     for banned in ("resume harbor", "BEGIN IMPORTED", "ref "):
         assert banned not in CLAUDE_POINTER
+
+
+def test_conflicting_registrations_are_refused(cli):
+    """A different rifja entry is a conflict, not a silent success."""
+    cli.env["CLAUDE_CONFIG_DIR"] = str(cli.home / ".claude")
+    Path(cli.env["CLAUDE_CONFIG_DIR"]).mkdir(parents=True)
+    (cli.cwd / ".mcp.json").write_text(json.dumps({"mcpServers": {"rifja": {"command": "other"}}}))
+    result = cli.run("agent", "install", "claude", code=2, json_output=False)
+    assert "agent_config_conflicts" in result.stderr
+    assert not (cli.cwd / "CLAUDE.md").exists()  # nothing partially installed
+    cli.env["CODEX_HOME"] = str(cli.home / "codex")
+    Path(cli.env["CODEX_HOME"]).mkdir(parents=True)
+    Path(cli.env["CODEX_HOME"], "config.toml").write_text(
+        '[mcp_servers.rifja]\ncommand = "other"\n'
+    )
+    result = cli.run("agent", "install", "codex", code=2, json_output=False)
+    assert "agent_config_conflicts" in result.stderr
+    assert not (cli.cwd / "AGENTS.md").exists()
+
+
+def test_malformed_codex_toml_is_refused_before_writing(cli):
+    cli.env["CODEX_HOME"] = str(cli.home / "codex")
+    Path(cli.env["CODEX_HOME"]).mkdir(parents=True)
+    Path(cli.env["CODEX_HOME"], "config.toml").write_text("= not toml [")
+    result = cli.run("agent", "install", "codex", code=2, json_output=False)
+    assert "agent_config_unreadable" in result.stderr
+    assert Path(cli.env["CODEX_HOME"], "config.toml").read_text() == "= not toml ["
+    assert not (cli.cwd / "AGENTS.md").exists()
+
+
+def test_status_survives_non_object_configs(cli):
+    cli.env["CLAUDE_CONFIG_DIR"] = str(cli.home / ".claude")
+    Path(cli.env["CLAUDE_CONFIG_DIR"]).mkdir(parents=True)
+    (cli.cwd / ".mcp.json").write_text("[1, 2, 3]")
+    cli.run("agent", "status")  # must not crash on a JSON array root
+    cli.env["CODEX_HOME"] = str(cli.home / "codex2")
+    Path(cli.env["CODEX_HOME"]).mkdir(parents=True)
+    Path(cli.env["CODEX_HOME"], "config.toml").write_text("not [ valid toml")
+    cli.run("agent", "status")  # must not crash on malformed TOML
+
+
+def test_pointer_symlink_leaves_config_untouched(cli):
+    cli.env["CLAUDE_CONFIG_DIR"] = str(cli.home / ".claude")
+    Path(cli.env["CLAUDE_CONFIG_DIR"]).mkdir(parents=True)
+    (cli.cwd / "CLAUDE.md").symlink_to(cli.root / "elsewhere.md")
+    result = cli.run("agent", "install", "claude", code=2, json_output=False)
+    assert "agent_pointer_must_not_be_symlink" in result.stderr
+    assert not (cli.cwd / ".mcp.json").exists()  # validation preceded the write
+
+
+def test_render_shows_the_config_file_not_the_project(cli):
+    import tempfile
+
+    from rifja.agent_onboarding import install_claude
+    from rifja.render import readable
+
+    with tempfile.TemporaryDirectory() as d:
+        result = install_claude(Path(d))
+        text = readable("agent", result)
+        assert f"Config: {d}/.mcp.json" in text

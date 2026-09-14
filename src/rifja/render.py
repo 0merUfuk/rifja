@@ -940,7 +940,7 @@ def _agent_lines(data: dict[str, Any], extra: dict[str, Any], tty: bool) -> list
     ]
     if data.get("already_registered"):
         lines[0] = f"Agent wiring ({data['environment']}): already registered, unchanged."
-    target = data.get("project") or data.get("config")
+    target = data.get("config") or data.get("project")
     lines.append(f"  Config: {target}")
     if data.get("pointer_added"):
         lines.append(

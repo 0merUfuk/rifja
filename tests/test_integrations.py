@@ -6,7 +6,7 @@ from __future__ import annotations
 import fcntl
 import json
 import subprocess
-from datetime import UTC, date, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -470,8 +470,13 @@ def test_memory_list_returns_accepted_knowledge_base(cli):
 
 
 def test_daily_overview_buckets_in_the_configured_timezone(cli):
-    # Local midnight in Istanbul is 21:00 UTC: this record is 2026-09-06
-    # 00:30 local but 2026-09-05 in UTC - both daily views must agree.
+    # Local midnight in Istanbul is 21:00 UTC: a record stamped 21:xx UTC on
+    # day N is already day N+1 locally - both daily views must agree. Anchor
+    # to real "yesterday/today" (not a fixed calendar date) so the scenario,
+    # and the small --days window used to observe it, never drift out of
+    # range as wall-clock time passes.
+    today_utc = datetime.now(UTC).date()
+    source_day = today_utc - timedelta(days=1)
     repo = cli.repo()
     cli.data("setup", "--timezone", "Europe/Istanbul")
     cli.data("project", "add", str(repo), "--name", "harbor")
@@ -482,25 +487,22 @@ def test_daily_overview_buckets_in_the_configured_timezone(cli):
         "synthetic-midnight",
         [("m1", "user", "TASK: Buckets must follow the configured zone.")],
     )
-    source.write_text(source.read_text().replace("2026-09-05T06:", "2026-09-05T21:"))
+    source.write_text(source.read_text().replace("2026-09-05T06:", f"{source_day.isoformat()}T21:"))
     cli.data("source", "add", "codex", str(source))
     cli.data("refresh")
-    # The fixture's records are pinned to 2026-09-05/06; request a window wide
-    # enough to still reach them no matter what "today" is when this runs.
-    window_days = (datetime.now(UTC).date() - date(2026, 9, 5)).days + 2
     responses = speak(
         cli,
         {
             "jsonrpc": "2.0",
             "id": 1,
             "method": "tools/call",
-            "params": {"name": "daily", "arguments": {"days": window_days}},
+            "params": {"name": "daily", "arguments": {"days": 5}},
         },
     )
     text = by_id(responses, 1)["result"]["content"][0]["text"]
-    assert "2026-09-06: 2 records" in text
-    assert "2026-09-05: 0 records" in text  # 21:xx UTC is already the 6th locally
-    drill = cli.data("daily", "2026-09-06", "--project", "harbor")
+    assert f"{today_utc.isoformat()}: 2 records" in text
+    assert f"{source_day.isoformat()}: 0 records" in text  # 21:xx UTC is already tomorrow locally
+    drill = cli.data("daily", today_utc.isoformat(), "--project", "harbor")
     assert len(drill["projects"][0]["activity"]) == 1
 
 

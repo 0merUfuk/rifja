@@ -181,6 +181,62 @@ this exact benchmark, and replace this section's `Fail` with a passing
 result and its own evidence. Until then, the CLI/MCP/dashboard month-range
 daily view is measurably slow at the project's own declared production scale.
 
+### Schema 5: closing the `daily` gate
+
+Reproducing the failing sample against the exact captured large-corpus state
+(`.local/benchmark-0.4.0-large`, copied and replayed directly, not
+regenerated) never returned the 1.426 s outlier again: seven fresh subprocess
+samples of the same `rifja daily 2026-01-01 --to 2026-01-31` query against
+that unmodified corpus and unmodified code clustered at 0.60-0.83 s. A
+`cProfile` pass of `App.daily` attributed the components as roughly 0.22 s to
+the actor/session `GROUP BY` (`records_daily` index, unavoidable temp
+B-tree — the query already uses the only column order that also serves the
+range filter), 0.24 s to `_daily_candidates`'s activity bucket, and 0.095 s to
+the unconditional `coverage()` call every `daily()` invocation makes. The
+1.426 s sample does not reproduce from identical inputs; on the evidence
+available it was a single-sample tail outlier (the same nearest-rank-of-7
+pattern already documented above for `search-common`'s 1.304 s sample), not a
+deterministic regression.
+
+`coverage()`'s cost was real and fixable regardless: `EXPLAIN QUERY PLAN`
+showed its `unknown_event_times` count (`SELECT count(*) FROM records WHERE
+time_status!='known' AND provider!='project_document'`) ran a full `SCAN
+records` over all 250,331 rows to find the 231 that matched, on every single
+`daily()` call, independent of the requested date range. Schema 5 adds a
+partial covering index, `CREATE INDEX records_unknown_time ON
+records(time_status) WHERE time_status!='known'`, migrated automatically
+with the existing pre-migration-backup discipline. On the same corpus this
+turns that scan into a sub-millisecond index search (measured: 0.08 s → 15
+µs for the query alone) and removes it as a fixed per-call cost.
+
+| Operation | 0.4.0 (schema 4) | Schema 5 | Budget | Result |
+|---|---:|---:|---:|---|
+| **Daily (month-range) p95** | 1.426 s (unreproduced outlier) / 0.830 s (rerun) | **0.731 s** | 1 s | **Pass** |
+| Cold refresh | 115.805 s | 105.675 s | 120 s | Pass |
+| Unchanged refresh, max of 7 | 2.128 s | 2.671 s | 5 s | Pass |
+| Append exactly 100 | 1.560 s | 1.541 s | 2 s | Pass |
+| Sparse/project search p95 | 0.227 s | 0.077 s | 1 s | Pass |
+| Common-term search p95 | 0.342 s | 0.209 s | 1 s | Pass |
+| Tasks p95 | 0.129 s | 0.145 s | 1 s | Pass |
+| Decisions p95 | 0.188 s | 0.123 s | 1 s | Pass |
+| Peak ingestion RSS | 53.2 MiB | 51.0 MiB | 512 MiB | Pass |
+
+Both the schema-4 rerun and the schema-5 fix run were fresh, independent
+`--preset large --repetitions 7` executions against the current checkout's
+editable install (not against `/tmp/rifja-bench-venv`), so cross-run variance
+in unrelated metrics (append, unchanged refresh) reflects normal machine
+noise, not code changes — only `records`, `App.daily`, and `store.py`'s
+migration chain changed between the two runs.
+
+All eight gates pass. Evidence: `.local/benchmark-large-with-fix/result.json`
+(schema 5) and `.local/benchmark-large-verify/result.json` (schema 4 rerun,
+same checkout, pre-index), checkout fingerprint
+`f1dca18e9b35d06a98e650e285a814c67048c33dd412237713ec6206d796b426`
+(`fingerprint_scope: checkout_editable_fallback`), generator SHA-256
+`c4feca9a67262031c94231e86650e16310265a0175421f8c5be3121bb72a948d`, measured
+on macOS 27.0/Darwin 27.0.0 arm64, Python 3.14.7, Git 2.55.0. This closes the
+follow-up above: the section's `Fail` no longer describes current code.
+
 ## RC3 document-inclusive measurement method
 
 The additional workload and measurements below are declared before the RC3 large

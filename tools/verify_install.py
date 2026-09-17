@@ -242,17 +242,19 @@ def main() -> None:
         db.execute("DROP TABLE audit_log")
         db.execute("DROP INDEX records_daily")
         db.execute("DROP TABLE activity")
+        db.execute("DROP INDEX records_unknown_time")
         db.execute("PRAGMA user_version=1")
     command("v1-restore-migrate", "restore", str(older), state="migrated")
-    assert command("migrated-doctor", "doctor", state="migrated")["schema_version"] == 4
+    assert command("migrated-doctor", "doctor", state="migrated")["schema_version"] == 5
     previous = root / "v2.sqlite3"
     shutil.copyfile(backup, previous)
     with sqlite3.connect(previous) as db:
         db.execute("DROP INDEX records_daily")
         db.execute("DROP TABLE activity")
+        db.execute("DROP INDEX records_unknown_time")
         db.execute("PRAGMA user_version=2")
     command("v2-restore-migrate", "restore", str(previous), state="migrated-v2")
-    assert command("v2-migrated-doctor", "doctor", state="migrated-v2")["schema_version"] == 4
+    assert command("v2-migrated-doctor", "doctor", state="migrated-v2")["schema_version"] == 5
     newer = root / "v99.sqlite3"
     shutil.copyfile(backup, newer)
     with sqlite3.connect(newer) as db:

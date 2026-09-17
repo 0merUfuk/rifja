@@ -29,11 +29,17 @@ exact commands and outcomes belong in the release evidence report. Published rel
 | >=1k sessions/250k records/250MiB/20 repos, declared budgets | tools/benchmark.py | final artifact benchmark; docs/performance |
 | Independent review, coherent changes and exact final artifacts | review findings; release process | resolved regressions; final source fingerprint and artifact checksums |
 | Retain parse gaps across append; retain objectives and long-record intent; preserve handoff constraints and date-scoped activity | ingestion; explicit objective items; daily selection; render | test_acceptance_regressions; independent installed challenges; rc1-to-rc2 upgrade checks |
-| Daily aggregation meets the warm query budget without dropping selected evidence | app.daily; schema 3 covering index; bounded output | large installed daily query; schema 2 upgrade and failure rollback in test_resilience |
+| Daily aggregation meets the warm query budget without dropping selected evidence | app.daily; schema 3 covering index; bounded output | large installed daily query; schema 2 upgrade and failure rollback in test_resilience. **Currently failing** for the month-range query at declared large scale (1.426s p95 vs 1s budget) — see [performance evidence](performance.md#040-large-preset-reference-schema-4-activity-log-14-tool-mcp). Not yet re-closed. |
+| Agent execution layer: MCP operational tools (setup, registration, refresh, queries, proposed-only memory, association) reachable only by explicit-path/proposed-status rules identical to the CLI; destructive operations never exposed | mcp_server.py; app.py consent enforcement (`inferred_memory_must_start_proposed`) | test_integrations.py (`test_mcp_stdio_lifecycle_and_tool_provenance`, `test_mcp_operational_tools_complete_the_agent_flow`); threat model TM-010 |
+| Schema 3->4 upgrade (append-only `activity` table) preserves existing data and migrates automatically with a pre-migration backup | store.py schema migration | test_resilience.py schema version/migration assertions |
+| Agent onboarding: idempotent MCP registration merging (not overwriting) existing `.mcp.json`/`config.toml`; static, transcript-free instruction-file pointer; refuses malformed/symlinked targets | agent_onboarding.py | test_agent_onboarding.py (idempotency, foreign-config preservation, broken-symlink refusal) |
 
 Deferred by scope: PyPI publication, required AI,
-embeddings, servers/MCP, daemons, UI, application-data synchronization,
-automatic orchestration and broad preference mining. Unavailable external
+embeddings, daemons, application-data synchronization,
+automatic orchestration and broad preference mining. Servers/MCP and UI
+shipped (rows above; Phase 2-3 of the evolution proposal, expanded by the
+2026-09 vision realignment) and are no longer deferred — this line
+previously overclaimed their absence after both landed. Unavailable external
 platforms/remote CI are documented validation gaps, never represented as executed.
 
 ## Continuity repair acceptance

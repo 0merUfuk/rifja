@@ -116,6 +116,71 @@ Read-only profiling of the same isolated large database attributed 2.107 of a pr
 
 Final delivery measurements and artifact reconciliation are recorded in the local release evidence report. This document preserves the first installed reference and failed baseline; it does not certify runtime changes made afterward.
 
+## 0.4.0 large-preset reference (schema 4, activity log, 14-tool MCP)
+
+Every benchmark result above predates the vision-realignment work (PRs #15-#18):
+schema 4's append-only `activity` table, the MCP server's growth to 14 tools, and
+the dashboard's "instrument" rebuild all shipped with no large-preset rerun. This
+is that rerun, against the installed 0.4.0 wheel in a fresh venv (`--preset large
+--repetitions 7`), and it found one real regression, not just a currency gap.
+
+| Operation | 0.4.0 | Budget | Result | rc1 reference (for scale) |
+|---|---:|---:|---|---:|
+| Cold refresh | 115.805 s | 120 s | Pass | 103.543 s |
+| Unchanged refresh, max of 7 | 2.128 s | 5 s | Pass | 0.261 s |
+| Append exactly 100 | 1.560 s | 2 s | Pass | 0.343 s |
+| Sparse/project search p95 | 0.227 s | 1 s | Pass | 0.175 s |
+| Common-term search p95 | 0.342 s | 1 s | Pass | 0.307 s |
+| Tasks p95 | 0.129 s | 1 s | Pass | 0.138 s |
+| Decisions p95 | 0.188 s | 1 s | Pass | 0.126 s |
+| **Daily (month-range) p95** | **1.426 s** | **1 s** | **Fail** | not gated at the time |
+| Peak ingestion RSS | 53.2 MiB | 512 MiB | Pass | 31.8 MiB |
+| CLI startup p95 | 0.077 s | Report separately | Measured | 0.062 s |
+| Git status p95 | 0.028 s | Report separately | Measured | 0.010 s |
+| Project observation p95 | 0.392 s | Report separately | Measured | 0.269 s |
+| Complete resume p95 | 0.553 s | Report separately | Measured | 0.391 s |
+
+**The `daily` gate fails at declared scale.** The measured query is
+`rifja daily 2026-01-01 --to 2026-01-31` (a month-wide range) — the same
+query class the rc2 acceptance review's finding A7 previously fixed and added
+to the gate (see [review findings](review-findings.md)). Reading
+`App.daily` (`src/rifja/app.py:589`), the range-drill path groups every
+matching `records` row by `(project_id, provider, actor, session_id,
+worktree_id)` for the whole requested range — there is no day-level
+pre-aggregation on this path, unlike the single-day/aggregate-overview path
+described in "Bounded daily materialization" below. The `records_daily`
+covering index (`store.py` schema v3) still exists and the query still uses
+it, but a 31-day range over a 250k-record/20-project corpus is enough rows
+to push past the shared 1-second query budget (1.426 s p95 measured, up from
+sub-budget behavior at the same preset before the schema-4/activity changes).
+This was not a false pass before: the A7 fix predates schema 4, MCP, and the
+activity table, and was never re-verified at large scale after any of them
+landed.
+
+**Everything else moved but stayed inside budget**, most notably unchanged
+refresh (0.26 s -> up to 2.1 s) and append (0.34 s -> 1.56 s) — both still
+comfortably under their 5 s / 2 s budgets, but the direction is consistent
+with the added activity/document bookkeeping per write, not noise. Cold
+refresh grew a proportionally smaller ~12% (103.5 s -> 115.8 s) despite the
+schema/table additions.
+
+Evidence: `.local/benchmark-0.4.0-large/result.json` (this checkout),
+runtime fingerprint `86fbcfd052fc50ed8c2c0b3cffe4c8d7a4fda9ced2c1e600391d7584accc0a8f`
+(installed-package scope, `/tmp/rifja-bench-venv`), generator SHA-256
+`c4feca9a67262031c94231e86650e16310265a0175421f8c5be3121bb72a948d`, measured
+on macOS 27.0/Darwin 27.0.0 arm64, Python 3.14.7, Git 2.55.0. This does not
+replace the local release evidence report's own reconciliation; it is the
+runtime-change verification `docs/development.md`'s release procedure calls
+for and the `docs/requirements.md` ledger's declared-budget row requires.
+
+**Follow-up required before this counts as closed**, per the same discipline
+this document already applies to itself: fix or redesign `App.daily`'s
+range-drill aggregation (day-bucket the count before hydrating per-actor
+detail, matching the "Bounded daily materialization" pattern below), rerun
+this exact benchmark, and replace this section's `Fail` with a passing
+result and its own evidence. Until then, the CLI/MCP/dashboard month-range
+daily view is measurably slow at the project's own declared production scale.
+
 ## RC3 document-inclusive measurement method
 
 The additional workload and measurements below are declared before the RC3 large

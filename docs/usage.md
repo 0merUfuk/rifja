@@ -1,6 +1,6 @@
 # Operational guide
 
-This guide describes the `rifja` console interface for release **0.4.0**. Install with `brew install 0merUfuk/rifja/rifja` using the [README instructions](../README.md). Homebrew manages Python 3.14+, Git and the private environment; no manual Python setup is needed. Runtime commands use local files and Git; they do not contact a model or network service, execute transcript instructions, or run tests for your project.
+This guide describes the `rifja` console interface for release **0.4.1**. Install with `brew install 0merUfuk/rifja/rifja` using the [README instructions](../README.md). Homebrew manages Python 3.14+, Git and the private environment; no manual Python setup is needed. Runtime commands use local files and Git; they do not contact a model or network service, execute transcript instructions, or run tests for your project.
 
 ## Initialize and choose state
 
@@ -247,7 +247,7 @@ Backups are consistent SQLite snapshots containing imported state, configuration
 
 Restore requires a nonexistent or empty destination directory. Do not run `setup` there first, because setup creates application state. A nonempty destination is rejected and preserved. After restoring, select the restored home explicitly and inspect source paths/coverage before refreshing, especially on a different machine.
 
-Application schemas 1 and 2 migrate to schema 3, and schema 3 migrates to schema 4, when opened. A private `before-migration-vN.sqlite3` backup is created before each migration. Schema 3 adds a covering index for daily queries; schema 4 adds the append-only `activity` record that powers the dashboard's agent-activity view. Newer state schemas are refused. Restore validates supported backup versions and structural/integrity checks before replacing the empty destination. Use a compatible program version or a compatible backup in a separate home; do not manually lower a database's schema version.
+Application schemas 1 and 2 migrate to schema 3, schema 3 migrates to schema 4, and schema 4 migrates to schema 5, when opened. A private `before-migration-vN.sqlite3` backup is created before each migration. Schema 3 adds a covering index for daily queries; schema 4 adds the append-only `activity` record that powers the dashboard's agent-activity view; schema 5 adds a partial index on unresolved event times so `coverage()`'s unknown-event-time count is a narrow search instead of a full table scan. Newer state schemas are refused. Restore validates supported backup versions and structural/integrity checks before replacing the empty destination. Use a compatible program version or a compatible backup in a separate home; do not manually lower a database's schema version.
 
 To upgrade a Homebrew installation, run `brew update` and `brew upgrade 0merUfuk/rifja/rifja`, then `refresh` against the same application state. Homebrew manages the environment. A version change replays derived extraction once; durable memory is retained. Release 0.1.0rc2 introduced schema 3. Overrides on unchanged pre-rc2 long records are carried to the new full-text evidence identity when the matching prior item is unambiguous; old evidence references remain available as history. A concurrently changed source is not assumed to be the same evidence.
 

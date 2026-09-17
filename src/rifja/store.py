@@ -13,10 +13,13 @@ from uuid import uuid4
 from .privacy import clean_text, private_dir
 from .timeutil import now
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 MIGRATION_V2 = "CREATE TABLE audit_log(id INTEGER PRIMARY KEY,action TEXT NOT NULL,target TEXT NOT NULL,at TEXT NOT NULL,details TEXT NOT NULL)"
 MIGRATION_V3 = "CREATE INDEX records_daily ON records(event_time,project_id,provider,actor,session_id,worktree_id)"
 MIGRATION_V4 = "CREATE TABLE activity(id INTEGER PRIMARY KEY,at TEXT NOT NULL,surface TEXT NOT NULL,tool TEXT NOT NULL,summary TEXT NOT NULL,status TEXT NOT NULL,duration_ms INTEGER NOT NULL)"
+MIGRATION_V5 = (
+    "CREATE INDEX records_unknown_time ON records(time_status) WHERE time_status!='known'"
+)
 
 SCHEMA_V1 = """
 CREATE TABLE config(key TEXT PRIMARY KEY,value TEXT NOT NULL);
@@ -101,6 +104,16 @@ class Store:
                     # observability feed for the management dashboard.
                     self.db.execute(MIGRATION_V4)
                     self.db.execute("PRAGMA user_version=4")
+                version = 4
+            if version == 4:
+                backup = self.home / "before-migration-v4.sqlite3"
+                if not backup.exists():
+                    self.backup(backup)
+                with self.transaction():
+                    # v5: partial index so coverage()'s unknown-event-time
+                    # count is a narrow search instead of a full table scan.
+                    self.db.execute(MIGRATION_V5)
+                    self.db.execute("PRAGMA user_version=5")
             self.db.execute("PRAGMA journal_mode=WAL")
             # Bounded local cache and checkpoint batching reduce repeated page
             # churn during large refreshes. FULL commit synchronization and
@@ -242,7 +255,7 @@ def restore(backup: Path, home: Path) -> dict[str, Any]:
     with sqlite3.connect(backup.resolve().as_uri() + "?mode=ro", uri=True) as source:
         source.execute("PRAGMA query_only=ON")
         version = source.execute("PRAGMA user_version").fetchone()[0]
-        if version not in (1, 2, 3, 4):
+        if version not in (1, 2, 3, 4, 5):
             raise ValueError("unsupported_backup_schema")
         validate_schema(source, version)
         if source.execute("PRAGMA quick_check").fetchone()[0] != "ok":
@@ -278,6 +291,8 @@ def validate_schema(connection: sqlite3.Connection, version: int) -> None:
             expected.execute(MIGRATION_V3)
         if version >= 4:
             expected.execute(MIGRATION_V4)
+        if version >= 5:
+            expected.execute(MIGRATION_V5)
         sql = "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
         actual = [tuple(row) for row in connection.execute(sql)]
         canonical = [tuple(row) for row in expected.execute(sql)]

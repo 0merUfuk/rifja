@@ -1,5 +1,21 @@
 # Release notes
 
+## 0.4.1
+
+Fixes the `daily` command's month-range performance gate, which a post-0.4.0
+large-scale rerun found failing (1.426s p95 vs the 1s budget; see
+[performance evidence](performance.md#schema-5-closing-the-daily-gate)).
+Investigation did not reproduce that sample against identical inputs — the
+evidence points to a single-sample tail outlier, not a deterministic
+regression — but profiling also found a real, unconditional cost:
+`coverage()`'s unresolved-event-time count ran a full table scan on every
+`daily()` call regardless of the requested range. Schema 5 adds a partial
+index (`records_unknown_time`, migrated automatically with the existing
+pre-migration-backup discipline) that turns it into a sub-millisecond index
+search. Rerunning the full large-preset benchmark on the fix measured 0.731s
+p95, comfortably inside budget with wider margin than before. No other
+behavior changes.
+
 ## 0.4.0
 
 Repositions Rifja per the ratified product vision: **the CLI is the execution

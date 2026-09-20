@@ -15,7 +15,7 @@ the store, `App.daily` unconditionally replayed *every* item in the corpus
 (427k+ rows on a real 969k-record store) to resolve it, even though an
 extracted correction only ever targets `task`/`next_action`/`blocker`/
 `decision` items by topic text (see `semantics.py`'s cancellation patterns) —
-`claim`/`context` items, which make up ~57% of a real corpus, can never be a
+`claim`/`context` items, which make up ~97.3% of a real corpus, can never be a
 match. `daily` now replays only the kinds a correction can actually reach
 when no *explicit* (`rifja correct`, which may target any item by id) 
 correction exists; explicit corrections still get the fully general replay,

@@ -353,9 +353,10 @@ ever produces without an explicit `rifja correct` call) is always created
 with `target="text:" + topic(...)`, and `_resolve_items` only ever indexes
 that key from `task`/`next_action`/`blocker`/`decision` items — `claim` and
 `context` items, 415,810 of the 427,156 total (97.3%), can never be a
-match. `App.daily` now takes this fast path only when at least one
-*explicit* correction exists (unrestricted target, must stay fully
-general); when only extracted corrections exist, it replays
+match. `App.daily` now takes this scoped replay only when *no* explicit
+correction exists and at least one extracted correction item does; an
+*explicit* correction (unrestricted target) still forces the fully general
+replay, unchanged. When only extracted corrections exist, it replays
 `{task, next_action, blocker, decision, correction}` only. `App.items` was
 extended to push its `kind`/`kinds` filters into the SQL `WHERE` clause
 (always `OR i.kind='correction'`, so resolution stays correct for every

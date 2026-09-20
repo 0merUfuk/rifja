@@ -1,5 +1,50 @@
 # Release notes
 
+## 0.4.2
+
+Fixes a real correction-replay performance bug affecting `daily`, `tasks`
+and `decisions` on long-lived corpora once any correction has ever been
+extracted from a transcript — a gap the 0.4.0/0.4.1 benchmarks never
+exercised, since their synthetic corpora carry a far lower item-per-record
+density than real usage. This is a partial fix: `daily` itself remains slow
+on a store with many unregistered-project records, for an unrelated reason
+found while verifying this one — see below.
+
+Root cause: once a single `items.kind='correction'` row exists anywhere in
+the store, `App.daily` unconditionally replayed *every* item in the corpus
+(427k+ rows on a real 969k-record store) to resolve it, even though an
+extracted correction only ever targets `task`/`next_action`/`blocker`/
+`decision` items by topic text (see `semantics.py`'s cancellation patterns) —
+`claim`/`context` items, which make up ~57% of a real corpus, can never be a
+match. `daily` now replays only the kinds a correction can actually reach
+when no *explicit* (`rifja correct`, which may target any item by id) 
+correction exists; explicit corrections still get the fully general replay,
+unchanged. `items()` (which backs `tasks`/`decisions`/`items`) now also
+pushes its `kind`/`kinds` filters into SQL instead of fetching the whole
+corpus and discarding rows in Python, while still keeping every
+`kind='correction'` row in scope so resolution stays correct.
+
+This fixes the correction-replay cost outright, and `decisions` drops from a
+full-corpus scan to an indexed one. `tasks` improves but is not yet inside
+budget at real scale, since its kind filter includes `claim` — the majority
+item kind — by design; that needs its own bounded/ranked query, tracked as
+follow-up work.
+
+**`daily` itself is not yet inside budget on a corpus where most records
+are unassociated with any registered project** — a second, unrelated
+bottleneck this fix's own real-scale verification surfaced: `coverage()`'s
+`unassociated_records` count (bundled into every `daily()` response) needs a
+per-row bookmark lookup for every `project_id IS NULL` record to check
+`text!=''`, and on a store where 98%+ of records are unassociated (fewer
+registered projects than active repos), that alone costs 15-20s regardless
+of this fix. No code change addresses it yet; registering more of your
+active repositories is today's mitigation (it shrinks the unassociated
+count directly), and a proper fix — most likely caching the count at
+refresh time instead of recomputing it per query — is tracked as follow-up
+work, not closed by this release. See [performance
+evidence](performance.md#042-real-corpus-correction-replay) for the full,
+honest breakdown of what this release does and does not close.
+
 ## 0.4.1
 
 Fixes the `daily` command's month-range performance gate, which a post-0.4.0

@@ -317,10 +317,14 @@ file-size limit. See [SQLite's WAL performance and checkpoint documentation](htt
 Daily activity ranks lightweight item IDs in SQLite and counts the complete
 activity/carryover buckets before loading the displayed text and provenance.
 This path applies only when there are no imported resolution events or durable
-user corrections; either condition retains the full correction-resolution path.
-Historical activity, current-generation carryover, project/worktree scope, stable
-ordering and omission counts retain their existing meaning. Nonpositive internal
-API limits and SQLite versions before 3.25 also use the complete path.
+user corrections. A durable (explicit, `rifja correct`) user correction always
+retains the full correction-resolution path, since its target may be any item
+kind. An imported (extracted) correction retains a correction-resolution path
+scoped to the kinds it can ever target — see "0.4.2: real-corpus correction
+replay" below — rather than the complete path. Historical activity,
+current-generation carryover, project/worktree scope, stable ordering and
+omission counts retain their existing meaning. Nonpositive internal API limits
+and SQLite versions before 3.25 also use the complete path.
 
 A bounded experiment on a private copy of the synthetic LARGE state produced
 byte-identical complete JSON before and after the change. Two warm development
@@ -329,3 +333,74 @@ CLI samples were 0.748 and 0.746 seconds; the first cold filesystem sample was
 do not replace the final installed LARGE query gate or its unchanged one-second
 warm p95 budget. The benchmark generator, source/record counts and semantic
 assertions remain unchanged.
+
+## 0.4.2: real-corpus correction replay
+
+None of the benchmarks above ever exercise a corpus with more than a
+handful of correction items, because the synthetic generator does not
+extract them at real-usage density. On the owner's actual local store —
+969,307 records, 427,156 items, 235 extracted `correction`-kind items, zero
+explicit (`rifja correct`) corrections — `App.daily` measured **25.35s**
+for a day with activity (`cProfile`: 21.4s in the underlying `items()`
+fetch, 3.68s in `_resolve_items`'s Python-side matching), and `App.items(
+kind="decision")` (backing `rifja decisions`) measured comparably, both
+because `needs_resolution` forced a full, unbounded fetch of all 427,156
+items the moment any correction-kind item existed anywhere in the store —
+regardless of the requested date range, project, or limit.
+
+Reading `semantics.py`, an *extracted* correction (the only kind real usage
+ever produces without an explicit `rifja correct` call) is always created
+with `target="text:" + topic(...)`, and `_resolve_items` only ever indexes
+that key from `task`/`next_action`/`blocker`/`decision` items — `claim` and
+`context` items, 415,810 of the 427,156 total (97.3%), can never be a
+match. `App.daily` now takes this fast path only when at least one
+*explicit* correction exists (unrestricted target, must stay fully
+general); when only extracted corrections exist, it replays
+`{task, next_action, blocker, decision, correction}` only. `App.items` was
+extended to push its `kind`/`kinds` filters into the SQL `WHERE` clause
+(always `OR i.kind='correction'`, so resolution stays correct for every
+existing caller, including `tasks`'s pre-existing `{task, next_action,
+blocker, claim, correction}` filter and `decisions`'s `kind="decision"`)
+instead of fetching every item and discarding rows in Python — the same
+`(r.provider=? OR i.kind='correction')` idiom the query already used for
+`provider`.
+
+Measured on the same real store (grown to 1,310,327 records / 549,912
+items / 247 correction items by the time of this measurement, still zero
+explicit corrections): the `items()` fetch that `daily`'s correction replay
+depends on dropped from the case above to **2.76s**, and `rifja decisions`
+dropped to **0.35s** from a comparable full scan. `rifja tasks` (kind
+filter includes `claim`, ~332k of 549k items) dropped from 20s+ to
+**6.9s** — real, but still outside the 1s budget; its kind filter was left
+unchanged (removing `claim` would change what the view means, not just how
+fast it runs), so a properly bounded `tasks` needs its own ranked/windowed
+query, tracked as follow-up work alongside `daily`'s remaining gap below.
+Correctness: `tests/test_daily_selection.py::
+test_daily_extracted_correction_scopes_replay_to_actionable_kinds` asserts
+the scoped replay is exactly what runs (not the full fallback, not the
+bounded fast path) and that it still correctly resolves a correction
+targeting an item outside the query window, alongside the pre-existing
+`test_daily_later_imported_correction_requires_full_resolution` and
+`test_daily_durable_correction_keeps_status_text_and_resolution_reference`,
+both still green.
+
+**This does not make `daily` itself fast on the same real store**, for an
+unrelated reason this fix's own real-scale verification surfaced:
+`coverage()` — embedded in every `daily()` response — computes
+`unassociated_records` as `SELECT count(*) FROM records WHERE project_id
+IS NULL AND text!=''`. `EXPLAIN QUERY PLAN` shows an index seek
+(`records_project_time`), but with only 2 of the store's active projects
+registered, 1,289,769 of 1,310,327 records (98.4%) are unassociated, and
+each index-matched row still needs a bookmark lookup into the base table
+to evaluate `text!=''` — that alone measured **15.65s** in the same
+`cProfile` run, dominating `daily`'s total 18.79s end to end. A partial
+index does not help here the way schema 5's did: the index already narrows
+to exactly the matching rows (confirmed via `EXPLAIN QUERY PLAN`), and the
+cost is the per-row bookmark lookup itself, not a table scan. The two real
+mitigations are registering more active projects (shrinks the unassociated
+count directly, and is unrelated to any code change) and, as follow-up
+work, computing this count once at refresh time instead of live per query.
+Evidence for both real-corpus measurements above: profiled directly
+against a private, read-only copy of the owner's own local store (not
+published; contains real session content) via `cProfile`, on the same
+runtime fingerprint and platform as the schema-5 measurements above.

@@ -369,6 +369,12 @@ class App:
         if provider:
             where.append("(r.provider=? OR i.kind='correction')")
             args.append(provider)
+        if kind:
+            where.append("(i.kind=? OR i.kind='correction')")
+            args.append(kind)
+        elif kinds is not None:
+            where.append("(i.kind IN (" + ",".join("?" * len(kinds)) + ") OR i.kind='correction')")
+            args.extend(kinds)
         query = _ITEM_QUERY
         if where:
             query += " WHERE " + " AND ".join(where)
@@ -677,12 +683,29 @@ class App:
                 )
         groups.sort(key=lambda group: (group["name"] or "", group["project_id"] or ""))
         totals = None
-        needs_resolution = self.store.db.execute(
-            "SELECT EXISTS(SELECT 1 FROM items WHERE kind='correction') OR EXISTS(SELECT 1 FROM corrections)"
+        has_explicit_corrections = self.store.db.execute(
+            "SELECT EXISTS(SELECT 1 FROM corrections)"
         ).fetchone()[0]
-        if needs_resolution or limit <= 0 or sqlite3.sqlite_version_info < (3, 25, 0):
+        has_correction_items = self.store.db.execute(
+            "SELECT EXISTS(SELECT 1 FROM items WHERE kind='correction')"
+        ).fetchone()[0]
+        if has_explicit_corrections or limit <= 0 or sqlite3.sqlite_version_info < (3, 25, 0):
+            # An explicit correction targets an item/record id directly and may
+            # reference any item kind, so every kind must stay in scope.
             scoped_items = self.items(
                 project, limit=None, worktree=worktree, include_evidence=False
+            )["items"]
+        elif has_correction_items:
+            # Extracted corrections always target task/next_action/blocker/decision
+            # items by topic text (see semantics.py's "cancel"/"iptal et" patterns);
+            # claim/context items can never match one, so excluding them from the
+            # replay is provably safe and avoids materializing the entire corpus.
+            scoped_items = self.items(
+                project,
+                limit=None,
+                worktree=worktree,
+                include_evidence=False,
+                kinds=frozenset({"task", "next_action", "blocker", "decision", "correction"}),
             )["items"]
         else:
             candidates, totals = self._daily_candidates(first, last, project, worktree, limit)

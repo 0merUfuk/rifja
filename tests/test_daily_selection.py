@@ -109,6 +109,54 @@ def test_daily_later_imported_correction_requires_full_resolution(
     assert [i["native_id"] for i in group["activity"]] == ["current:block:0"]
 
 
+def test_daily_extracted_correction_scopes_replay_to_actionable_kinds(
+    app: App, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """An extracted (non-explicit) correction must not force a full-corpus replay.
+
+    It only ever targets task/next_action/blocker/decision items by topic text
+    (semantics.py), so claim/context items are provably unreachable and must
+    be excluded from the bounded replay at real scale.
+    """
+    source(
+        app,
+        tmp_path,
+        message(
+            "target", "TASK: [target] Prior cancellation subject.", timestamp="2025-01-01T12:00:00Z"
+        ),
+        message("current", "TASK: [current] Current activity."),
+        message("noise", "Tests passed and the build succeeded.", actor="assistant"),
+        message(
+            "cancel",
+            "CANCEL: [target:block:0] Cancel the prior check.",
+            timestamp="2025-01-03T12:00:00Z",
+        ),
+    )
+    Ingestor(app.store).refresh()
+    assert (
+        app.store.db.execute("SELECT count(*) FROM items WHERE kind='correction'").fetchone()[0]
+        == 1
+    )
+    assert app.store.db.execute("SELECT count(*) FROM corrections").fetchone()[0] == 0
+    assert app.store.db.execute("SELECT count(*) FROM items WHERE kind='claim'").fetchone()[0] >= 1
+    monkeypatch.setattr(
+        app, "_daily_candidates", lambda *_: pytest.fail("Corrections require the scoped replay")
+    )
+    seen_kinds = []
+    original_items = App.items
+
+    def spy(self, *args, **kwargs):
+        seen_kinds.append(kwargs.get("kinds"))
+        return original_items(self, *args, **kwargs)
+
+    monkeypatch.setattr(App, "items", spy)
+    group = app.daily("2025-01-02")["projects"][0]
+    assert seen_kinds == [frozenset({"task", "next_action", "blocker", "decision", "correction"})]
+    assert group["carryover"] == []
+    assert [i["native_id"] for i in group["activity"]] == ["current:block:0"]
+    assert not any("Tests passed" in i["text"] for i in group["activity"] + group["carryover"])
+
+
 def test_daily_durable_correction_keeps_status_text_and_resolution_reference(
     app: App, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):

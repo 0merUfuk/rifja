@@ -11,6 +11,10 @@ Rifja is a local CLI for resuming engineering work across agent sessions, projec
 Version **0.4.1**. Licensed under [MIT](LICENSE). Runtime collection and queries
 need no network, model service or paid account.
 
+## Project film
+
+An illustrative project film about recovering session context, checking current Git state, and accepting memory explicitly. It uses reconstructed visuals and synthetic content, not a recording of a live run.
+
 ## Install
 
 With [Homebrew](https://brew.sh) installed and on PATH:

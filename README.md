@@ -13,6 +13,8 @@ need no network, model service or paid account.
 
 ## Project film
 
+https://github.com/user-attachments/assets/3394922a-a736-40ec-a460-9c6435faeafa
+
 An illustrative project film about recovering session context, checking current Git state, and accepting memory explicitly. It uses reconstructed visuals and synthetic content, not a recording of a live run.
 
 ## Install

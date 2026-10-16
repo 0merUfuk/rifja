@@ -1,0 +1,4 @@
+# Session recovery FAILED [project_not_registered]
+This repository is not a registered rifja project (1 registered).
+Next (for the human operator): Operator step (not run by this skill): `rifja project add <repo> --name <name>`, or pass --project <name> for a registered one.
+No continuation context was produced. Do not reconstruct one from memory or from raw transcripts.

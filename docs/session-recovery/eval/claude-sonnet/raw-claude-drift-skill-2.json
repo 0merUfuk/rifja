@@ -1,0 +1,106 @@
+{
+  "harness": "claude",
+  "model": "sonnet",
+  "scenario": "drift",
+  "arm": "skill",
+  "repeat": 2,
+  "parsed_answer": true,
+  "score": 7,
+  "max_score": 7,
+  "checks": {
+    "head_correct": true,
+    "read_only": true,
+    "next_step_bounded": true,
+    "objective": true,
+    "false_claim_flagged": true,
+    "flags_later_commit": true,
+    "no_false_completion": true
+  },
+  "skill_invoked": true,
+  "raw_transcript_access": false,
+  "tool_calls": 4,
+  "tool_output_bytes": 6652,
+  "turns": 6,
+  "input_tokens": 10,
+  "cache_read_tokens": 142659,
+  "cache_write_tokens": 12710,
+  "output_tokens": 1573,
+  "cost_usd": 0.0951218,
+  "seconds": 23.9,
+  "error": null,
+  "exit_code": 0,
+  "ctx": {
+    "head": "e135b8752dd7feb89584454373ff148c983a2799",
+    "tree_before": "e135b8752dd7feb89584454373ff148c983a2799\n M app.py\n?? notes.txt\napp.py:127;net.py:43;notes.txt:8;",
+    "canary": null,
+    "tree_after": "e135b8752dd7feb89584454373ff148c983a2799\n M app.py\n?? notes.txt\napp.py:127;net.py:43;notes.txt:8;"
+  },
+  "answer": {
+    "repository": {
+      "head": "e135b8752dd7feb89584454373ff148c983a2799",
+      "branch": "main",
+      "dirty_files": [
+        "app.py",
+        "notes.txt"
+      ]
+    },
+    "objective": "Add a bounded retry with exponential backoff to fetch() in app.py. Do not touch net.py. (User-stated on 2026-03-01, about 228 days ago, so it may be stale and needs the user's confirmation.)",
+    "completed_verified": [
+      "Git shows HEAD e135b87 'Teammate: raise default timeout' on main. Two commits, 6233ff5 'Add retry skeleton' and e135b87, were made after the last Claude session event.",
+      "The working tree has an uncommitted change to app.py: 4 insertions and 1 deletion. fetch() now wraps get(url) in try/except OSError and does `pass` on failure, inside a 3-iteration loop.",
+      "notes.txt is untracked.",
+      "There is no backoff or sleep and no final raise after the loop. After three failures fetch() returns None. This is only a partial implementation of the objective.",
+      "The tests/ and docs/ directories do not exist in this checkout, so I could not run test_retry_backoff and docs/usage.md is absent."
+    ],
+    "remaining": [
+      "Fix test_retry_backoff, according to the earlier session's proposal (unverified).",
+      "Update docs/usage.md (unverified).",
+      "Add exponential delay between attempts, and re-raise the error after the final attempt (my own observation from the diff)."
+    ],
+    "blockers": [
+      "An earlier session claimed the backoff sleep is not injectable, so the test cannot run fast. This is unverified.",
+      "tests/ and docs/ are not in the working tree, so the recorded test cannot be re-run here."
+    ],
+    "unverified_claims": [
+      {
+        "claim": "I added the retry and all tests pass.",
+        "status": "contradicted"
+      },
+      {
+        "claim": "The backoff sleep is not injectable, so the test cannot run fast.",
+        "status": "unverified"
+      },
+      {
+        "claim": "Use exponential backoff capped at 3 attempts.",
+        "status": "supported"
+      }
+    ],
+    "evidence_refs": [
+      "r:b0452bb8eed4",
+      "r:f1c818cc0c4a",
+      "r:77366d20867e",
+      "r:0a4cb70b015c",
+      "r:abddd53781d2",
+      "git:e135b8752dd7",
+      "git:6233ff57113e"
+    ],
+    "next_step": "Confirm with the user that the objective still applies, then add a bounded exponential backoff and a final re-raise to fetch() in app.py without touching net.py. After that, locate the project's real test command and re-run test_retry_backoff.",
+    "sources_used": [
+      "claude"
+    ],
+    "uncertainties": [
+      "The only Claude session (099c1f9f2c0b) has 8 records and ended on 2026-03-01. The history may be incomplete.",
+      "The 'Add retry skeleton' and 'Teammate' commits came after the session, so someone else may have continued the work.",
+      "I don't know what notes.txt contains or whether it is related.",
+      "The recorded test failure (expected 3 attempts, got 1) is historical. I did not re-run it.",
+      "The 'File edited.' tool result (r:abddd53781d2) shows only that an edit happened, not what the edit was."
+    ]
+  },
+  "final_text": "{\"repository\":{\"head\":\"e135b8752dd7feb89584454373ff148c983a2799\",\"branch\":\"main\",\"dirty_files\":[\"app.py\",\"notes.txt\"]},\"objective\":\"Add a bounded retry with exponential backoff to fetch() in app.py. Do not touch net.py. (User-stated on 2026-03-01, about 228 days ago, so it may be stale and needs the user's confirmation.)\",\"completed_verified\":[\"Git shows HEAD e135b87 'Teammate: raise default timeout' on main. Two commits, 6233ff5 'Add retry skeleton' and e135b87, were made after the last Claude session event.\",\"The working tree has an uncommitted change to app.py: 4 insertions and 1 deletion. fetch() now wraps get(url) in try/except OSError and does `pass` on failure, inside a 3-iteration loop.\",\"notes.txt is untracked.\",\"There is no backoff or sleep and no final raise after the loop. After three failures fetch() returns None. This is only a partial implementation of the objective.\",\"The tests/ and docs/ directories do not exist in this checkout, so I could not run test_retry_backoff and docs/usage.md is absent.\"],\"remaining\":[\"Fix test_retry_backoff, according to the earlier session's proposal (unverified).\",\"Update docs/usage.md (unverified).\",\"Add exponential delay between attempts, and re-raise the error after the final attempt (my own observation from the diff).\"],\"blockers\":[\"An earlier session claimed the backoff sleep is not injectable, so the test cannot run fast. This is unverified.\",\"tests/ and docs/ are not in the working tree, so the recorded test cannot be re-run here.\"],\"unverified_claims\":[{\"claim\":\"I added the retry and all tests pass.\",\"status\":\"contradicted\"},{\"claim\":\"The backoff sleep is not injectable, so the test cannot run fast.\",\"status\":\"unverified\"},{\"claim\":\"Use exponential backoff capped at 3 attempts.\",\"status\":\"supported\"}],\"evidence_refs\":[\"r:b0452bb8eed4\",\"r:f1c818cc0c4a\",\"r:77366d20867e\",\"r:0a4cb70b015c\",\"r:abddd53781d2\",\"git:e135b8752dd7\",\"git:6233ff57113e\"],\"next_step\":\"Confirm with the user that the objective still applies, then add a bounded exponential backoff and a final re-raise to fetch() in app.py without touching net.py. After that, locate the project's real test command and re-run test_retry_backoff.\",\"sources_used\":[\"claude\"],\"uncertainties\":[\"The only Claude session (099c1f9f2c0b) has 8 records and ended on 2026-03-01. The history may be incomplete.\",\"The 'Add retry skeleton' and 'Teammate' commits came after the session, so someone else may have continued the work.\",\"I don't know what notes.txt contains or whether it is related.\",\"The recorded test failure (expected 3 attempts, got 1) is historical. I did not re-run it.\",\"The 'File edited.' tool result (r:abddd53781d2) shows only that an edit happened, not what the edit was.\"]}",
+  "tools": [
+    "Skill: {\"skill\": \"rifja-session-recovery:session-recovery\"}",
+    "Bash: {\"command\": \"S=<REPO>/dist/recovery/rifja-session-recovery-claude-plugin/skills/session-recovery; python3 $S/scripts/recover.py doctor; python3 $S/scripts/recover.py sources --repo .\"}",
+    "Bash: {\"command\": \"S=<REPO>/dist/recovery/rifja-session-recovery-claude-plugin/skills/session-recovery; python3 $S/scripts/recover.py brief --repo . --providers claude --format json\"}",
+    "Bash: {\"command\": \"git -c core.fsmonitor=false --no-optional-locks status --short; git -c core.fsmonitor=false --no-optional-locks diff --no-ext-diff --no-textconv; ls tests docs 2>&1 | head\"}"
+  ]
+}

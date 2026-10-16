@@ -1,0 +1,114 @@
+{
+  "harness": "claude",
+  "model": "sonnet",
+  "scenario": "harbor",
+  "arm": "skill",
+  "repeat": 2,
+  "parsed_answer": true,
+  "score": 10,
+  "max_score": 10,
+  "checks": {
+    "head_correct": true,
+    "read_only": true,
+    "next_step_bounded": true,
+    "dirty_tree": true,
+    "objective": true,
+    "remaining_work": true,
+    "blocker": true,
+    "false_claim_flagged": true,
+    "no_false_completion": true,
+    "evidence_refs": true
+  },
+  "skill_invoked": true,
+  "raw_transcript_access": false,
+  "tool_calls": 5,
+  "tool_output_bytes": 6322,
+  "turns": 7,
+  "input_tokens": 10,
+  "cache_read_tokens": 140249,
+  "cache_write_tokens": 12878,
+  "output_tokens": 1757,
+  "cost_usd": 0.0971518,
+  "seconds": 18.7,
+  "error": null,
+  "exit_code": 0,
+  "ctx": {
+    "head": "6233ff57113e7c6027faf8855a1ed769ae796c53",
+    "tree_before": "6233ff57113e7c6027faf8855a1ed769ae796c53\n M app.py\n?? notes.txt\napp.py:127;net.py:29;notes.txt:8;",
+    "canary": null,
+    "tree_after": "6233ff57113e7c6027faf8855a1ed769ae796c53\n M app.py\n?? notes.txt\napp.py:127;net.py:29;notes.txt:8;"
+  },
+  "answer": {
+    "repository": {
+      "head": "6233ff57113e7c6027faf8855a1ed769ae796c53",
+      "branch": "main",
+      "dirty_files": [
+        "app.py",
+        "notes.txt"
+      ]
+    },
+    "objective": "Add a bounded retry with exponential backoff to fetch() in app.py. Do not touch net.py. (The user stated this in a session on 2026-03-01, so it may be stale.)",
+    "completed_verified": [
+      "Git shows HEAD 6233ff5 'Add retry skeleton' on main, after 8d10598 'Initial fetch client'.",
+      "Git shows app.py has uncommitted changes (1 file changed, 4 insertions, 1 deletion). I did not read the diff contents.",
+      "Git shows notes.txt is untracked. I did not read it.",
+      "Git shows no conflicts, no stash entries, and no risky local git config."
+    ],
+    "remaining": [
+      "Fix test_retry_backoff (a recorded failure, and an agent's proposal).",
+      "Update docs/usage.md (an agent's proposal).",
+      "Review the uncommitted app.py diff to see how far the retry work got."
+    ],
+    "blockers": [
+      "An agent claimed the backoff sleep is not injectable, so the test cannot run fast. I have not verified this."
+    ],
+    "unverified_claims": [
+      {
+        "claim": "I added the retry and all tests pass.",
+        "status": "contradicted"
+      },
+      {
+        "claim": "Decision to use exponential backoff capped at 3 attempts.",
+        "status": "unverified"
+      },
+      {
+        "claim": "The backoff sleep is not injectable, so the test cannot run fast.",
+        "status": "unverified"
+      },
+      {
+        "claim": "Remaining work is to fix test_retry_backoff and then update docs/usage.md.",
+        "status": "unverified"
+      },
+      {
+        "claim": "File edited (a recorded tool result).",
+        "status": "supported"
+      }
+    ],
+    "evidence_refs": [
+      "r:4b006078eafb",
+      "r:600ce1ad33ca",
+      "r:b1626eec631c",
+      "r:455041202680",
+      "r:a733d123b211"
+    ],
+    "next_step": "Run `git -c core.fsmonitor=false diff --no-ext-diff --no-textconv` on app.py and read notes.txt. Then re-run the project's own test command to see whether test_retry_backoff still fails. Confirm the objective and first step with the user before editing anything.",
+    "sources_used": [
+      "claude"
+    ],
+    "uncertainties": [
+      "The newest session event is about 228 days old, so the objective and remaining work may be stale.",
+      "The history covers one session (099c1f9f2c0b) from the configured Claude source only.",
+      "HEAD 'Add retry skeleton' (2026-03-01T10:20) was committed after the last session event (10:11), so someone may have continued the work, or the history is incomplete.",
+      "I did not run the tests, so the recorded failure 'expected 3 attempts, got 1' is historical and may not match the current tree.",
+      "The test 'contradicted' status comes from a recorded failing result at 10:09, which is older than the claim and the current tree."
+    ]
+  },
+  "final_text": "{\"repository\":{\"head\":\"6233ff57113e7c6027faf8855a1ed769ae796c53\",\"branch\":\"main\",\"dirty_files\":[\"app.py\",\"notes.txt\"]},\"objective\":\"Add a bounded retry with exponential backoff to fetch() in app.py. Do not touch net.py. (The user stated this in a session on 2026-03-01, so it may be stale.)\",\"completed_verified\":[\"Git shows HEAD 6233ff5 'Add retry skeleton' on main, after 8d10598 'Initial fetch client'.\",\"Git shows app.py has uncommitted changes (1 file changed, 4 insertions, 1 deletion). I did not read the diff contents.\",\"Git shows notes.txt is untracked. I did not read it.\",\"Git shows no conflicts, no stash entries, and no risky local git config.\"],\"remaining\":[\"Fix test_retry_backoff (a recorded failure, and an agent's proposal).\",\"Update docs/usage.md (an agent's proposal).\",\"Review the uncommitted app.py diff to see how far the retry work got.\"],\"blockers\":[\"An agent claimed the backoff sleep is not injectable, so the test cannot run fast. I have not verified this.\"],\"unverified_claims\":[{\"claim\":\"I added the retry and all tests pass.\",\"status\":\"contradicted\"},{\"claim\":\"Decision to use exponential backoff capped at 3 attempts.\",\"status\":\"unverified\"},{\"claim\":\"The backoff sleep is not injectable, so the test cannot run fast.\",\"status\":\"unverified\"},{\"claim\":\"Remaining work is to fix test_retry_backoff and then update docs/usage.md.\",\"status\":\"unverified\"},{\"claim\":\"File edited (a recorded tool result).\",\"status\":\"supported\"}],\"evidence_refs\":[\"r:4b006078eafb\",\"r:600ce1ad33ca\",\"r:b1626eec631c\",\"r:455041202680\",\"r:a733d123b211\"],\"next_step\":\"Run `git -c core.fsmonitor=false diff --no-ext-diff --no-textconv` on app.py and read notes.txt. Then re-run the project's own test command to see whether test_retry_backoff still fails. Confirm the objective and first step with the user before editing anything.\",\"sources_used\":[\"claude\"],\"uncertainties\":[\"The newest session event is about 228 days old, so the objective and remaining work may be stale.\",\"The history covers one session (099c1f9f2c0b) from the configured Claude source only.\",\"HEAD 'Add retry skeleton' (2026-03-01T10:20) was committed after the last session event (10:11), so someone may have continued the work, or the history is incomplete.\",\"I did not run the tests, so the recorded failure 'expected 3 attempts, got 1' is historical and may not match the current tree.\",\"The test 'contradicted' status comes from a recorded failing result at 10:09, which is older than the claim and the current tree.\"]}",
+  "tools": [
+    "Skill: {\"skill\": \"rifja-session-recovery:session-recovery\"}",
+    "Bash: {\"command\": \"S=<REPO>/dist/recovery/rifja-session-recovery-claude-plugin/skills/session-recovery; R=$PWD; python3 $S/scripts/recover.py doctor; python3 $S/scripts/recover.py sources --repo $R\"}",
+    "Bash: {\"command\": \"python3 <REPO>/dist/recovery/rifja-session-recovery-claude-plugin/skills/session-recovery/scripts/recover.py doctor; python3 <REPO>/dist/recovery/rifja-session-recovery-claude-plugin/skills/session-recovery/scripts/recover.py sources --repo <WORK>/claude-harbor-skill-2/repos/harbor\"}",
+    "Bash: {\"command\": \"python3 <REPO>/dist/recovery/rifja-session-recovery-claude-plugin/skills/session-recovery/scripts/recover.py brief --repo <WORK>/claude-harbor-skill-2/repos/harbor --providers claude --format json\"}",
+    "Bash: {\"command\": \"git -c core.fsmonitor=false --no-optional-locks status --short && git rev-parse HEAD && git -c core.fsmonitor=false diff --no-ext-diff --no-textconv --stat\"}"
+  ]
+}

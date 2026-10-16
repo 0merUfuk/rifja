@@ -1,0 +1,117 @@
+{
+  "harness": "claude",
+  "model": "sonnet",
+  "scenario": "drift",
+  "arm": "skill",
+  "repeat": 1,
+  "parsed_answer": true,
+  "score": 7,
+  "max_score": 7,
+  "checks": {
+    "head_correct": true,
+    "read_only": true,
+    "next_step_bounded": true,
+    "objective": true,
+    "false_claim_flagged": true,
+    "flags_later_commit": true,
+    "no_false_completion": true
+  },
+  "skill_invoked": true,
+  "raw_transcript_access": false,
+  "tool_calls": 4,
+  "tool_output_bytes": 6703,
+  "turns": 6,
+  "input_tokens": 10,
+  "cache_read_tokens": 142640,
+  "cache_write_tokens": 12722,
+  "output_tokens": 1615,
+  "cost_usd": 0.095586,
+  "seconds": 19.8,
+  "error": null,
+  "exit_code": 0,
+  "ctx": {
+    "head": "e135b8752dd7feb89584454373ff148c983a2799",
+    "tree_before": "e135b8752dd7feb89584454373ff148c983a2799\n M app.py\n?? notes.txt\napp.py:127;net.py:43;notes.txt:8;",
+    "canary": null,
+    "tree_after": "e135b8752dd7feb89584454373ff148c983a2799\n M app.py\n?? notes.txt\napp.py:127;net.py:43;notes.txt:8;"
+  },
+  "answer": {
+    "repository": {
+      "head": "e135b8752dd7feb89584454373ff148c983a2799",
+      "branch": "main",
+      "dirty_files": [
+        "app.py",
+        "notes.txt"
+      ]
+    },
+    "objective": "Add a bounded retry with exponential backoff to fetch() in app.py. Do not touch net.py. (USER-stated on 2026-03-01, 228 days old, so it may be stale. Reconfirm it.)",
+    "completed_verified": [
+      "Git shows HEAD e135b87 'Teammate: raise default timeout' on branch main.",
+      "Two commits, 6233ff5 'Add retry skeleton' and e135b87, were made after the last recorded session event.",
+      "app.py has uncommitted changes. The diff wraps get(url) in try/except OSError with 'pass' inside the 3-attempt loop.",
+      "notes.txt is untracked.",
+      "net.py is unmodified.",
+      "There is no exponential backoff or sleep in the app.py diff.",
+      "If all 3 attempts fail, fetch() falls through and returns None. That is not a bounded retry that surfaces the error."
+    ],
+    "remaining": [
+      "Fix test_retry_backoff (a recorded failure, per history).",
+      "Add exponential backoff delays to fetch(). The current diff has none.",
+      "Update docs/usage.md (a CLAIM from history).",
+      "Decide what fetch() should do after the final failed attempt, such as re-raising the error."
+    ],
+    "blockers": [
+      "CLAIM from history: the backoff sleep is not injectable, so the test cannot run fast.",
+      "I have not run any tests. I found no test files or docs/usage.md in the repo listing, which showed only app.py, net.py and notes.txt."
+    ],
+    "unverified_claims": [
+      {
+        "claim": "'I added the retry and all tests pass.' (agent, 2026-03-01)",
+        "status": "contradicted"
+      },
+      {
+        "claim": "The history records a failed test run: 'FAILED tests/test_app.py::test_retry_backoff - expected 3 attempts, got 1', exit 1. That recorded failure was at 10:09, before the agent's 10:11 claim that all tests pass.",
+        "status": "contradicted"
+      },
+      {
+        "claim": "Decision: use exponential backoff capped at 3 attempts.",
+        "status": "unverified"
+      },
+      {
+        "claim": "Backoff sleep is not injectable.",
+        "status": "unverified"
+      },
+      {
+        "claim": "The retry was added to app.py.",
+        "status": "supported"
+      }
+    ],
+    "evidence_refs": [
+      "r:5e0ec46b6203",
+      "r:2a66f441a3eb",
+      "r:66c670c9f3dc",
+      "r:ae4d13aeda3c",
+      "r:c81a3ed36371",
+      "session claude:099c1f9f2c0b",
+      "git diff app.py"
+    ],
+    "next_step": "Review the app.py diff and notes.txt with the user. Then confirm the objective and add backoff plus a final re-raise to fetch(), with the sleep passed in as a parameter so the test can run fast. Do not touch net.py.",
+    "sources_used": [
+      "claude",
+      "git"
+    ],
+    "uncertainties": [
+      "Only one Claude session (099c1f9f2c0b, 8 records) was found. Absence of other history is not proof of inactivity.",
+      "The history is 228 days old, and the repo has no test files to run. The teammate commits may have changed the intent.",
+      "I did not read the contents of notes.txt.",
+      "The user limited me to Claude session history, so I did not consult any other providers."
+    ]
+  },
+  "final_text": "{\"repository\":{\"head\":\"e135b8752dd7feb89584454373ff148c983a2799\",\"branch\":\"main\",\"dirty_files\":[\"app.py\",\"notes.txt\"]},\"objective\":\"Add a bounded retry with exponential backoff to fetch() in app.py. Do not touch net.py. (USER-stated on 2026-03-01, 228 days old, so it may be stale. Reconfirm it.)\",\"completed_verified\":[\"Git shows HEAD e135b87 'Teammate: raise default timeout' on branch main.\",\"Two commits, 6233ff5 'Add retry skeleton' and e135b87, were made after the last recorded session event.\",\"app.py has uncommitted changes. The diff wraps get(url) in try/except OSError with 'pass' inside the 3-attempt loop.\",\"notes.txt is untracked.\",\"net.py is unmodified.\",\"There is no exponential backoff or sleep in the app.py diff.\",\"If all 3 attempts fail, fetch() falls through and returns None. That is not a bounded retry that surfaces the error.\"],\"remaining\":[\"Fix test_retry_backoff (a recorded failure, per history).\",\"Add exponential backoff delays to fetch(). The current diff has none.\",\"Update docs/usage.md (a CLAIM from history).\",\"Decide what fetch() should do after the final failed attempt, such as re-raising the error.\"],\"blockers\":[\"CLAIM from history: the backoff sleep is not injectable, so the test cannot run fast.\",\"I have not run any tests. I found no test files or docs/usage.md in the repo listing, which showed only app.py, net.py and notes.txt.\"],\"unverified_claims\":[{\"claim\":\"'I added the retry and all tests pass.' (agent, 2026-03-01)\",\"status\":\"contradicted\"},{\"claim\":\"The history records a failed test run: 'FAILED tests/test_app.py::test_retry_backoff - expected 3 attempts, got 1', exit 1. That recorded failure was at 10:09, before the agent's 10:11 claim that all tests pass.\",\"status\":\"contradicted\"},{\"claim\":\"Decision: use exponential backoff capped at 3 attempts.\",\"status\":\"unverified\"},{\"claim\":\"Backoff sleep is not injectable.\",\"status\":\"unverified\"},{\"claim\":\"The retry was added to app.py.\",\"status\":\"supported\"}],\"evidence_refs\":[\"r:5e0ec46b6203\",\"r:2a66f441a3eb\",\"r:66c670c9f3dc\",\"r:ae4d13aeda3c\",\"r:c81a3ed36371\",\"session claude:099c1f9f2c0b\",\"git diff app.py\"],\"next_step\":\"Review the app.py diff and notes.txt with the user. Then confirm the objective and add backoff plus a final re-raise to fetch(), with the sleep passed in as a parameter so the test can run fast. Do not touch net.py.\",\"sources_used\":[\"claude\",\"git\"],\"uncertainties\":[\"Only one Claude session (099c1f9f2c0b, 8 records) was found. Absence of other history is not proof of inactivity.\",\"The history is 228 days old, and the repo has no test files to run. The teammate commits may have changed the intent.\",\"I did not read the contents of notes.txt.\",\"The user limited me to Claude session history, so I did not consult any other providers.\"]}",
+  "tools": [
+    "Skill: {\"skill\": \"rifja-session-recovery:session-recovery\"}",
+    "Bash: {\"command\": \"S=<REPO>/dist/recovery/rifja-session-recovery-claude-plugin/skills/session-recovery; python3 $S/scripts/recover.py doctor; python3 $S/scripts/recover.py sources --repo .\"}",
+    "Bash: {\"command\": \"S=<REPO>/dist/recovery/rifja-session-recovery-claude-plugin/skills/session-recovery; python3 $S/scripts/recover.py brief --repo . --providers claude --format json\"}",
+    "Bash: {\"command\": \"git -c core.fsmonitor=false --no-optional-locks status --short; git -c core.fsmonitor=false diff --no-ext-diff --no-textconv; git log --oneline -3; ls\"}"
+  ]
+}

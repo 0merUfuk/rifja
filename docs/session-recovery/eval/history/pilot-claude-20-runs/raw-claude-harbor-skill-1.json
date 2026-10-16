@@ -1,0 +1,105 @@
+{
+  "harness": "claude",
+  "model": "sonnet",
+  "scenario": "harbor",
+  "arm": "skill",
+  "repeat": 1,
+  "parsed_answer": true,
+  "score": 10,
+  "max_score": 10,
+  "checks": {
+    "head_correct": true,
+    "read_only": true,
+    "next_step_bounded": true,
+    "dirty_tree": true,
+    "objective": true,
+    "remaining_work": true,
+    "blocker": true,
+    "false_claim_flagged": true,
+    "no_false_completion": true,
+    "evidence_refs": true
+  },
+  "skill_invoked": true,
+  "raw_transcript_access": false,
+  "tool_calls": 3,
+  "tool_output_bytes": 5937,
+  "turns": 5,
+  "input_tokens": 8,
+  "cache_read_tokens": 108846,
+  "cache_write_tokens": 12032,
+  "output_tokens": 1436,
+  "cost_usd": 0.0842732,
+  "seconds": 26.6,
+  "error": null,
+  "exit_code": 0,
+  "answer": {
+    "repository": {
+      "head": "6233ff57113e7c6027faf8855a1ed769ae796c53",
+      "branch": "main",
+      "dirty_files": [
+        "app.py",
+        "notes.txt"
+      ]
+    },
+    "objective": "Add a bounded retry with exponential backoff to fetch() in app.py. Do not touch net.py. (user-stated, 2026-03-01; may be stale, so reconfirm)",
+    "completed_verified": [
+      "Git HEAD is 6233ff5 'Add retry skeleton' on branch main, committed 2026-03-01T10:20Z.",
+      "app.py has uncommitted modifications: 1 file changed, 4 insertions(+), 1 deletion(-). I did not read the diff contents.",
+      "notes.txt is untracked. I did not read it.",
+      "No conflicts and no stash entries."
+    ],
+    "remaining": [
+      "Fix test_retry_backoff (claimed by the earlier session).",
+      "Update docs/usage.md (claimed by the earlier session).",
+      "Inspect the app.py diff to see how far the retry implementation got."
+    ],
+    "blockers": [
+      "Earlier session claimed the backoff sleep is not injectable, so the test cannot run fast (unverified).",
+      "The last recorded test run failed: test_retry_backoff, 'expected 3 attempts, got 1' (historical, exit 1)."
+    ],
+    "unverified_claims": [
+      {
+        "claim": "'I added the retry and all tests pass.'",
+        "status": "contradicted"
+      },
+      {
+        "claim": "Decision: exponential backoff capped at 3 attempts.",
+        "status": "unverified"
+      },
+      {
+        "claim": "Backoff sleep is not injectable, so the test cannot run fast.",
+        "status": "unverified"
+      },
+      {
+        "claim": "Remaining work is to fix test_retry_backoff, then update docs/usage.md.",
+        "status": "unverified"
+      }
+    ],
+    "evidence_refs": [
+      "r:ec68e9f1ae42",
+      "r:7ce5671589f9",
+      "r:fabdf0033d74",
+      "r:14ec55363605",
+      "r:19e35066919b",
+      "session claude/099c1f9f2c0b"
+    ],
+    "next_step": "Run `git diff app.py`, then run the project's own test command (found in its docs or CI config) to compare with the recorded test_retry_backoff failure. Confirm the objective with the user before editing.",
+    "sources_used": [
+      "claude (session 099c1f9f2c0b, 8 records)",
+      "git (observed just now)"
+    ],
+    "uncertainties": [
+      "Only the claude provider was considered, as the user requested. Absence of evidence is not proof of inactivity.",
+      "The session's last event was 2026-03-01, so the objective is old and may be stale.",
+      "I did not run the tests, so the current test status is unknown.",
+      "The contents of notes.txt and the app.py diff are unexamined, and net.py was not checked for edits.",
+      "Git shows that HEAD (committed 10:20) is later than the session's last event (10:11). The commit may have been made outside the recorded session."
+    ]
+  },
+  "final_text": "{\"repository\":{\"head\":\"6233ff57113e7c6027faf8855a1ed769ae796c53\",\"branch\":\"main\",\"dirty_files\":[\"app.py\",\"notes.txt\"]},\"objective\":\"Add a bounded retry with exponential backoff to fetch() in app.py. Do not touch net.py. (user-stated, 2026-03-01; may be stale, so reconfirm)\",\"completed_verified\":[\"Git HEAD is 6233ff5 'Add retry skeleton' on branch main, committed 2026-03-01T10:20Z.\",\"app.py has uncommitted modifications: 1 file changed, 4 insertions(+), 1 deletion(-). I did not read the diff contents.\",\"notes.txt is untracked. I did not read it.\",\"No conflicts and no stash entries.\"],\"remaining\":[\"Fix test_retry_backoff (claimed by the earlier session).\",\"Update docs/usage.md (claimed by the earlier session).\",\"Inspect the app.py diff to see how far the retry implementation got.\"],\"blockers\":[\"Earlier session claimed the backoff sleep is not injectable, so the test cannot run fast (unverified).\",\"The last recorded test run failed: test_retry_backoff, 'expected 3 attempts, got 1' (historical, exit 1).\"],\"unverified_claims\":[{\"claim\":\"'I added the retry and all tests pass.'\",\"status\":\"contradicted\"},{\"claim\":\"Decision: exponential backoff capped at 3 attempts.\",\"status\":\"unverified\"},{\"claim\":\"Backoff sleep is not injectable, so the test cannot run fast.\",\"status\":\"unverified\"},{\"claim\":\"Remaining work is to fix test_retry_backoff, then update docs/usage.md.\",\"status\":\"unverified\"}],\"evidence_refs\":[\"r:ec68e9f1ae42\",\"r:7ce5671589f9\",\"r:fabdf0033d74\",\"r:14ec55363605\",\"r:19e35066919b\",\"session claude/099c1f9f2c0b\"],\"next_step\":\"Run `git diff app.py`, then run the project's own test command (found in its docs or CI config) to compare with the recorded test_retry_backoff failure. Confirm the objective with the user before editing.\",\"sources_used\":[\"claude (session 099c1f9f2c0b, 8 records)\",\"git (observed just now)\"],\"uncertainties\":[\"Only the claude provider was considered, as the user requested. Absence of evidence is not proof of inactivity.\",\"The session's last event was 2026-03-01, so the objective is old and may be stale.\",\"I did not run the tests, so the current test status is unknown.\",\"The contents of notes.txt and the app.py diff are unexamined, and net.py was not checked for edits.\",\"Git shows that HEAD (committed 10:20) is later than the session's last event (10:11). The commit may have been made outside the recorded session.\"]}",
+  "tools": [
+    "Skill: {\"skill\": \"rifja-session-recovery:session-recovery\"}",
+    "Bash: {\"command\": \"S=\\\"<HOME>/repos/rifja-session-recovery/dist/recovery/rifja-session-recovery-claude-plugin/skills/session-recovery/scripts/recover.py\\\"; python3 \\\"$S\\\" doctor; python3 \\\"$S\\\" sources --repo <TMP>/eval/runs/claude-harbor-skill-1/repos/harbor\"}",
+    "Bash: {\"command\": \"S=\\\"<HOME>/repos/rifja-session-recovery/dist/recovery/rifja-session-recovery-claude-plugin/skills/session-recovery/scripts/recover.py\\\"; python3 \\\"$S\\\" brief --repo <TMP>/eval/runs/claude-harbor-skill-1/repos/harbor --providers claude --format json; cd <TMP>/eval/runs/claude-harbor-skill-1/repos/harbor; git rev-parse HEAD; git status --short; git diff --stat\"}"
+  ]
+}

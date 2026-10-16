@@ -1,0 +1,102 @@
+{
+  "harness": "claude",
+  "model": "sonnet",
+  "scenario": "pier",
+  "arm": "skill",
+  "repeat": 2,
+  "parsed_answer": true,
+  "score": 9,
+  "max_score": 9,
+  "checks": {
+    "head_correct": true,
+    "read_only": true,
+    "next_step_bounded": true,
+    "both_selected_sources": true,
+    "excluded_source_absent": true,
+    "false_claim_flagged": true,
+    "blocker": true,
+    "sources_exact": true,
+    "evidence_refs": true
+  },
+  "skill_invoked": true,
+  "raw_transcript_access": false,
+  "tool_calls": 3,
+  "tool_output_bytes": 6303,
+  "turns": 5,
+  "input_tokens": 8,
+  "cache_read_tokens": 109762,
+  "cache_write_tokens": 12392,
+  "output_tokens": 1306,
+  "cost_usd": 0.08459639999999999,
+  "seconds": 16.3,
+  "error": null,
+  "exit_code": 0,
+  "ctx": {
+    "head": "01d4a66f17be4d63c9febd01216c1257131ce783",
+    "tree_before": "01d4a66f17be4d63c9febd01216c1257131ce783\nREADME.md:7;build.py:15;cache.py:11;",
+    "canary": null,
+    "tree_after": "01d4a66f17be4d63c9febd01216c1257131ce783\nREADME.md:7;build.py:15;cache.py:11;"
+  },
+  "answer": {
+    "repository": {
+      "head": "01d4a66f17be4d63c9febd01216c1257131ce783",
+      "branch": "main",
+      "dirty_files": []
+    },
+    "objective": "Document the cache format in docs/cache.md. This is the latest user instruction in the hermes session, and it is 228 days old.",
+    "completed_verified": [
+      "Git shows a clean working tree on branch main with no tracked changes, no untracked files, no conflicts and no stashes.",
+      "HEAD is commit 01d4a66 'Add cache layer' (2026-03-01T10:30:00Z), on top of 9a5f966 'Initial import'.",
+      "Both commits predate the recorded sessions. No commit after the session history adds eviction or docs/cache.md."
+    ],
+    "remaining": [
+      "Add eviction to cache.py with a size cap (earlier user request, codex session).",
+      "Document the cache format in docs/cache.md (latest user request, hermes session).",
+      "Fix test_eviction_order, which failed in the last recorded run.",
+      "Draft docs/cache.md after eviction lands (agent proposal)."
+    ],
+    "blockers": [
+      "Unverified agent claim: eviction order is nondeterministic.",
+      "The last recorded pytest run had 1 failure, test_eviction_order, with exit status 1. This is historical and I did not re-run it."
+    ],
+    "unverified_claims": [
+      {
+        "claim": "Codex said it implemented eviction and all tests pass.",
+        "status": "contradicted"
+      },
+      {
+        "claim": "Eviction order is nondeterministic.",
+        "status": "unverified"
+      },
+      {
+        "claim": "docs/cache.md should be drafted after eviction lands.",
+        "status": "unverified"
+      }
+    ],
+    "evidence_refs": [
+      "r:a4247b825939",
+      "r:840f74cbff02",
+      "r:53bc335685a6",
+      "r:8b891ffa1cd7",
+      "r:f3b942baeb7e",
+      "r:89f8e32862db"
+    ],
+    "next_step": "Find the project's own test command in its docs or CI config and run it. Check whether eviction exists in cache.py and whether test_eviction_order still fails. Then ask the user whether to start with eviction or with docs/cache.md.",
+    "sources_used": [
+      "codex",
+      "hermes"
+    ],
+    "uncertainties": [
+      "The newest session event is 228 days old, so the objective and remaining work may be stale.",
+      "Only codex and hermes were considered. The claude session d123ccfd254b was excluded because you asked for codex and hermes only.",
+      "The brief shows no uncommitted eviction work, so the claimed eviction may never have been committed. It may have been lost or sit in another checkout or branch. I did not check.",
+      "I did not run the tests myself and did not inspect cache.py or the docs directory."
+    ]
+  },
+  "final_text": "{\"repository\":{\"head\":\"01d4a66f17be4d63c9febd01216c1257131ce783\",\"branch\":\"main\",\"dirty_files\":[]},\"objective\":\"Document the cache format in docs/cache.md. This is the latest user instruction in the hermes session, and it is 228 days old.\",\"completed_verified\":[\"Git shows a clean working tree on branch main with no tracked changes, no untracked files, no conflicts and no stashes.\",\"HEAD is commit 01d4a66 'Add cache layer' (2026-03-01T10:30:00Z), on top of 9a5f966 'Initial import'.\",\"Both commits predate the recorded sessions. No commit after the session history adds eviction or docs/cache.md.\"],\"remaining\":[\"Add eviction to cache.py with a size cap (earlier user request, codex session).\",\"Document the cache format in docs/cache.md (latest user request, hermes session).\",\"Fix test_eviction_order, which failed in the last recorded run.\",\"Draft docs/cache.md after eviction lands (agent proposal).\"],\"blockers\":[\"Unverified agent claim: eviction order is nondeterministic.\",\"The last recorded pytest run had 1 failure, test_eviction_order, with exit status 1. This is historical and I did not re-run it.\"],\"unverified_claims\":[{\"claim\":\"Codex said it implemented eviction and all tests pass.\",\"status\":\"contradicted\"},{\"claim\":\"Eviction order is nondeterministic.\",\"status\":\"unverified\"},{\"claim\":\"docs/cache.md should be drafted after eviction lands.\",\"status\":\"unverified\"}],\"evidence_refs\":[\"r:a4247b825939\",\"r:840f74cbff02\",\"r:53bc335685a6\",\"r:8b891ffa1cd7\",\"r:f3b942baeb7e\",\"r:89f8e32862db\"],\"next_step\":\"Find the project's own test command in its docs or CI config and run it. Check whether eviction exists in cache.py and whether test_eviction_order still fails. Then ask the user whether to start with eviction or with docs/cache.md.\",\"sources_used\":[\"codex\",\"hermes\"],\"uncertainties\":[\"The newest session event is 228 days old, so the objective and remaining work may be stale.\",\"Only codex and hermes were considered. The claude session d123ccfd254b was excluded because you asked for codex and hermes only.\",\"The brief shows no uncommitted eviction work, so the claimed eviction may never have been committed. It may have been lost or sit in another checkout or branch. I did not check.\",\"I did not run the tests myself and did not inspect cache.py or the docs directory.\"]}",
+  "tools": [
+    "Skill: {\"skill\": \"rifja-session-recovery:session-recovery\"}",
+    "Bash: {\"command\": \"S=<REPO>/dist/recovery/rifja-session-recovery-claude-plugin/skills/session-recovery; R=<WORK>/claude-pier-skill-2/repos/pier; python3 $S/scripts/recover.py doctor; python3 $S/scripts/recover.py sources --repo $R\"}",
+    "Bash: {\"command\": \"S=<REPO>/dist/recovery/rifja-session-recovery-claude-plugin/skills/session-recovery; R=<WORK>/claude-pier-skill-2/repos/pier; python3 $S/scripts/recover.py brief --repo $R --providers codex,hermes --format json\"}"
+  ]
+}

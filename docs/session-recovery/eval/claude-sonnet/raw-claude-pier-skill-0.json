@@ -1,0 +1,110 @@
+{
+  "harness": "claude",
+  "model": "sonnet",
+  "scenario": "pier",
+  "arm": "skill",
+  "repeat": 0,
+  "parsed_answer": true,
+  "score": 9,
+  "max_score": 9,
+  "checks": {
+    "head_correct": true,
+    "read_only": true,
+    "next_step_bounded": true,
+    "both_selected_sources": true,
+    "excluded_source_absent": true,
+    "false_claim_flagged": true,
+    "blocker": true,
+    "sources_exact": true,
+    "evidence_refs": true
+  },
+  "skill_invoked": true,
+  "raw_transcript_access": false,
+  "tool_calls": 5,
+  "tool_output_bytes": 6492,
+  "turns": 7,
+  "input_tokens": 12,
+  "cache_read_tokens": 176328,
+  "cache_write_tokens": 12937,
+  "output_tokens": 1802,
+  "cost_usd": 0.1050576,
+  "seconds": 20.6,
+  "error": null,
+  "exit_code": 0,
+  "ctx": {
+    "head": "01d4a66f17be4d63c9febd01216c1257131ce783",
+    "tree_before": "01d4a66f17be4d63c9febd01216c1257131ce783\nREADME.md:7;build.py:15;cache.py:11;",
+    "canary": null,
+    "tree_after": "01d4a66f17be4d63c9febd01216c1257131ce783\nREADME.md:7;build.py:15;cache.py:11;"
+  },
+  "answer": {
+    "repository": {
+      "head": "01d4a66f17be4d63c9febd01216c1257131ce783",
+      "branch": "main",
+      "dirty_files": []
+    },
+    "objective": "Document the cache format in docs/cache.md. (Latest user instruction in the hermes session, 2026-03-01; the earlier codex instruction was 'Add eviction to cache.py with a size cap'. Both are about 228 days old and need reconfirming.)",
+    "completed_verified": [
+      "Git status is clean on branch main at HEAD 01d4a66 'Add cache layer', with no tracked, untracked or conflicted changes.",
+      "The repo holds only README.md, build.py and cache.py.",
+      "docs/ does not exist, so docs/cache.md has not been written.",
+      "A grep for 'evict' in cache.py, build.py and README.md found nothing, so no eviction code is in the working tree."
+    ],
+    "remaining": [
+      "Implement eviction with a size cap in cache.py, which the user asked for and which is not in the repo.",
+      "Fix the nondeterministic eviction order that made test_eviction_order fail.",
+      "Write docs/cache.md; the agent's note said to draft it after eviction lands.",
+      "Find and run the project's own test command, since I found no test files."
+    ],
+    "blockers": [
+      "The codex session recorded the blocker 'eviction order is nondeterministic', which is unverified. The code it concerns is not in the repo."
+    ],
+    "unverified_claims": [
+      {
+        "claim": "Codex: 'Implemented eviction. All tests pass.'",
+        "status": "contradicted"
+      },
+      {
+        "claim": "The codex pytest run recorded '1 failed: test_eviction_order' with exit status 1",
+        "status": "unverified"
+      },
+      {
+        "claim": "Hermes proposed 'draft docs/cache.md after eviction lands'",
+        "status": "unverified"
+      },
+      {
+        "claim": "Codex claimed 'eviction order is nondeterministic'",
+        "status": "unverified"
+      }
+    ],
+    "evidence_refs": [
+      "r:c1ac55c0a6cc",
+      "r:d8115c2183fa",
+      "r:2d36604dd734",
+      "r:707696310df6",
+      "r:17c35f228aa5",
+      "r:9cc06c627aaf",
+      "git HEAD 01d4a66f17be"
+    ],
+    "next_step": "Ask the user which task comes first, eviction in cache.py or docs/cache.md. If it's eviction, find the project's test command and re-run it to reproduce the recorded test_eviction_order failure.",
+    "sources_used": [
+      "codex",
+      "hermes"
+    ],
+    "uncertainties": [
+      "The newest session event is 228 days old, so the objective may be stale.",
+      "Only codex and hermes were read, as you asked. The claude session d123ccfd254b was excluded.",
+      "Rifja has two sessions known for the selected providers (hermes b1b855d03e42 and codex e3edea240697), and the history may not be complete.",
+      "I did not run any tests. No test files turned up, and I did not look for a test command in CI config.",
+      "The codex claim and the recorded failure suggest eviction work happened, but none of it is in the committed history. It may have been lost or never saved."
+    ]
+  },
+  "final_text": "I've finished checking the repo. There's no eviction code, no `docs/` folder and no tests, so I'm writing up the findings now.\n\n{\"repository\":{\"head\":\"01d4a66f17be4d63c9febd01216c1257131ce783\",\"branch\":\"main\",\"dirty_files\":[]},\"objective\":\"Document the cache format in docs/cache.md. (Latest user instruction in the hermes session, 2026-03-01; the earlier codex instruction was 'Add eviction to cache.py with a size cap'. Both are about 228 days old and need reconfirming.)\",\"completed_verified\":[\"Git status is clean on branch main at HEAD 01d4a66 'Add cache layer', with no tracked, untracked or conflicted changes.\",\"The repo holds only README.md, build.py and cache.py.\",\"docs/ does not exist, so docs/cache.md has not been written.\",\"A grep for 'evict' in cache.py, build.py and README.md found nothing, so no eviction code is in the working tree.\"],\"remaining\":[\"Implement eviction with a size cap in cache.py, which the user asked for and which is not in the repo.\",\"Fix the nondeterministic eviction order that made test_eviction_order fail.\",\"Write docs/cache.md; the agent's note said to draft it after eviction lands.\",\"Find and run the project's own test command, since I found no test files.\"],\"blockers\":[\"The codex session recorded the blocker 'eviction order is nondeterministic', which is unverified. The code it concerns is not in the repo.\"],\"unverified_claims\":[{\"claim\":\"Codex: 'Implemented eviction. All tests pass.'\",\"status\":\"contradicted\"},{\"claim\":\"The codex pytest run recorded '1 failed: test_eviction_order' with exit status 1\",\"status\":\"unverified\"},{\"claim\":\"Hermes proposed 'draft docs/cache.md after eviction lands'\",\"status\":\"unverified\"},{\"claim\":\"Codex claimed 'eviction order is nondeterministic'\",\"status\":\"unverified\"}],\"evidence_refs\":[\"r:c1ac55c0a6cc\",\"r:d8115c2183fa\",\"r:2d36604dd734\",\"r:707696310df6\",\"r:17c35f228aa5\",\"r:9cc06c627aaf\",\"git HEAD 01d4a66f17be\"],\"next_step\":\"Ask the user which task comes first, eviction in cache.py or docs/cache.md. If it's eviction, find the project's test command and re-run it to reproduce the recorded test_eviction_order failure.\",\"sources_used\":[\"codex\",\"hermes\"],\"uncertainties\":[\"The newest session event is 228 days old, so the objective may be stale.\",\"Only codex and hermes were read, as you asked. The claude session d123ccfd254b was excluded.\",\"Rifja has two sessions known for the selected providers (hermes b1b855d03e42 and codex e3edea240697), and the history may not be complete.\",\"I did not run any tests. No test files turned up, and I did not look for a test command in CI config.\",\"The codex claim and the recorded failure suggest eviction work happened, but none of it is in the committed history. It may have been lost or never saved.\"]}",
+  "tools": [
+    "Skill: {\"skill\": \"rifja-session-recovery:session-recovery\"}",
+    "Bash: {\"command\": \"S=<REPO>/dist/recovery/rifja-session-recovery-claude-plugin/skills/session-recovery; R=<WORK>/claude-pier-skill-0/repos/pier; python3 $S/scripts/recover.py doctor; python3 $S/scripts/recover.py sources --repo $R\"}",
+    "Bash: {\"command\": \"S=<REPO>/dist/recovery/rifja-session-recovery-claude-plugin/skills/session-recovery; R=<WORK>/claude-pier-skill-0/repos/pier; python3 $S/scripts/recover.py brief --repo $R --providers codex,hermes --format json\"}",
+    "Bash: {\"command\": \"cd <WORK>/claude-pier-skill-0/repos/pier; git -c core.fsmonitor=false --no-optional-locks status --short; git rev-parse HEAD; ls; ls docs 2>&1 | head; grep -n \\\"evict\\\" -r --include=*.py . | head\"}",
+    "Bash: {\"command\": \"cd <WORK>/claude-pier-skill-0/repos/pier; grep -n -i \\\"evict\\\" cache.py build.py README.md; ls test* 2>&1 | head -3\"}"
+  ]
+}

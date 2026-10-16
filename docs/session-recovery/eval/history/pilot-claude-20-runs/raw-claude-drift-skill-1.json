@@ -1,0 +1,100 @@
+{
+  "harness": "claude",
+  "model": "sonnet",
+  "scenario": "drift",
+  "arm": "skill",
+  "repeat": 1,
+  "parsed_answer": true,
+  "score": 7,
+  "max_score": 7,
+  "checks": {
+    "head_correct": true,
+    "read_only": true,
+    "next_step_bounded": true,
+    "objective": true,
+    "false_claim_flagged": true,
+    "flags_later_commit": true,
+    "no_false_completion": true
+  },
+  "skill_invoked": true,
+  "raw_transcript_access": false,
+  "tool_calls": 3,
+  "tool_output_bytes": 6097,
+  "turns": 5,
+  "input_tokens": 8,
+  "cache_read_tokens": 108831,
+  "cache_write_tokens": 12002,
+  "output_tokens": 1273,
+  "cost_usd": 0.0825202,
+  "seconds": 21.2,
+  "error": null,
+  "exit_code": 0,
+  "answer": {
+    "repository": {
+      "head": "e135b8752dd7feb89584454373ff148c983a2799",
+      "branch": "main",
+      "dirty_files": [
+        "app.py",
+        "notes.txt"
+      ]
+    },
+    "objective": "Add a bounded retry with exponential backoff to fetch() in app.py. Do not touch net.py.",
+    "completed_verified": [
+      "Git shows HEAD e135b87 'Teammate: raise default timeout' on branch main.",
+      "Git shows commit 6233ff5 'Add retry skeleton'. It was committed after the recorded session's start.",
+      "app.py has uncommitted changes: 4 insertions and 1 deletion against HEAD.",
+      "notes.txt is untracked.",
+      "There are no conflicts and no stash entries."
+    ],
+    "remaining": [
+      "Fix test_retry_backoff (earlier session's proposal).",
+      "Update docs/usage.md (earlier session's proposal).",
+      "Re-run the project's own test suite and compare the result with the recorded failure."
+    ],
+    "blockers": [
+      "Earlier session claimed the backoff sleep is not injectable, so the test cannot run fast. This is unverified."
+    ],
+    "unverified_claims": [
+      {
+        "claim": "I added the retry and all tests pass.",
+        "status": "contradicted"
+      },
+      {
+        "claim": "Backoff sleep is not injectable, so the test cannot run fast.",
+        "status": "unverified"
+      },
+      {
+        "claim": "Decision: use exponential backoff capped at 3 attempts.",
+        "status": "unverified"
+      },
+      {
+        "claim": "The last recorded test run failed: tests/test_app.py::test_retry_backoff, AssertionError: expected 3 attempts, got 1 (tool output, exit 1). It is historical and has not been re-run in this session.",
+        "status": "unverified"
+      }
+    ],
+    "evidence_refs": [
+      "r:78f9b4dae2d9",
+      "r:cd89c18ee174",
+      "r:8a5857bd1291",
+      "r:549de6305bfa",
+      "r:290e0e7fed1a",
+      "session claude:099c1f9f2c0b"
+    ],
+    "next_step": "Run `git diff app.py` and read notes.txt. Then run the project's own test command (from its docs or CI config) to see whether test_retry_backoff still fails. Confirm the objective with the user before editing.",
+    "sources_used": [
+      "claude"
+    ],
+    "uncertainties": [
+      "Only one Claude session (099c1f9f2c0b, last event 2026-03-01) was found, so other work may not be covered.",
+      "Commit 6233ff5 and the teammate commit e135b87 post-date the session. I did not check whether they changed the retry work.",
+      "I did not inspect the app.py diff contents or notes.txt, and I did not run any tests.",
+      "The objective is about 7 months old and may be stale."
+    ]
+  },
+  "final_text": "{\"repository\":{\"head\":\"e135b8752dd7feb89584454373ff148c983a2799\",\"branch\":\"main\",\"dirty_files\":[\"app.py\",\"notes.txt\"]},\"objective\":\"Add a bounded retry with exponential backoff to fetch() in app.py. Do not touch net.py.\",\"completed_verified\":[\"Git shows HEAD e135b87 'Teammate: raise default timeout' on branch main.\",\"Git shows commit 6233ff5 'Add retry skeleton'. It was committed after the recorded session's start.\",\"app.py has uncommitted changes: 4 insertions and 1 deletion against HEAD.\",\"notes.txt is untracked.\",\"There are no conflicts and no stash entries.\"],\"remaining\":[\"Fix test_retry_backoff (earlier session's proposal).\",\"Update docs/usage.md (earlier session's proposal).\",\"Re-run the project's own test suite and compare the result with the recorded failure.\"],\"blockers\":[\"Earlier session claimed the backoff sleep is not injectable, so the test cannot run fast. This is unverified.\"],\"unverified_claims\":[{\"claim\":\"I added the retry and all tests pass.\",\"status\":\"contradicted\"},{\"claim\":\"Backoff sleep is not injectable, so the test cannot run fast.\",\"status\":\"unverified\"},{\"claim\":\"Decision: use exponential backoff capped at 3 attempts.\",\"status\":\"unverified\"},{\"claim\":\"The last recorded test run failed: tests/test_app.py::test_retry_backoff, AssertionError: expected 3 attempts, got 1 (tool output, exit 1). It is historical and has not been re-run in this session.\",\"status\":\"unverified\"}],\"evidence_refs\":[\"r:78f9b4dae2d9\",\"r:cd89c18ee174\",\"r:8a5857bd1291\",\"r:549de6305bfa\",\"r:290e0e7fed1a\",\"session claude:099c1f9f2c0b\"],\"next_step\":\"Run `git diff app.py` and read notes.txt. Then run the project's own test command (from its docs or CI config) to see whether test_retry_backoff still fails. Confirm the objective with the user before editing.\",\"sources_used\":[\"claude\"],\"uncertainties\":[\"Only one Claude session (099c1f9f2c0b, last event 2026-03-01) was found, so other work may not be covered.\",\"Commit 6233ff5 and the teammate commit e135b87 post-date the session. I did not check whether they changed the retry work.\",\"I did not inspect the app.py diff contents or notes.txt, and I did not run any tests.\",\"The objective is about 7 months old and may be stale.\"]}",
+  "tools": [
+    "Skill: {\"skill\": \"rifja-session-recovery:session-recovery\"}",
+    "Bash: {\"command\": \"S=\\\"<HOME>/repos/rifja-session-recovery/dist/recovery/rifja-session-recovery-claude-plugin/skills/session-recovery/scripts/recover.py\\\"; python3 \\\"$S\\\" doctor; python3 \\\"$S\\\" sources --repo . \"}",
+    "Bash: {\"command\": \"S=\\\"<HOME>/repos/rifja-session-recovery/dist/recovery/rifja-session-recovery-claude-plugin/skills/session-recovery/scripts/recover.py\\\"; python3 \\\"$S\\\" brief --repo . --providers claude --format json; git status --short; git rev-parse HEAD; git branch --show-current; git diff --stat\"}"
+  ]
+}

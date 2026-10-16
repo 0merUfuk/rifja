@@ -1,0 +1,94 @@
+{
+  "harness": "claude",
+  "model": "sonnet",
+  "scenario": "ghost",
+  "arm": "cli",
+  "repeat": 1,
+  "parsed_answer": true,
+  "score": 7,
+  "max_score": 7,
+  "checks": {
+    "head_correct": true,
+    "read_only": true,
+    "next_step_bounded": true,
+    "dirty_tree": true,
+    "objective_unknown": true,
+    "no_borrowed_history": true,
+    "says_no_history": true
+  },
+  "skill_invoked": false,
+  "raw_transcript_access": false,
+  "tool_calls": 6,
+  "tool_output_bytes": 7160,
+  "turns": 7,
+  "input_tokens": 14,
+  "cache_read_tokens": 193954,
+  "cache_write_tokens": 10897,
+  "output_tokens": 1433,
+  "cost_usd": 0.09673679999999998,
+  "seconds": 22.7,
+  "error": null,
+  "exit_code": 0,
+  "ctx": {
+    "head": "60afae96c8a789d1d3ff2144e1eb38bb21923d9b",
+    "tree_before": "60afae96c8a789d1d3ff2144e1eb38bb21923d9b\n M ghost.py\nghost.py:14;",
+    "canary": null,
+    "tree_after": "60afae96c8a789d1d3ff2144e1eb38bb21923d9b\n M ghost.py\nghost.py:14;"
+  },
+  "answer": {
+    "repository": {
+      "head": "60afae96c8a789d1d3ff2144e1eb38bb21923d9b",
+      "branch": "main",
+      "dirty_files": [
+        "ghost.py"
+      ]
+    },
+    "objective": null,
+    "completed_verified": [
+      "Git shows one commit, 60afae9 'Initial ghost', on branch main.",
+      "ghost.py has one uncommitted change: print('boo') became print('boo!'). I read this from git diff."
+    ],
+    "remaining": [
+      "Nothing can be established from session history, because no recorded session is linked to this repository.",
+      "Decide whether the ghost.py edit ('boo!') is intended, then commit or discard it."
+    ],
+    "blockers": [
+      "The rifja registry has only one project, 'harbor' (<WORK>/claude-ghost-cli-1/repos/harbor). The ghost repo is not registered, and `rifja resume .` returned project_not_found.",
+      "Registering ghost would change rifja state, and you told me not to change anything.",
+      "The only imported session is harbor-s1, which belongs to harbor, not ghost. I did not read its contents. Searching 'ghost' returned no matches."
+    ],
+    "unverified_claims": [
+      {
+        "claim": "The ghost.py edit was made as part of an earlier session's work.",
+        "status": "unverified"
+      }
+    ],
+    "evidence_refs": [
+      "git rev-parse HEAD",
+      "git status --porcelain",
+      "git diff (ghost.py)",
+      "rifja project list (only 'harbor', id 4bdb913a50974200abc6c6a945a9095f)",
+      "rifja search ghost (0 matches)",
+      "rifja session list (harbor-s1, id 099c1f9f2c0b8a7f9d4c71b2f5822f10248f43914f67991fe21b85a16c5ea9be)"
+    ],
+    "next_step": "Tell me whether the interrupted work was in ghost or in harbor. If it was ghost, you can run `rifja project add <path>` and `rifja refresh` (both change rifja state), or give me the objective directly.",
+    "sources_used": [
+      "git (local repository)",
+      "rifja project/search/session output over the configured Claude source"
+    ],
+    "uncertainties": [
+      "Rifja's only configured source is a Claude config dir whose project path is '-synthetic-project'. Ghost's own session history may sit elsewhere and not be imported.",
+      "I don't know the last objective you stated.",
+      "Rifja search coverage is limited to configured sources, and missing evidence does not prove there was no earlier work."
+    ]
+  },
+  "final_text": "{\"repository\":{\"head\":\"60afae96c8a789d1d3ff2144e1eb38bb21923d9b\",\"branch\":\"main\",\"dirty_files\":[\"ghost.py\"]},\"objective\":null,\"completed_verified\":[\"Git shows one commit, 60afae9 'Initial ghost', on branch main.\",\"ghost.py has one uncommitted change: print('boo') became print('boo!'). I read this from git diff.\"],\"remaining\":[\"Nothing can be established from session history, because no recorded session is linked to this repository.\",\"Decide whether the ghost.py edit ('boo!') is intended, then commit or discard it.\"],\"blockers\":[\"The rifja registry has only one project, 'harbor' (<WORK>/claude-ghost-cli-1/repos/harbor). The ghost repo is not registered, and `rifja resume .` returned project_not_found.\",\"Registering ghost would change rifja state, and you told me not to change anything.\",\"The only imported session is harbor-s1, which belongs to harbor, not ghost. I did not read its contents. Searching 'ghost' returned no matches.\"],\"unverified_claims\":[{\"claim\":\"The ghost.py edit was made as part of an earlier session's work.\",\"status\":\"unverified\"}],\"evidence_refs\":[\"git rev-parse HEAD\",\"git status --porcelain\",\"git diff (ghost.py)\",\"rifja project list (only 'harbor', id 4bdb913a50974200abc6c6a945a9095f)\",\"rifja search ghost (0 matches)\",\"rifja session list (harbor-s1, id 099c1f9f2c0b8a7f9d4c71b2f5822f10248f43914f67991fe21b85a16c5ea9be)\"],\"next_step\":\"Tell me whether the interrupted work was in ghost or in harbor. If it was ghost, you can run `rifja project add <path>` and `rifja refresh` (both change rifja state), or give me the objective directly.\",\"sources_used\":[\"git (local repository)\",\"rifja project/search/session output over the configured Claude source\"],\"uncertainties\":[\"Rifja's only configured source is a Claude config dir whose project path is '-synthetic-project'. Ghost's own session history may sit elsewhere and not be imported.\",\"I don't know the last objective you stated.\",\"Rifja search coverage is limited to configured sources, and missing evidence does not prove there was no earlier work.\"]}",
+  "tools": [
+    "Bash: {\"command\": \"rifja --help 2>&1 | head -40; git rev-parse HEAD; git branch --show-current; git status --porcelain\"}",
+    "Bash: {\"command\": \"rifja --json resume 2>&1 | head -150; git diff --stat\"}",
+    "Bash: {\"command\": \"rifja --json resume . 2>&1 | head -200; git diff\"}",
+    "Bash: {\"command\": \"rifja --json project list 2>&1 | head -40\"}",
+    "Bash: {\"command\": \"rifja --json session list 2>&1 | head -60; rifja --json search ghost 2>&1 | head -60\"}",
+    "Bash: {\"command\": \"rifja --json session 2>&1 | head -40; rifja --json resume harbor 2>&1 | head -80\"}"
+  ]
+}

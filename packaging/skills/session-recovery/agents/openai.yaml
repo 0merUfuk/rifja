@@ -1,0 +1,4 @@
+interface:
+  display_name: "Session Recovery"
+  short_description: "Resume interrupted work from an evidence-grounded brief"
+  default_prompt: "Use $session-recovery to resume the work in this repository: ask me which providers to include, build the brief, and tell me what is verified versus claimed."

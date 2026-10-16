@@ -1,0 +1,3 @@
+# The bundled script must run on Python 3.9+ (the host agent's interpreter, not rifja's 3.14).
+target-version = "py39"
+line-length = 100

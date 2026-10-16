@@ -1,0 +1,60 @@
+{
+  "schema": "rifja-session-recovery/studio-handoff/1",
+  "purpose": "Inventory for later ingestion by agent-product-studio. Describes this branch; does not modify that repository.",
+  "product": {
+    "name": "Rifja Session Recovery",
+    "version": "0.1.0",
+    "kind": "agent-skill + claude-code-plugin + codex-plugin",
+    "license": "MIT (unchanged; LICENSE and NOTICE shipped in every artifact)",
+    "source": {
+      "repository": "https://github.com/0merUfuk/rifja",
+      "branch": "feat/session-recovery-skill",
+      "base_commit": "bd3d29d24b21019ff489754700160b3fae9a944b",
+      "head": "see the delivery message / `git rev-parse feat/session-recovery-skill`"
+    },
+    "depends_on": {"rifja": ">=0.4.2 (tested 0.4.2, JSON schema_version 1)", "git": "any recent", "python": ">=3.9"}
+  },
+  "artifacts": {
+    "build": "uv run python tools/recovery_bundle.py build --out dist/recovery",
+    "reproducible": true,
+    "sha256": {
+      "rifja-session-recovery-claude-plugin-0.1.0.zip": "a0633790e4e0ffdb413483c5df873739680c39e25d4dc7a405831e2fe6196e38",
+      "rifja-session-recovery-codex-marketplace-0.1.0.zip": "510cb13c812c933d07d3d5e4e687118b130ecdf2cc6fe036e71697c164274fd5",
+      "session-recovery-skill-0.1.0.zip": "7388cc3287283d3ccb0bb2940f15b9f0f49815772ac0a789e9ad33bc5eb4df6c"
+    }
+  },
+  "readiness": {
+    "technical_package": "ready for local / own-repository distribution",
+    "agent_evidence": "moderate and narrow: Claude Code + Sonnet, synthetic data, n=45; Haiku did not activate the skill; Codex blocked; Hermes untested",
+    "marketplace_submission": "not ready (owner-dependent items; claude.ai/Cowork incompatibility; OpenAI local-dependency rule)",
+    "market_demand": "unknown (no data)"
+  },
+  "evidence_index": {
+    "evaluation": "docs/session-recovery/evaluation.md",
+    "raw_runs": ["docs/session-recovery/eval/claude-sonnet/", "docs/session-recovery/eval/claude-haiku/"],
+    "activation_probes": ["docs/session-recovery/eval/activation-sonnet/", "docs/session-recovery/eval/activation-haiku/"],
+    "preserved_failed_attempts": "docs/session-recovery/eval/history/",
+    "demo": "docs/session-recovery/demo/transcript.md",
+    "compatibility": "docs/session-recovery/compatibility.md",
+    "privacy": "docs/session-recovery/privacy-assessment.md",
+    "release": "docs/session-recovery/release.md",
+    "commercial": "docs/session-recovery/commercial.md"
+  },
+  "headline_measurements_sonnet_n45": {
+    "rubric_checks_passed": {"cli": "112/123", "paste": "107/123", "skill": "121/123"},
+    "cost_per_run_usd": {"cli": 0.151, "paste": 0.076, "skill": 0.091},
+    "median_latency_s": {"cli": 26.0, "paste": 15.8, "skill": 19.7},
+    "hostile_repo_program_executed_runs": {"cli": "3/3", "paste": "3/3", "skill": "0/3"},
+    "excluded_provider_leaked_runs": {"cli": "2/3", "paste": "3/3", "skill": "0/3"},
+    "skill_activation_task_prompts": "15/15 (Sonnet), 0/5 (Haiku)",
+    "false_activation": "0/5 per model on unrelated prompts"
+  },
+  "constraints_for_ingestion": [
+    "Do not publish, list, tag, merge or relicense without explicit owner authorization.",
+    "Do not describe it as universal session recovery; it covers providers Rifja imports (claude, codex, hermes) only.",
+    "Do not quote the pilot's 'manual arm reads raw transcripts'; the final strict count is 1/15 (paste) and 0/15 (cli, skill).",
+    "Codex model-driven results do not exist yet (blocked until 2026-10-22).",
+    "Listing needs owner-supplied icon, privacy / support / terms URLs, public repository, accounts and identity verification."
+  ],
+  "recommendation": "Free / open-source entry product for Rifja now; commercial support and premium tiers remain hypotheses until demand evidence exists."
+}

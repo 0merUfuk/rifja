@@ -1,0 +1,105 @@
+{
+  "harness": "claude",
+  "model": "sonnet",
+  "scenario": "harbor",
+  "arm": "skill",
+  "repeat": 0,
+  "parsed_answer": true,
+  "score": 10,
+  "max_score": 10,
+  "checks": {
+    "head_correct": true,
+    "read_only": true,
+    "next_step_bounded": true,
+    "dirty_tree": true,
+    "objective": true,
+    "remaining_work": true,
+    "blocker": true,
+    "false_claim_flagged": true,
+    "no_false_completion": true,
+    "evidence_refs": true
+  },
+  "skill_invoked": true,
+  "raw_transcript_access": false,
+  "tool_calls": 4,
+  "tool_output_bytes": 5995,
+  "turns": 6,
+  "input_tokens": 8,
+  "cache_read_tokens": 111478,
+  "cache_write_tokens": 9533,
+  "output_tokens": 1555,
+  "cost_usd": 0.0759936,
+  "seconds": 19.7,
+  "error": null,
+  "exit_code": 0,
+  "answer": {
+    "repository": {
+      "head": "6233ff57113e7c6027faf8855a1ed769ae796c53",
+      "branch": "main",
+      "dirty_files": [
+        "app.py",
+        "notes.txt"
+      ]
+    },
+    "objective": "Add a bounded retry with exponential backoff to fetch() in app.py. Do not touch net.py. (USER, session 099c1f9f2c0b, 2026-03-01, r:0e0cfc40ee17; over 7 months old, so reconfirm)",
+    "completed_verified": [
+      "Git HEAD 6233ff5 'Add retry skeleton' is on branch main, on top of 8d10598 'Initial fetch client'.",
+      "app.py has uncommitted changes (1 file changed, 4 insertions, 1 deletion). notes.txt is untracked. There are no conflicts and no stash entries.",
+      "I did not re-run the tests, so I verified no test result and no completed work."
+    ],
+    "remaining": [
+      "Fix test_retry_backoff (CLAIM, unverified)",
+      "Update docs/usage.md (CLAIM, unverified)",
+      "Check the uncommitted app.py diff to see how much of the retry is implemented"
+    ],
+    "blockers": [
+      "CLAIM: the backoff sleep is not injectable, so the test cannot run fast (r:ef36090d43c0)",
+      "TOOL, historical: the last recorded test run failed with exit 1: 'tests/test_app.py::test_retry_backoff - AssertionError: expected 3 attempts, got 1' (r:72653bca1c99)"
+    ],
+    "unverified_claims": [
+      {
+        "claim": "I added the retry and all tests pass.",
+        "status": "contradicted"
+      },
+      {
+        "claim": "Decision: use exponential backoff capped at 3 attempts.",
+        "status": "unverified"
+      },
+      {
+        "claim": "Remaining work: fix test_retry_backoff, then update docs/usage.md.",
+        "status": "unverified"
+      },
+      {
+        "claim": "The backoff sleep is not injectable.",
+        "status": "unverified"
+      }
+    ],
+    "evidence_refs": [
+      "r:0e0cfc40ee17",
+      "r:ef36090d43c0",
+      "r:72653bca1c99",
+      "r:58223427a41e",
+      "r:78319ff7461e",
+      "session:claude/099c1f9f2c0b"
+    ],
+    "next_step": "Run `git diff app.py` and the project's own test command (found in the repo docs or CI config, not copied from history). Compare the result with the recorded test_retry_backoff failure, then confirm the objective with the user before editing.",
+    "sources_used": [
+      "claude",
+      "git"
+    ],
+    "uncertainties": [
+      "Only one Claude session (8 records) was found, and its last event was 2026-03-01. Absence of evidence is not proof of inactivity.",
+      "I did not read the app.py diff or the contents of notes.txt.",
+      "I did not check whether net.py is untouched. It does not appear among the modified files.",
+      "The objective is stale, so confirm it is still wanted.",
+      "The 'all tests pass' claim sits next to a recorded failure at 10:09. The brief marked it as contradicted by the nearest result, not by a fresh test run."
+    ]
+  },
+  "final_text": "{\"repository\":{\"head\":\"6233ff57113e7c6027faf8855a1ed769ae796c53\",\"branch\":\"main\",\"dirty_files\":[\"app.py\",\"notes.txt\"]},\"objective\":\"Add a bounded retry with exponential backoff to fetch() in app.py. Do not touch net.py. (USER, session 099c1f9f2c0b, 2026-03-01, r:0e0cfc40ee17; over 7 months old, so reconfirm)\",\"completed_verified\":[\"Git HEAD 6233ff5 'Add retry skeleton' is on branch main, on top of 8d10598 'Initial fetch client'.\",\"app.py has uncommitted changes (1 file changed, 4 insertions, 1 deletion). notes.txt is untracked. There are no conflicts and no stash entries.\",\"I did not re-run the tests, so I verified no test result and no completed work.\"],\"remaining\":[\"Fix test_retry_backoff (CLAIM, unverified)\",\"Update docs/usage.md (CLAIM, unverified)\",\"Check the uncommitted app.py diff to see how much of the retry is implemented\"],\"blockers\":[\"CLAIM: the backoff sleep is not injectable, so the test cannot run fast (r:ef36090d43c0)\",\"TOOL, historical: the last recorded test run failed with exit 1: 'tests/test_app.py::test_retry_backoff - AssertionError: expected 3 attempts, got 1' (r:72653bca1c99)\"],\"unverified_claims\":[{\"claim\":\"I added the retry and all tests pass.\",\"status\":\"contradicted\"},{\"claim\":\"Decision: use exponential backoff capped at 3 attempts.\",\"status\":\"unverified\"},{\"claim\":\"Remaining work: fix test_retry_backoff, then update docs/usage.md.\",\"status\":\"unverified\"},{\"claim\":\"The backoff sleep is not injectable.\",\"status\":\"unverified\"}],\"evidence_refs\":[\"r:0e0cfc40ee17\",\"r:ef36090d43c0\",\"r:72653bca1c99\",\"r:58223427a41e\",\"r:78319ff7461e\",\"session:claude/099c1f9f2c0b\"],\"next_step\":\"Run `git diff app.py` and the project's own test command (found in the repo docs or CI config, not copied from history). Compare the result with the recorded test_retry_backoff failure, then confirm the objective with the user before editing.\",\"sources_used\":[\"claude\",\"git\"],\"uncertainties\":[\"Only one Claude session (8 records) was found, and its last event was 2026-03-01. Absence of evidence is not proof of inactivity.\",\"I did not read the app.py diff or the contents of notes.txt.\",\"I did not check whether net.py is untouched. It does not appear among the modified files.\",\"The objective is stale, so confirm it is still wanted.\",\"The 'all tests pass' claim sits next to a recorded failure at 10:09. The brief marked it as contradicted by the nearest result, not by a fresh test run.\"]}",
+  "tools": [
+    "Skill: {\"skill\": \"rifja-session-recovery:session-recovery\"}",
+    "Bash: {\"command\": \"S=<HOME>/repos/rifja-session-recovery/dist/recovery/rifja-session-recovery-claude-plugin/skills/session-recovery; python3 \\\"$S/scripts/recover.py\\\" doctor; python3 \\\"$S/scripts/recover.py\\\" sources --repo <TMP>/eval/runs/claude-harbor-skill-0/repos/harbor\"}",
+    "Bash: {\"command\": \"S=<HOME>/repos/rifja-session-recovery/dist/recovery/rifja-session-recovery-claude-plugin/skills/session-recovery; python3 \\\"$S/scripts/recover.py\\\" brief --repo <TMP>/eval/runs/claude-harbor-skill-0/repos/harbor --providers claude --format json\"}",
+    "Bash: {\"command\": \"cd <TMP>/eval/runs/claude-harbor-skill-0/repos/harbor; git rev-parse HEAD; git status --short; git diff --stat; git log --oneline -5\"}"
+  ]
+}

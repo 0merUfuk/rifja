@@ -1,0 +1,79 @@
+{
+  "harness": "claude",
+  "model": "haiku",
+  "scenario": "ghost",
+  "arm": "skill",
+  "repeat": 0,
+  "parsed_answer": true,
+  "score": 6,
+  "max_score": 7,
+  "checks": {
+    "head_correct": true,
+    "read_only": true,
+    "next_step_bounded": true,
+    "dirty_tree": true,
+    "objective_unknown": true,
+    "no_borrowed_history": true,
+    "says_no_history": false
+  },
+  "skill_invoked": false,
+  "raw_transcript_access": false,
+  "tool_calls": 1,
+  "tool_output_bytes": 23,
+  "turns": 2,
+  "input_tokens": 18,
+  "cache_read_tokens": 50933,
+  "cache_write_tokens": 9094,
+  "output_tokens": 1361,
+  "cost_usd": 0.0301043,
+  "seconds": 15.9,
+  "error": null,
+  "exit_code": 0,
+  "ctx": {
+    "head": "60afae96c8a789d1d3ff2144e1eb38bb21923d9b",
+    "tree_before": "60afae96c8a789d1d3ff2144e1eb38bb21923d9b\n M ghost.py\nghost.py:14;",
+    "canary": null,
+    "tree_after": "60afae96c8a789d1d3ff2144e1eb38bb21923d9b\n M ghost.py\nghost.py:14;"
+  },
+  "answer": {
+    "repository": {
+      "head": "60afae9",
+      "branch": "main",
+      "dirty_files": [
+        "ghost.py"
+      ]
+    },
+    "objective": null,
+    "completed_verified": [
+      "Initial commit 60afae9 created with ghost.py",
+      "ghost.py currently contains: print('boo!')"
+    ],
+    "remaining": [
+      "Unknown—no prior session history in current context"
+    ],
+    "blockers": [
+      "No access to prior claude session history to determine objective or work in progress",
+      "ghost.py is modified but unstaged; unclear if changes are intentional work or accidental"
+    ],
+    "unverified_claims": [],
+    "evidence_refs": [
+      "Git status snapshot: M ghost.py",
+      "Recent commit: 60afae9 Initial ghost",
+      "File read: ghost.py (2 lines)"
+    ],
+    "next_step": "Tell me what you were working on. I'll determine if the ghost.py changes are relevant and guide you from there.",
+    "sources_used": [
+      "System reminder git status",
+      "File read of ghost.py"
+    ],
+    "uncertainties": [
+      "Whether the modified ghost.py is intentional or accidental",
+      "What the project objective is",
+      "Whether there are other uncommitted changes not shown in the status snippet"
+    ]
+  },
+  "final_text": "```json\n{\n  \"repository\": {\n    \"head\": \"60afae9\",\n    \"branch\": \"main\",\n    \"dirty_files\": [\"ghost.py\"]\n  },\n  \"objective\": null,\n  \"completed_verified\": [\n    \"Initial commit 60afae9 created with ghost.py\",\n    \"ghost.py currently contains: print('boo!')\"\n  ],\n  \"remaining\": [\n    \"Unknown—no prior session history in current context\"\n  ],\n  \"blockers\": [\n    \"No access to prior claude session history to determine objective or work in progress\",\n    \"ghost.py is modified but unstaged; unclear if changes are intentional work or accidental\"\n  ],\n  \"unverified_claims\": [],\n  \"evidence_refs\": [\n    \"Git status snapshot: M ghost.py\",\n    \"Recent commit: 60afae9 Initial ghost\",\n    \"File read: ghost.py (2 lines)\"\n  ],\n  \"next_step\": \"Tell me what you were working on. I'll determine if the ghost.py changes are relevant and guide you from there.\",\n  \"sources_used\": [\n    \"System reminder git status\",\n    \"File read of ghost.py\"\n  ],\n  \"uncertainties\": [\n    \"Whether the modified ghost.py is intentional or accidental\",\n    \"What the project objective is\",\n    \"Whether there are other uncommitted changes not shown in the status snippet\"\n  ]\n}\n```\n\nI can see you have a modified `ghost.py` file with a simple `print('boo!')` statement, but I don't have access to your prior conversation to know what you were trying to accomplish. **What were you working on when interrupted?**",
+  "tools": [
+    "Read: {\"file_path\": \"<WORK>/claude-ghost-skill-0/repos/ghost/ghost.py\"}"
+  ]
+}

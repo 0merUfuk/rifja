@@ -1,0 +1,92 @@
+{
+  "harness": "claude",
+  "model": "haiku",
+  "scenario": "ghost",
+  "arm": "paste",
+  "repeat": 0,
+  "parsed_answer": true,
+  "score": 7,
+  "max_score": 7,
+  "checks": {
+    "head_correct": true,
+    "read_only": true,
+    "next_step_bounded": true,
+    "dirty_tree": true,
+    "objective_unknown": true,
+    "no_borrowed_history": true,
+    "says_no_history": true
+  },
+  "skill_invoked": false,
+  "raw_transcript_access": false,
+  "tool_calls": 4,
+  "tool_output_bytes": 557,
+  "turns": 5,
+  "input_tokens": 42,
+  "cache_read_tokens": 142627,
+  "cache_write_tokens": 9713,
+  "output_tokens": 1670,
+  "cost_usd": 0.0420807,
+  "seconds": 21.6,
+  "error": null,
+  "exit_code": 0,
+  "ctx": {
+    "head": "60afae96c8a789d1d3ff2144e1eb38bb21923d9b",
+    "tree_before": "60afae96c8a789d1d3ff2144e1eb38bb21923d9b\n M ghost.py\nghost.py:14;",
+    "canary": null,
+    "tree_after": "60afae96c8a789d1d3ff2144e1eb38bb21923d9b\n M ghost.py\nghost.py:14;"
+  },
+  "answer": {
+    "repository": {
+      "head": "60afae96c8a789d1d3ff2144e1eb38bb21923d9b",
+      "branch": "main",
+      "dirty_files": [
+        "ghost.py"
+      ]
+    },
+    "objective": null,
+    "completed_verified": [
+      "Initial commit exists (60afae9) with print('boo')"
+    ],
+    "remaining": [
+      "Unclear - work in progress appears incomplete: ghost.py has uncommitted modification changing print('boo') to print('boo!')"
+    ],
+    "blockers": [
+      "No prior session history available in this conversation to determine the original objective",
+      "The modification (single exclamation mark) appears to be work-in-progress or incomplete"
+    ],
+    "unverified_claims": [
+      {
+        "claim": "User was interrupted while working",
+        "status": "supported"
+      },
+      {
+        "claim": "There is uncommitted work in progress",
+        "status": "supported"
+      }
+    ],
+    "evidence_refs": [
+      "git status: M ghost.py",
+      "git diff: +print('boo!') -print('boo')",
+      "HEAD: 60afae96c8a789d1d3ff2144e1eb38bb21923d9b"
+    ],
+    "next_step": "Need user to clarify: Was the exclamation mark change intentional/complete, or was the objective something else? Should the modification be committed, discarded, or expanded?",
+    "sources_used": [
+      "git status",
+      "git log",
+      "git diff",
+      "file content read"
+    ],
+    "uncertainties": [
+      "Original objective unknown - no prior session history available",
+      "Whether the single-character modification is complete or partial work",
+      "Whether this change should be staged/committed or is exploratory"
+    ]
+  },
+  "final_text": "```json\n{\n  \"repository\": {\n    \"head\": \"60afae96c8a789d1d3ff2144e1eb38bb21923d9b\",\n    \"branch\": \"main\",\n    \"dirty_files\": [\"ghost.py\"]\n  },\n  \"objective\": null,\n  \"completed_verified\": [\n    \"Initial commit exists (60afae9) with print('boo')\"\n  ],\n  \"remaining\": [\n    \"Unclear - work in progress appears incomplete: ghost.py has uncommitted modification changing print('boo') to print('boo!')\"\n  ],\n  \"blockers\": [\n    \"No prior session history available in this conversation to determine the original objective\",\n    \"The modification (single exclamation mark) appears to be work-in-progress or incomplete\"\n  ],\n  \"unverified_claims\": [\n    {\n      \"claim\": \"User was interrupted while working\",\n      \"status\": \"supported\"\n    },\n    {\n      \"claim\": \"There is uncommitted work in progress\",\n      \"status\": \"supported\"\n    }\n  ],\n  \"evidence_refs\": [\n    \"git status: M ghost.py\",\n    \"git diff: +print('boo!') -print('boo')\",\n    \"HEAD: 60afae96c8a789d1d3ff2144e1eb38bb21923d9b\"\n  ],\n  \"next_step\": \"Need user to clarify: Was the exclamation mark change intentional/complete, or was the objective something else? Should the modification be committed, discarded, or expanded?\",\n  \"sources_used\": [\n    \"git status\",\n    \"git log\",\n    \"git diff\",\n    \"file content read\"\n  ],\n  \"uncertainties\": [\n    \"Original objective unknown - no prior session history available\",\n    \"Whether the single-character modification is complete or partial work\",\n    \"Whether this change should be staged/committed or is exploratory\"\n  ]\n}\n```",
+  "tools": [
+    "Bash: {\"command\": \"git log --oneline -5 && echo \\\"---\\\" && git status\"}",
+    "Read: {\"file_path\": \"<WORK>/claude-ghost-paste-0/repos/ghost/ghost.py\"}",
+    "Bash: {\"command\": \"git diff ghost.py && echo \\\"---COMMITTED VERSION---\\\" && git show HEAD:ghost.py\"}",
+    "Bash: {\"command\": \"git rev-parse HEAD\"}"
+  ]
+}

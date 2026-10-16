@@ -1,0 +1,86 @@
+{
+  "harness": "claude",
+  "model": "haiku",
+  "scenario": "ghost",
+  "arm": "cli",
+  "repeat": 0,
+  "parsed_answer": true,
+  "score": 6,
+  "max_score": 7,
+  "checks": {
+    "head_correct": true,
+    "read_only": true,
+    "next_step_bounded": true,
+    "dirty_tree": true,
+    "objective_unknown": true,
+    "no_borrowed_history": true,
+    "says_no_history": false
+  },
+  "skill_invoked": false,
+  "raw_transcript_access": false,
+  "tool_calls": 4,
+  "tool_output_bytes": 812,
+  "turns": 5,
+  "input_tokens": 42,
+  "cache_read_tokens": 130366,
+  "cache_write_tokens": 33705,
+  "output_tokens": 1674,
+  "cost_usd": 0.0888586,
+  "seconds": 24.5,
+  "error": null,
+  "exit_code": 0,
+  "ctx": {
+    "head": "60afae96c8a789d1d3ff2144e1eb38bb21923d9b",
+    "tree_before": "60afae96c8a789d1d3ff2144e1eb38bb21923d9b\n M ghost.py\nghost.py:14;",
+    "canary": null,
+    "tree_after": "60afae96c8a789d1d3ff2144e1eb38bb21923d9b\n M ghost.py\nghost.py:14;"
+  },
+  "answer": {
+    "repository": {
+      "head": "60afae96c8a789d1d3ff2144e1eb38bb21923d9b",
+      "branch": "main",
+      "dirty_files": [
+        "ghost.py"
+      ]
+    },
+    "objective": null,
+    "completed_verified": [
+      "Repository initialized with commit 60afae9 'Initial ghost'",
+      "ghost.py file exists with content: print('boo')"
+    ],
+    "remaining": [
+      "Determine what work was interrupted",
+      "Decide whether ghost.py change (print('boo') → print('boo!')) should be committed or reverted"
+    ],
+    "blockers": [
+      "No Claude session history available to review prior context",
+      "No CLAUDE.md or project documentation found",
+      "Unknown objective for the repository"
+    ],
+    "unverified_claims": [],
+    "evidence_refs": [
+      "git rev-parse HEAD → 60afae96c8a789d1d3ff2144e1eb38bb21923d9b",
+      "git status → M ghost.py",
+      "git diff ghost.py → single line changed"
+    ],
+    "next_step": "Ask user to clarify the original objective and whether the ghost.py modification should be committed, reverted, or further edited.",
+    "sources_used": [
+      "git status",
+      "git log",
+      "git diff",
+      "filesystem inspection"
+    ],
+    "uncertainties": [
+      "What the project is intended to do",
+      "Whether the change to ghost.py is intentional or exploratory",
+      "What 'interrupted' state means in this context"
+    ]
+  },
+  "final_text": "```json\n{\n  \"repository\": {\n    \"head\": \"60afae96c8a789d1d3ff2144e1eb38bb21923d9b\",\n    \"branch\": \"main\",\n    \"dirty_files\": [\"ghost.py\"]\n  },\n  \"objective\": null,\n  \"completed_verified\": [\n    \"Repository initialized with commit 60afae9 'Initial ghost'\",\n    \"ghost.py file exists with content: print('boo')\"\n  ],\n  \"remaining\": [\n    \"Determine what work was interrupted\",\n    \"Decide whether ghost.py change (print('boo') → print('boo!')) should be committed or reverted\"\n  ],\n  \"blockers\": [\n    \"No Claude session history available to review prior context\",\n    \"No CLAUDE.md or project documentation found\",\n    \"Unknown objective for the repository\"\n  ],\n  \"unverified_claims\": [],\n  \"evidence_refs\": [\n    \"git rev-parse HEAD → 60afae96c8a789d1d3ff2144e1eb38bb21923d9b\",\n    \"git status → M ghost.py\",\n    \"git diff ghost.py → single line changed\"\n  ],\n  \"next_step\": \"Ask user to clarify the original objective and whether the ghost.py modification should be committed, reverted, or further edited.\",\n  \"sources_used\": [\n    \"git status\",\n    \"git log\",\n    \"git diff\",\n    \"filesystem inspection\"\n  ],\n  \"uncertainties\": [\n    \"What the project is intended to do\",\n    \"Whether the change to ghost.py is intentional or exploratory\",\n    \"What 'interrupted' state means in this context\"\n  ]\n}\n```",
+  "tools": [
+    "Bash: {\"command\": \"git status\"}",
+    "Bash: {\"command\": \"git log --oneline -10 && echo \\\"---\\\" && git diff ghost.py | head -100\"}",
+    "Bash: {\"command\": \"git rev-parse HEAD && ls -la && git log -1 --format=\\\"%H %s\\\"\"}",
+    "Bash: {\"command\": \"find . -name \\\"CLAUDE.md\\\" -o -name \\\"*.md\\\" -o -name \\\".claude\\\" -type f 2>/dev/null | head -20\"}"
+  ]
+}

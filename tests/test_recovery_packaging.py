@@ -608,3 +608,105 @@ class TestDistributionContents:
             assert path.read_bytes() == (ROOT / "LICENSE").read_bytes()
         for path in out.rglob("NOTICE"):
             assert path.read_bytes() == (ROOT / "NOTICE").read_bytes()
+
+
+class TestLintCacheDoesNotContaminateTheReleaseAudit:
+    """Regression for CI run 38833618755: the skill folder's own ruff.toml made it a separate Ruff
+    project, so `make check` cached inside the audited tree with absolute host paths, and
+    `tools/audit_release.py` (which scans ignored files too) failed `personal_home_path`."""
+
+    AUDITED = ("src", "tests", "docs", "tools", "packaging", ".github")
+    RUFF = Path(sys.executable).parent / "ruff"
+
+    def _caches(self):
+        return [p for d in self.AUDITED for p in (ROOT / d).rglob(".ruff_cache")]
+
+    @pytest.mark.skipif(not RUFF.exists(), reason="ruff not installed in this environment")
+    def test_make_check_ruff_commands_leave_no_cache_in_audited_directories(self):
+        for stale in self._caches():
+            shutil.rmtree(stale)  # git-ignored local cache; safe to remove
+        paths = ["src", "tests", "tools", "packaging/skills/session-recovery"]
+        for argv in (["check", *paths], ["format", "--check", *paths]):
+            result = subprocess.run(
+                [str(self.RUFF), *argv], cwd=ROOT, capture_output=True, text=True, check=False
+            )
+            assert result.returncode == 0, result.stdout + result.stderr
+        assert self._caches() == []
+
+    @pytest.mark.skipif(not RUFF.exists(), reason="ruff not installed in this environment")
+    def test_skill_folder_cache_directory_resolves_outside_the_audited_trees(self):
+        result = subprocess.run(
+            [str(self.RUFF), "check", "--show-settings", "scripts/recover.py"],
+            cwd=bundle.SKILL_DIR, capture_output=True, text=True, check=False,
+        )  # fmt: skip
+        line = next(x for x in result.stdout.splitlines() if x.startswith("cache_dir"))
+        cache = Path(line.split("=", 1)[1].strip().strip('"'))
+        assert (ROOT / ".local") in cache.parents
+        assert not any((ROOT / d) in cache.parents for d in self.AUDITED)
+
+    def test_the_cache_directory_is_git_ignored_and_not_packaged(self, built):
+        out, _ = built
+        ignored = subprocess.run(
+            ["git", "check-ignore", "-q", ".local/ruff-cache/x"], cwd=ROOT, check=False
+        )
+        assert ignored.returncode == 0
+        assert not list(out.rglob("ruff.toml")) and not list(out.rglob(".ruff_cache"))
+
+
+class TestReleaseAuditStaysStrict:
+    """The audit must keep failing on real private material, including in git-ignored local files."""
+
+    def _audit(self, tmp_path, files):
+        (tmp_path / "tools").mkdir()
+        shutil.copy(ROOT / "tools" / "audit_release.py", tmp_path / "tools" / "audit_release.py")
+        (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\nversion = "9.9.9"\n')
+        subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+        for name, text in files.items():
+            target = tmp_path / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(text, encoding="utf-8")
+        out = tmp_path / "audit.json"
+        subprocess.run(
+            [sys.executable, str(tmp_path / "tools" / "audit_release.py"), "--output", str(out)],
+            cwd=tmp_path, capture_output=True, text=True, check=False,
+        )  # fmt: skip
+        return json.loads(out.read_text())["findings"]
+
+    def test_clean_tree_has_no_content_findings(self, tmp_path):
+        findings = self._audit(tmp_path, {"packaging/skills/session-recovery/SKILL.md": "# fine\n"})
+        # the only finding is the missing build output, which is unrelated to content
+        assert {f["rule"] for f in findings} == {"current_release_artifact_missing"}
+
+    def test_an_ignored_cache_file_with_a_host_path_still_fails(self, tmp_path):
+        host = "/Us" + "ers/runner/work/rifja/rifja/packaging/skills/session-recovery"
+        findings = self._audit(
+            tmp_path,
+            {"packaging/skills/session-recovery/.ruff_cache/0.16.6/123": f"cache {host}\n"},
+        )
+        assert {"scope": "source", "file": "packaging/skills/session-recovery/.ruff_cache/0.16.6/123",
+                "rule": "personal_home_path"} in findings  # fmt: skip
+
+    @pytest.mark.parametrize(
+        ("name", "text", "rule"),
+        [
+            (
+                "packaging/skills/session-recovery/SKILL.md",
+                "see " + "/Us" + "ers/jane/.ssh/id_rsa\n",
+                "personal_home_path",
+            ),
+            (
+                "packaging/skills/session-recovery/scripts/recover.py",
+                "T = '" + "ghp_" + "A" * 36 + "'\n",
+                "credential_token",
+            ),
+            ("tools/x.py", "K = '" + "AKIA" + "ABCDEFGHIJKLMNOP" + "'\n", "credential_token"),
+            (
+                "docs/y.md",
+                "-----BEGIN RSA PRIVATE KEY-----\n" + "A" * 40 + "\n",
+                "private_key_body",
+            ),
+        ],
+    )
+    def test_real_private_material_in_distributable_sources_fails(self, tmp_path, name, text, rule):
+        findings = self._audit(tmp_path, {name: text})
+        assert any(f["file"] == name and f["rule"] == rule for f in findings), findings

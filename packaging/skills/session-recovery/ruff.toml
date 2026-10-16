@@ -1,3 +1,7 @@
 # The bundled script must run on Python 3.9+ (the host agent's interpreter, not rifja's 3.14).
 target-version = "py39"
 line-length = 100
+# This file makes the folder its own Ruff project, so Ruff would cache next to it, inside the
+# audited, distributable tree, with absolute host paths in the cache entries. Keep the cache in the
+# ignored, unaudited .local/ area instead (path is relative to this file).
+cache-dir = "../../../.local/ruff-cache"

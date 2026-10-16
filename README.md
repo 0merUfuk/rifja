@@ -116,6 +116,7 @@ Output files must not already exist. Exports include accepted project/global mem
 - [Semantic acceptance corpus and release gates](docs/acceptance.md)
 - [Design and privacy boundaries](docs/design.md)
 - [Project documents, identity and continuity limits](docs/project-context.md)
+- [Session-recovery skill (candidate, unreleased)](docs/session-recovery/README.md): an Agent Skills package that turns Rifja history plus live Git into a bounded, evidence-tagged continuation brief for Claude Code and Codex
 - [Release changes and upgrade boundaries](docs/releases.md)
 - [Development checks and release procedure](docs/development.md)
 - [Contributing](CONTRIBUTING.md) and [security reports](SECURITY.md)

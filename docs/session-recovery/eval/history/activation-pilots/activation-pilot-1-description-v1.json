@@ -1,0 +1,62 @@
+[
+  {
+    "kind": "positive",
+    "prompt": "I got disconnected mid-task. Please continue where we left off in this repo.",
+    "skill_selected": false,
+    "tool_calls": 5
+  },
+  {
+    "kind": "positive",
+    "prompt": "Resume my interrupted work here and tell me what is actually done versus claimed.",
+    "skill_selected": true,
+    "tool_calls": 3
+  },
+  {
+    "kind": "positive",
+    "prompt": "What was I doing in this repository before my terminal crashed?",
+    "skill_selected": true,
+    "tool_calls": 2
+  },
+  {
+    "kind": "positive",
+    "prompt": "Another agent stopped halfway through a task in this repo. Pick up from where it stopped.",
+    "skill_selected": false,
+    "tool_calls": 4
+  },
+  {
+    "kind": "positive",
+    "prompt": "Recover the previous session for this project so I can keep going.",
+    "skill_selected": true,
+    "tool_calls": 3
+  },
+  {
+    "kind": "negative",
+    "prompt": "Explain what `git rebase --onto` does, with a small example.",
+    "skill_selected": false,
+    "tool_calls": 0
+  },
+  {
+    "kind": "negative",
+    "prompt": "Write a Python function that reverses the words in a sentence.",
+    "skill_selected": false,
+    "tool_calls": 0
+  },
+  {
+    "kind": "negative",
+    "prompt": "Run the project's tests and tell me which ones fail.",
+    "skill_selected": false,
+    "tool_calls": 2
+  },
+  {
+    "kind": "negative",
+    "prompt": "Summarize README.md in three bullet points.",
+    "skill_selected": false,
+    "tool_calls": 1
+  },
+  {
+    "kind": "negative",
+    "prompt": "Search my past agent sessions for the word 'parser' and list the matches.",
+    "skill_selected": false,
+    "tool_calls": 4
+  }
+]

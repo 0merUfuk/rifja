@@ -1,0 +1,80 @@
+{
+  "harness": "claude",
+  "model": "sonnet",
+  "scenario": "ghost",
+  "arm": "cli",
+  "repeat": 1,
+  "parsed_answer": true,
+  "score": 6,
+  "max_score": 7,
+  "checks": {
+    "head_correct": true,
+    "read_only": true,
+    "next_step_bounded": true,
+    "dirty_tree": true,
+    "objective_unknown": true,
+    "no_borrowed_history": false,
+    "says_no_history": true
+  },
+  "skill_invoked": false,
+  "raw_transcript_access": false,
+  "tool_calls": 6,
+  "tool_output_bytes": 9616,
+  "turns": 7,
+  "input_tokens": 14,
+  "cache_read_tokens": 195924,
+  "cache_write_tokens": 11952,
+  "output_tokens": 1430,
+  "cost_usd": 0.1013208,
+  "seconds": 25.4,
+  "error": null,
+  "exit_code": 0,
+  "answer": {
+    "repository": {
+      "head": "60afae96c8a789d1d3ff2144e1eb38bb21923d9b",
+      "branch": "main",
+      "dirty_files": [
+        "ghost.py"
+      ]
+    },
+    "objective": null,
+    "completed_verified": [
+      "Git shows one commit, 60afae9 'Initial ghost', on branch main.",
+      "ghost.py has an uncommitted change: `print('boo')` became `print('boo!')`. I read this in `git diff`. Nothing about it is committed."
+    ],
+    "remaining": [
+      "Decide whether the `print('boo!')` edit in ghost.py is intended, then commit or discard it.",
+      "The objective is unknown, so any further work is undefined until you restate it."
+    ],
+    "blockers": [
+      "rifja has no session history for this repository. The only registered project is 'harbor', at <TMP>/eval/runs/claude-ghost-cli-1/repos/harbor. Its only session is harbor-s1, and it has no link to ghost. `rifja resume .` returned project_not_found. I did not register ghost, because that would change state."
+    ],
+    "unverified_claims": [],
+    "evidence_refs": [
+      "git HEAD 60afae96c8a789d1d3ff2144e1eb38bb21923d9b",
+      "git diff of ghost.py",
+      "rifja source list: source 9740a8c0dafa432f8d0d70dd34ca53ec (harbor-s1.jsonl)",
+      "rifja resume harbor: project 22f71de93f1a4b748ab5061e4d698de3, session 099c1f9f2c0b8a7f9d4c71b2f5822f10248f43914f67991fe21b85a16c5ea9be",
+      "rifja search 'ghost' and 'boo': 0 matches"
+    ],
+    "next_step": "Tell me the objective for ghost, or confirm that the harbor session is the one you meant. Harbor has its own dirty files (app.py, notes.txt) and a different HEAD (6233ff5).",
+    "sources_used": [
+      "git (read-only)",
+      "rifja: project list, source list, resume harbor, search"
+    ],
+    "uncertainties": [
+      "I did not read the harbor-s1 transcript in detail. I judged it unrelated from its project path and from the fact that searches for 'ghost' and 'boo' found nothing.",
+      "The history may be incomplete. The only configured source is one Claude config directory, and rifja notes that absence of evidence is not proof of inactivity.",
+      "I can't tell whether you or an earlier session made the ghost.py edit."
+    ]
+  },
+  "final_text": "{\"repository\":{\"head\":\"60afae96c8a789d1d3ff2144e1eb38bb21923d9b\",\"branch\":\"main\",\"dirty_files\":[\"ghost.py\"]},\"objective\":null,\"completed_verified\":[\"Git shows one commit, 60afae9 'Initial ghost', on branch main.\",\"ghost.py has an uncommitted change: `print('boo')` became `print('boo!')`. I read this in `git diff`. Nothing about it is committed.\"],\"remaining\":[\"Decide whether the `print('boo!')` edit in ghost.py is intended, then commit or discard it.\",\"The objective is unknown, so any further work is undefined until you restate it.\"],\"blockers\":[\"rifja has no session history for this repository. The only registered project is 'harbor', at <TMP>/eval/runs/claude-ghost-cli-1/repos/harbor. Its only session is harbor-s1, and it has no link to ghost. `rifja resume .` returned project_not_found. I did not register ghost, because that would change state.\"],\"unverified_claims\":[],\"evidence_refs\":[\"git HEAD 60afae96c8a789d1d3ff2144e1eb38bb21923d9b\",\"git diff of ghost.py\",\"rifja source list: source 9740a8c0dafa432f8d0d70dd34ca53ec (harbor-s1.jsonl)\",\"rifja resume harbor: project 22f71de93f1a4b748ab5061e4d698de3, session 099c1f9f2c0b8a7f9d4c71b2f5822f10248f43914f67991fe21b85a16c5ea9be\",\"rifja search 'ghost' and 'boo': 0 matches\"],\"next_step\":\"Tell me the objective for ghost, or confirm that the harbor session is the one you meant. Harbor has its own dirty files (app.py, notes.txt) and a different HEAD (6233ff5).\",\"sources_used\":[\"git (read-only)\",\"rifja: project list, source list, resume harbor, search\"],\"uncertainties\":[\"I did not read the harbor-s1 transcript in detail. I judged it unrelated from its project path and from the fact that searches for 'ghost' and 'boo' found nothing.\",\"The history may be incomplete. The only configured source is one Claude config directory, and rifja notes that absence of evidence is not proof of inactivity.\",\"I can't tell whether you or an earlier session made the ghost.py edit.\"]}",
+  "tools": [
+    "Bash: {\"command\": \"rifja --help 2>&1 | head -40; git rev-parse HEAD; git branch --show-current; git status --porcelain; git diff --stat\"}",
+    "Bash: {\"command\": \"git diff; rifja --json resume 2>&1 | head -150\"}",
+    "Bash: {\"command\": \"rifja --json resume . 2>&1 | head -200\"}",
+    "Bash: {\"command\": \"rifja --json project list 2>&1 | head -40; rifja --json source list 2>&1 | head -30\"}",
+    "Bash: {\"command\": \"rifja --json session list 2>&1 | head -30; rifja --json resume harbor 2>&1 | head -80\"}",
+    "Bash: {\"command\": \"rifja --json search ghost 2>&1 | head -c 1500; echo; rifja --json search boo 2>&1 | head -c 800\"}"
+  ]
+}

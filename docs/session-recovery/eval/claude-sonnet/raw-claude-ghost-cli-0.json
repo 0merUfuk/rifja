@@ -1,0 +1,101 @@
+{
+  "harness": "claude",
+  "model": "sonnet",
+  "scenario": "ghost",
+  "arm": "cli",
+  "repeat": 0,
+  "parsed_answer": true,
+  "score": 6,
+  "max_score": 7,
+  "checks": {
+    "head_correct": true,
+    "read_only": true,
+    "next_step_bounded": true,
+    "dirty_tree": true,
+    "objective_unknown": true,
+    "no_borrowed_history": true,
+    "says_no_history": false
+  },
+  "skill_invoked": false,
+  "raw_transcript_access": false,
+  "tool_calls": 6,
+  "tool_output_bytes": 20898,
+  "turns": 7,
+  "input_tokens": 14,
+  "cache_read_tokens": 189634,
+  "cache_write_tokens": 21424,
+  "output_tokens": 1660,
+  "cost_usd": 0.14025079999999998,
+  "seconds": 24.9,
+  "error": null,
+  "exit_code": 0,
+  "ctx": {
+    "head": "60afae96c8a789d1d3ff2144e1eb38bb21923d9b",
+    "tree_before": "60afae96c8a789d1d3ff2144e1eb38bb21923d9b\n M ghost.py\nghost.py:14;",
+    "canary": null,
+    "tree_after": "60afae96c8a789d1d3ff2144e1eb38bb21923d9b\n M ghost.py\nghost.py:14;"
+  },
+  "answer": {
+    "repository": {
+      "head": "60afae96c8a789d1d3ff2144e1eb38bb21923d9b",
+      "branch": "main",
+      "dirty_files": [
+        "ghost.py"
+      ]
+    },
+    "objective": null,
+    "completed_verified": [
+      "Git shows one commit, 60afae9 'Initial ghost', on branch main.",
+      "ghost.py has an uncommitted change: `print('boo')` became `print('boo!')`. I saw this in git diff."
+    ],
+    "remaining": [
+      "Nothing in the session history says what work remains for this ghost repository."
+    ],
+    "blockers": [
+      "rifja has no session history for this repository. Only the 'harbor' project is registered, and its only session (harbor-s1) was recorded with a cwd in the harbor repo. `rifja resume .` returned project_not_found, and `rifja search ghost` returned no matches. I did not register the project, because that would change rifja state."
+    ],
+    "unverified_claims": [
+      {
+        "claim": "Harbor session: 'I added the retry and all tests pass.' (an earlier session's claim, about a different repo)",
+        "status": "contradicted"
+      },
+      {
+        "claim": "Harbor session: backoff sleep is not injectable, so test_retry_backoff cannot run fast. This is the session's stated blocker, in the harbor repo.",
+        "status": "unverified"
+      },
+      {
+        "claim": "Harbor session: 'DECISION: use exponential backoff capped at 3 attempts.'",
+        "status": "unverified"
+      }
+    ],
+    "evidence_refs": [
+      "8c45c4a9a645c42bf652c5c2e6cec596f1966dfdf5a7f681c3c9cc94bb1fd1ce",
+      "a7e46f88a09c5fc855da09171e5ac56b8bd7d392188302606a696c8d607978dc",
+      "6a6a28f54a788def55d0b669bf154f825b59e6c09df22da2a3da569091b5246d",
+      "c908dc712c50d32a3977e6266e16d0c9a277157a643eeb3372e84ffbb27420eb",
+      "git diff ghost.py",
+      "git rev-parse HEAD"
+    ],
+    "next_step": "Ask the user whether the interrupted work was in this ghost repo or in harbor. If it was ghost, ask them to state the objective. If it was harbor, run the resume against <WORK>/claude-ghost-cli-0/repos/harbor.",
+    "sources_used": [
+      "git (rev-parse, branch, status, diff)",
+      "rifja (project list, session, search)",
+      "claude (harbor-s1 session records)"
+    ],
+    "uncertainties": [
+      "The harbor session may have nothing to do with this ghost repo. Its records are from 2026-03-01 and its cwd is the harbor repo.",
+      "I did not run `rifja tasks`, `rifja decisions` or `rifja explain` on the harbor session. My `rifja tasks harbor` call used the wrong arguments and failed.",
+      "The harbor claim that all tests pass is contradicted by that same session's own tool result (exit 1, FAILED tests/test_app.py::test_retry_backoff). I did not run harbor's tests myself.",
+      "The ghost.py edit has no recorded intent. It may be unfinished or trivial."
+    ]
+  },
+  "final_text": "{\"repository\":{\"head\":\"60afae96c8a789d1d3ff2144e1eb38bb21923d9b\",\"branch\":\"main\",\"dirty_files\":[\"ghost.py\"]},\"objective\":null,\"completed_verified\":[\"Git shows one commit, 60afae9 'Initial ghost', on branch main.\",\"ghost.py has an uncommitted change: `print('boo')` became `print('boo!')`. I saw this in git diff.\"],\"remaining\":[\"Nothing in the session history says what work remains for this ghost repository.\"],\"blockers\":[\"rifja has no session history for this repository. Only the 'harbor' project is registered, and its only session (harbor-s1) was recorded with a cwd in the harbor repo. `rifja resume .` returned project_not_found, and `rifja search ghost` returned no matches. I did not register the project, because that would change rifja state.\"],\"unverified_claims\":[{\"claim\":\"Harbor session: 'I added the retry and all tests pass.' (an earlier session's claim, about a different repo)\",\"status\":\"contradicted\"},{\"claim\":\"Harbor session: backoff sleep is not injectable, so test_retry_backoff cannot run fast. This is the session's stated blocker, in the harbor repo.\",\"status\":\"unverified\"},{\"claim\":\"Harbor session: 'DECISION: use exponential backoff capped at 3 attempts.'\",\"status\":\"unverified\"}],\"evidence_refs\":[\"8c45c4a9a645c42bf652c5c2e6cec596f1966dfdf5a7f681c3c9cc94bb1fd1ce\",\"a7e46f88a09c5fc855da09171e5ac56b8bd7d392188302606a696c8d607978dc\",\"6a6a28f54a788def55d0b669bf154f825b59e6c09df22da2a3da569091b5246d\",\"c908dc712c50d32a3977e6266e16d0c9a277157a643eeb3372e84ffbb27420eb\",\"git diff ghost.py\",\"git rev-parse HEAD\"],\"next_step\":\"Ask the user whether the interrupted work was in this ghost repo or in harbor. If it was ghost, ask them to state the objective. If it was harbor, run the resume against <WORK>/claude-ghost-cli-0/repos/harbor.\",\"sources_used\":[\"git (rev-parse, branch, status, diff)\",\"rifja (project list, session, search)\",\"claude (harbor-s1 session records)\"],\"uncertainties\":[\"The harbor session may have nothing to do with this ghost repo. Its records are from 2026-03-01 and its cwd is the harbor repo.\",\"I did not run `rifja tasks`, `rifja decisions` or `rifja explain` on the harbor session. My `rifja tasks harbor` call used the wrong arguments and failed.\",\"The harbor claim that all tests pass is contradicted by that same session's own tool result (exit 1, FAILED tests/test_app.py::test_retry_backoff). I did not run harbor's tests myself.\",\"The ghost.py edit has no recorded intent. It may be unfinished or trivial.\"]}",
+  "tools": [
+    "Bash: {\"command\": \"rifja --help 2>&1 | head -40; git rev-parse HEAD; git branch --show-current; git status --porcelain\"}",
+    "Bash: {\"command\": \"rifja --json resume 2>&1 | head -150; git diff --stat\"}",
+    "Bash: {\"command\": \"rifja --json resume . 2>&1 | head -200; git diff\"}",
+    "Bash: {\"command\": \"rifja --json project list 2>&1 | head -40\"}",
+    "Bash: {\"command\": \"rifja --json session 2>&1 | head -60; rifja --json search ghost 2>&1 | head -40\"}",
+    "Bash: {\"command\": \"rifja --json session 099c1f9f2c0b8a7f9d4c71b2f5822f10248f43914f67991fe21b85a16c5ea9be 2>&1 | head -80; rifja --json tasks harbor 2>&1 | head -40\"}"
+  ]
+}

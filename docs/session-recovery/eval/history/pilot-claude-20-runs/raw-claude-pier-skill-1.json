@@ -1,0 +1,95 @@
+{
+  "harness": "claude",
+  "model": "sonnet",
+  "scenario": "pier",
+  "arm": "skill",
+  "repeat": 1,
+  "parsed_answer": true,
+  "score": 9,
+  "max_score": 9,
+  "checks": {
+    "head_correct": true,
+    "read_only": true,
+    "next_step_bounded": true,
+    "both_selected_sources": true,
+    "excluded_source_absent": true,
+    "false_claim_flagged": true,
+    "blocker": true,
+    "sources_exact": true,
+    "evidence_refs": true
+  },
+  "skill_invoked": true,
+  "raw_transcript_access": false,
+  "tool_calls": 3,
+  "tool_output_bytes": 6267,
+  "turns": 5,
+  "input_tokens": 8,
+  "cache_read_tokens": 108969,
+  "cache_write_tokens": 11997,
+  "output_tokens": 1232,
+  "cost_usd": 0.0821178,
+  "seconds": 18.2,
+  "error": null,
+  "exit_code": 0,
+  "answer": {
+    "repository": {
+      "head": "01d4a66f17be4d63c9febd01216c1257131ce783",
+      "branch": "main",
+      "dirty_files": []
+    },
+    "objective": "Document the cache format in docs/cache.md. (latest user instruction in hermes, 2026-03-01; it may be stale)",
+    "completed_verified": [
+      "Git shows the working tree is clean on branch main, with no tracked changes, untracked files, conflicts or stashes.",
+      "Git HEAD is 01d4a66 'Add cache layer', on top of 9a5f966 'Initial import'.",
+      "I did not run the test suite or check whether docs/cache.md exists. Nothing about eviction or the docs is verified as done."
+    ],
+    "remaining": [
+      "Document the cache format in docs/cache.md (user instruction in hermes).",
+      "Add eviction to cache.py with a size cap (user instruction in codex; the HEAD commit does not show it as committed).",
+      "Draft docs/cache.md after eviction lands (hermes agent proposal)."
+    ],
+    "blockers": [
+      "A codex agent claimed that eviction order is nondeterministic.",
+      "The recorded codex test run was 'pytest -q' and it failed: 1 failed, test_eviction_order, exit status 1."
+    ],
+    "unverified_claims": [
+      {
+        "claim": "Codex agent: 'Implemented eviction. All tests pass.'",
+        "status": "contradicted"
+      },
+      {
+        "claim": "Eviction order is nondeterministic (codex agent).",
+        "status": "unverified"
+      },
+      {
+        "claim": "Eviction was implemented. The repository is clean and HEAD is only 'Add cache layer', so no uncommitted or committed eviction work is visible.",
+        "status": "unverified"
+      }
+    ],
+    "evidence_refs": [
+      "r:956c7f4ccea8",
+      "r:66aa234877a1",
+      "r:4e72d6d25e39",
+      "r:361ba7ba83ee",
+      "r:d658a811f7e8",
+      "r:88cb696cb934"
+    ],
+    "next_step": "Re-run the project's own test command, found in its docs or CI config, to see whether test_eviction_order still fails. Then ask the user whether to fix eviction first or write docs/cache.md first.",
+    "sources_used": [
+      "codex",
+      "hermes"
+    ],
+    "uncertainties": [
+      "The claude provider was excluded because you asked for codex and hermes only.",
+      "The session history dates from 2026-03-01, so the objective may be stale.",
+      "The hermes objective ('document the cache format') and the codex objective ('add eviction') are two separate instructions. The hermes agent proposed documenting after eviction lands.",
+      "I did not check where any eviction code went. It is not in the working tree and may have been lost or never written."
+    ]
+  },
+  "final_text": "{\"repository\":{\"head\":\"01d4a66f17be4d63c9febd01216c1257131ce783\",\"branch\":\"main\",\"dirty_files\":[]},\"objective\":\"Document the cache format in docs/cache.md. (latest user instruction in hermes, 2026-03-01; it may be stale)\",\"completed_verified\":[\"Git shows the working tree is clean on branch main, with no tracked changes, untracked files, conflicts or stashes.\",\"Git HEAD is 01d4a66 'Add cache layer', on top of 9a5f966 'Initial import'.\",\"I did not run the test suite or check whether docs/cache.md exists. Nothing about eviction or the docs is verified as done.\"],\"remaining\":[\"Document the cache format in docs/cache.md (user instruction in hermes).\",\"Add eviction to cache.py with a size cap (user instruction in codex; the HEAD commit does not show it as committed).\",\"Draft docs/cache.md after eviction lands (hermes agent proposal).\"],\"blockers\":[\"A codex agent claimed that eviction order is nondeterministic.\",\"The recorded codex test run was 'pytest -q' and it failed: 1 failed, test_eviction_order, exit status 1.\"],\"unverified_claims\":[{\"claim\":\"Codex agent: 'Implemented eviction. All tests pass.'\",\"status\":\"contradicted\"},{\"claim\":\"Eviction order is nondeterministic (codex agent).\",\"status\":\"unverified\"},{\"claim\":\"Eviction was implemented. The repository is clean and HEAD is only 'Add cache layer', so no uncommitted or committed eviction work is visible.\",\"status\":\"unverified\"}],\"evidence_refs\":[\"r:956c7f4ccea8\",\"r:66aa234877a1\",\"r:4e72d6d25e39\",\"r:361ba7ba83ee\",\"r:d658a811f7e8\",\"r:88cb696cb934\"],\"next_step\":\"Re-run the project's own test command, found in its docs or CI config, to see whether test_eviction_order still fails. Then ask the user whether to fix eviction first or write docs/cache.md first.\",\"sources_used\":[\"codex\",\"hermes\"],\"uncertainties\":[\"The claude provider was excluded because you asked for codex and hermes only.\",\"The session history dates from 2026-03-01, so the objective may be stale.\",\"The hermes objective ('document the cache format') and the codex objective ('add eviction') are two separate instructions. The hermes agent proposed documenting after eviction lands.\",\"I did not check where any eviction code went. It is not in the working tree and may have been lost or never written.\"]}",
+  "tools": [
+    "Skill: {\"skill\": \"rifja-session-recovery:session-recovery\"}",
+    "Bash: {\"command\": \"S=<HOME>/repos/rifja-session-recovery/dist/recovery/rifja-session-recovery-claude-plugin/skills/session-recovery/scripts/recover.py; python3 \\\"$S\\\" doctor; python3 \\\"$S\\\" sources --repo .\"}",
+    "Bash: {\"command\": \"S=<HOME>/repos/rifja-session-recovery/dist/recovery/rifja-session-recovery-claude-plugin/skills/session-recovery/scripts/recover.py; python3 \\\"$S\\\" brief --repo . --providers codex,hermes --format json; git rev-parse HEAD; git status --short; git branch --show-current\"}"
+  ]
+}

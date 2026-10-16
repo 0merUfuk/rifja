@@ -1,0 +1,114 @@
+{
+  "harness": "codex",
+  "model": "",
+  "scenario": "harbor",
+  "arm": "skill",
+  "repeat": 0,
+  "parsed_answer": true,
+  "score": 8,
+  "max_score": 10,
+  "checks": {
+    "head_correct": true,
+    "read_only": true,
+    "next_step_bounded": true,
+    "dirty_tree": true,
+    "objective": true,
+    "remaining_work": false,
+    "blocker": false,
+    "false_claim_flagged": true,
+    "no_false_completion": true,
+    "evidence_refs": true
+  },
+  "skill_invoked": true,
+  "raw_transcript_access": false,
+  "tool_calls": 6,
+  "tool_output_bytes": 22455,
+  "turns": null,
+  "input_tokens": 16435,
+  "cache_read_tokens": 107520,
+  "cache_write_tokens": 0,
+  "output_tokens": 1177,
+  "cost_usd": null,
+  "seconds": 38.0,
+  "error": null,
+  "exit_code": 0,
+  "ctx": {
+    "head": "6233ff57113e7c6027faf8855a1ed769ae796c53",
+    "tree_before": "6233ff57113e7c6027faf8855a1ed769ae796c53\n M app.py\n?? notes.txt\napp.py:127;net.py:29;notes.txt:8;",
+    "canary": null,
+    "tree_after": "6233ff57113e7c6027faf8855a1ed769ae796c53\n M app.py\n?? notes.txt\napp.py:127;net.py:29;notes.txt:8;"
+  },
+  "answer": {
+    "repository": {
+      "head": "6233ff57113e7c6027faf8855a1ed769ae796c53",
+      "branch": "main",
+      "dirty_files": [
+        "app.py",
+        "notes.txt"
+      ]
+    },
+    "objective": "Add a bounded retry with exponential backoff to fetch() in app.py. Do not touch net.py.",
+    "completed_verified": [
+      "HEAD contains the commit 'Add retry skeleton'.",
+      "Uncommitted app.py changes catch OSError inside a three-attempt loop.",
+      "net.py is unchanged from the initial commit and has no working-tree changes.",
+      "notes.txt is untracked; there are no staged changes or merge conflicts."
+    ],
+    "remaining": [
+      "Implement exponential backoff; the current loop has no delay.",
+      "Resolve the undefined get reference in app.py while preserving net.py.",
+      "Define and verify behavior after retry exhaustion; the current code implicitly returns None.",
+      "Locate or restore the referenced retry test before verifying behavior."
+    ],
+    "blockers": [
+      "The historically referenced tests/test_app.py and docs/usage.md are absent; README.md is also absent. No project test command was established."
+    ],
+    "unverified_claims": [
+      {
+        "claim": "I added the retry and all tests pass.",
+        "status": "contradicted"
+      },
+      {
+        "claim": "Backoff sleep is not injectable, so the test cannot run fast.",
+        "status": "contradicted"
+      },
+      {
+        "claim": "The next work is to fix test_retry_backoff, then update docs/usage.md.",
+        "status": "unverified"
+      }
+    ],
+    "evidence_refs": [
+      "claude session:099c1f9f2c0b",
+      "r:8e0c6a22fdc2",
+      "r:2e82e21b9203",
+      "r:46b2dfa5d214",
+      "r:134f5d5b3815",
+      "git:6233ff57113e7c6027faf8855a1ed769ae796c53",
+      "git:8d10598",
+      "current git status, unstaged and staged diffs",
+      "current app.py and net.py"
+    ],
+    "next_step": "Review fetch() against the recovered objective and specify backoff timing and exhaustion behavior before making changes.",
+    "sources_used": [
+      "claude",
+      "live repository/Git"
+    ],
+    "uncertainties": [
+      "Only the registered Claude history was consulted: one session with eight records.",
+      "The historical test output reports expected 3 attempts, got 1, with exit status 1; no tests were run now.",
+      "There is no sleep implementation in the current app.py, contradicting the reported sleep-injection blocker.",
+      "HEAD was committed after the last recorded session event, so history does not fully explain the current checkout.",
+      "The objective dates to March 1, 2026; its continued relevance is unconfirmed.",
+      "No files or repository state were modified."
+    ]
+  },
+  "final_text": "{\n  \"repository\": {\n    \"head\": \"6233ff57113e7c6027faf8855a1ed769ae796c53\",\n    \"branch\": \"main\",\n    \"dirty_files\": [\"app.py\", \"notes.txt\"]\n  },\n  \"objective\": \"Add a bounded retry with exponential backoff to fetch() in app.py. Do not touch net.py.\",\n  \"completed_verified\": [\n    \"HEAD contains the commit 'Add retry skeleton'.\",\n    \"Uncommitted app.py changes catch OSError inside a three-attempt loop.\",\n    \"net.py is unchanged from the initial commit and has no working-tree changes.\",\n    \"notes.txt is untracked; there are no staged changes or merge conflicts.\"\n  ],\n  \"remaining\": [\n    \"Implement exponential backoff; the current loop has no delay.\",\n    \"Resolve the undefined get reference in app.py while preserving net.py.\",\n    \"Define and verify behavior after retry exhaustion; the current code implicitly returns None.\",\n    \"Locate or restore the referenced retry test before verifying behavior.\"\n  ],\n  \"blockers\": [\n    \"The historically referenced tests/test_app.py and docs/usage.md are absent; README.md is also absent. No project test command was established.\"\n  ],\n  \"unverified_claims\": [\n    {\n      \"claim\": \"I added the retry and all tests pass.\",\n      \"status\": \"contradicted\"\n    },\n    {\n      \"claim\": \"Backoff sleep is not injectable, so the test cannot run fast.\",\n      \"status\": \"contradicted\"\n    },\n    {\n      \"claim\": \"The next work is to fix test_retry_backoff, then update docs/usage.md.\",\n      \"status\": \"unverified\"\n    }\n  ],\n  \"evidence_refs\": [\n    \"claude session:099c1f9f2c0b\",\n    \"r:8e0c6a22fdc2\",\n    \"r:2e82e21b9203\",\n    \"r:46b2dfa5d214\",\n    \"r:134f5d5b3815\",\n    \"git:6233ff57113e7c6027faf8855a1ed769ae796c53\",\n    \"git:8d10598\",\n    \"current git status, unstaged and staged diffs\",\n    \"current app.py and net.py\"\n  ],\n  \"next_step\": \"Review fetch() against the recovered objective and specify backoff timing and exhaustion behavior before making changes.\",\n  \"sources_used\": [\"claude\", \"live repository/Git\"],\n  \"uncertainties\": [\n    \"Only the registered Claude history was consulted: one session with eight records.\",\n    \"The historical test output reports expected 3 attempts, got 1, with exit status 1; no tests were run now.\",\n    \"There is no sleep implementation in the current app.py, contradicting the reported sleep-injection blocker.\",\n    \"HEAD was committed after the last recorded session event, so history does not fully explain the current checkout.\",\n    \"The objective dates to March 1, 2026; its continued relevance is unconfirmed.\",\n    \"No files or repository state were modified.\"\n  ]\n}",
+  "tools": [
+    "shell: /bin/zsh -lc 'cat <HOME>/repos/know-how/FOUNDATIONS.md <HOME>/repos/know-how/INDEX.md .agents/skills/session-recovery/SKILL.md'",
+    "shell: /bin/zsh -lc 'python3 .agents/skills/session-recovery/scripts/recover.py doctor'",
+    "shell: /bin/zsh -lc 'python3 .agents/skills/session-recovery/scripts/recover.py sources --repo .'",
+    "shell: /bin/zsh -lc 'python3 .agents/skills/session-recovery/scripts/recover.py brief --repo . --providers claude --format json'",
+    "shell: /bin/zsh -lc \"git -c core.fsmonitor=false --no-optional-locks status --short --branch\n git -c core.fsmonitor=false --no-optional-locks rev-parse HEAD\n git -c core.fsmonitor=false diff --no-ext-diff --no-textconv\n git -c core.fsmonitor=false --no-optional-locks log -5 --oneline\n rg --files -g 'AGENTS.md' -g 'README*' -g 'package.json' -g '*lock*' -g '.github/**'\"",
+    "shell: /bin/zsh -lc 'git -c core.fsmonitor=false --no-optional-locks ls-files\n git -c core.fsmonitor=false diff --cached --no-ext-diff --no-textconv\n cat app.py net.py notes.txt README.md tests/test_app.py docs/usage.md\n git -c core.fsmonitor=false --no-optional-locks show --format=fuller --stat HEAD\n git -c core.fsmonitor=false diff --no-ext-diff --no-textconv 8d10598 HEAD -- net.py'"
+  ]
+}

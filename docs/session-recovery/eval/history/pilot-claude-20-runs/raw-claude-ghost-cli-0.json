@@ -1,0 +1,101 @@
+{
+  "harness": "claude",
+  "model": "sonnet",
+  "scenario": "ghost",
+  "arm": "cli",
+  "repeat": 0,
+  "parsed_answer": true,
+  "score": 6,
+  "max_score": 7,
+  "checks": {
+    "head_correct": true,
+    "read_only": true,
+    "next_step_bounded": true,
+    "dirty_tree": true,
+    "objective_unknown": true,
+    "no_borrowed_history": false,
+    "says_no_history": true
+  },
+  "skill_invoked": false,
+  "raw_transcript_access": false,
+  "tool_calls": 6,
+  "tool_output_bytes": 20424,
+  "turns": 7,
+  "input_tokens": 14,
+  "cache_read_tokens": 197837,
+  "cache_write_tokens": 17074,
+  "output_tokens": 2409,
+  "cost_usd": 0.1319814,
+  "seconds": 34.6,
+  "error": null,
+  "exit_code": 0,
+  "answer": {
+    "repository": {
+      "head": "60afae96c8a789d1d3ff2144e1eb38bb21923d9b",
+      "branch": "main",
+      "dirty_files": [
+        "ghost.py"
+      ]
+    },
+    "objective": null,
+    "completed_verified": [
+      "Current repo is ghost: HEAD 60afae96c8a789d1d3ff2144e1eb38bb21923d9b on main, one commit ('Initial ghost').",
+      "Git shows an uncommitted change to ghost.py: print('boo') became print('boo!').",
+      "The only session history rifja has covers a different repo, harbor. In harbor, HEAD is 6233ff57 on main, with app.py modified and notes.txt untracked. The app.py diff wraps get(url) in try/except OSError with pass. It has no sleep or backoff, and the loop never re-raises after the last attempt."
+    ],
+    "remaining": [
+      "Nothing is recorded for ghost, so its remaining work is unknown.",
+      "For harbor (recorded session only): add exponential backoff to fetch() in app.py, fix test_retry_backoff, and update docs/usage.md."
+    ],
+    "blockers": [
+      "No session history exists for the ghost repo. rifja has only the 'harbor' project registered, so I can't tie the ghost.py edit to any recorded objective.",
+      "Harbor blocker (agent-claimed, unverified): the backoff sleep isn't injectable, so the test can't run fast."
+    ],
+    "unverified_claims": [
+      {
+        "claim": "Harbor session: 'I added the retry and all tests pass.'",
+        "status": "contradicted"
+      },
+      {
+        "claim": "Harbor session: backoff sleep is not injectable, so the test can't run fast.",
+        "status": "unverified"
+      },
+      {
+        "claim": "Harbor session decision: use exponential backoff capped at 3 attempts.",
+        "status": "unverified"
+      },
+      {
+        "claim": "Harbor session: 'File edited' (app.py).",
+        "status": "supported"
+      }
+    ],
+    "evidence_refs": [
+      "6ed93e424002fbd49decf82c1d7bd095d16b71409c127669ecf0b73aa6ce3ddb (harbor user objective)",
+      "f471a0a68992a8ca3d45fd1c443c19e05eaa868129c5470d7de78b947b5321cf (harbor agent claim, NEXT and BLOCKER)",
+      "e4dadc62d41a95839dc8e1ce43ca6e4e6f41ebfadbbbee2af78b72de9fbb8c86 (recorded failing test_retry_backoff: expected 3 attempts, got 1)",
+      "10e7bde8577dd54653c09c7313fc46e9984b84f4e2a19f723d9ec9f719cc035e (recorded 'File edited.')",
+      "session 099c1f9f2c0b8a7f9d4c71b2f5822f10248f43914f67991fe21b85a16c5ea9be (harbor-s1)",
+      "project 707c17ca3cf14bf19a90be465cdece28 (harbor)"
+    ],
+    "next_step": "Confirm whether the interrupted work was in ghost or harbor. If it was harbor, add bounded exponential backoff with an injectable sleep to fetch() in app.py without touching net.py, then run the tests. If it was ghost, decide whether to keep or revert the print('boo!') change.",
+    "sources_used": [
+      "claude (via rifja)",
+      "git (read-only)"
+    ],
+    "uncertainties": [
+      "The session history is for harbor, not the repo you're in, so I set the objective to null. The harbor objective was: add a bounded retry with exponential backoff to fetch() in app.py, and do not touch net.py.",
+      "I did not run any tests, so the 'all tests pass' claim is contradicted only by a recorded failing result. That result has no revision identity and is historical.",
+      "The harbor session ended on 2026-03-01, so its transcript may be stale compared with the current working tree.",
+      "Rifja's coverage covers only the configured sources, and the absence of ghost history doesn't prove ghost had no sessions."
+    ]
+  },
+  "final_text": "```json\n{\"repository\":{\"head\":\"60afae96c8a789d1d3ff2144e1eb38bb21923d9b\",\"branch\":\"main\",\"dirty_files\":[\"ghost.py\"]},\"objective\":null,\"completed_verified\":[\"Current repo is ghost: HEAD 60afae96c8a789d1d3ff2144e1eb38bb21923d9b on main, one commit ('Initial ghost').\",\"Git shows an uncommitted change to ghost.py: print('boo') became print('boo!').\",\"The only session history rifja has covers a different repo, harbor. In harbor, HEAD is 6233ff57 on main, with app.py modified and notes.txt untracked. The app.py diff wraps get(url) in try/except OSError with pass. It has no sleep or backoff, and the loop never re-raises after the last attempt.\"],\"remaining\":[\"Nothing is recorded for ghost, so its remaining work is unknown.\",\"For harbor (recorded session only): add exponential backoff to fetch() in app.py, fix test_retry_backoff, and update docs/usage.md.\"],\"blockers\":[\"No session history exists for the ghost repo. rifja has only the 'harbor' project registered, so I can't tie the ghost.py edit to any recorded objective.\",\"Harbor blocker (agent-claimed, unverified): the backoff sleep isn't injectable, so the test can't run fast.\"],\"unverified_claims\":[{\"claim\":\"Harbor session: 'I added the retry and all tests pass.'\",\"status\":\"contradicted\"},{\"claim\":\"Harbor session: backoff sleep is not injectable, so the test can't run fast.\",\"status\":\"unverified\"},{\"claim\":\"Harbor session decision: use exponential backoff capped at 3 attempts.\",\"status\":\"unverified\"},{\"claim\":\"Harbor session: 'File edited' (app.py).\",\"status\":\"supported\"}],\"evidence_refs\":[\"6ed93e424002fbd49decf82c1d7bd095d16b71409c127669ecf0b73aa6ce3ddb (harbor user objective)\",\"f471a0a68992a8ca3d45fd1c443c19e05eaa868129c5470d7de78b947b5321cf (harbor agent claim, NEXT and BLOCKER)\",\"e4dadc62d41a95839dc8e1ce43ca6e4e6f41ebfadbbbee2af78b72de9fbb8c86 (recorded failing test_retry_backoff: expected 3 attempts, got 1)\",\"10e7bde8577dd54653c09c7313fc46e9984b84f4e2a19f723d9ec9f719cc035e (recorded 'File edited.')\",\"session 099c1f9f2c0b8a7f9d4c71b2f5822f10248f43914f67991fe21b85a16c5ea9be (harbor-s1)\",\"project 707c17ca3cf14bf19a90be465cdece28 (harbor)\"],\"next_step\":\"Confirm whether the interrupted work was in ghost or harbor. If it was harbor, add bounded exponential backoff with an injectable sleep to fetch() in app.py without touching net.py, then run the tests. If it was ghost, decide whether to keep or revert the print('boo!') change.\",\"sources_used\":[\"claude (via rifja)\",\"git (read-only)\"],\"uncertainties\":[\"The session history is for harbor, not the repo you're in, so I set the objective to null. The harbor objective was: add a bounded retry with exponential backoff to fetch() in app.py, and do not touch net.py.\",\"I did not run any tests, so the 'all tests pass' claim is contradicted only by a recorded failing result. That result has no revision identity and is historical.\",\"The harbor session ended on 2026-03-01, so its transcript may be stale compared with the current working tree.\",\"Rifja's coverage covers only the configured sources, and the absence of ghost history doesn't prove ghost had no sessions.\"]}\n```",
+  "tools": [
+    "Bash: {\"command\": \"rifja --help 2>&1 | head -40; git rev-parse HEAD; git branch --show-current; git status --porcelain; git diff --stat\"}",
+    "Bash: {\"command\": \"git diff; rifja --json resume 2>&1 | head -150\"}",
+    "Bash: {\"command\": \"rifja --json resume . 2>&1 | head -200\"}",
+    "Bash: {\"command\": \"rifja --json project list 2>&1 | head -30; rifja --json source list 2>&1 | head -30\"}",
+    "Bash: {\"command\": \"rifja --json resume harbor 2>&1 | head -c 6000; echo; rifja --json session list 2>&1 | head -c 1500; ls <TMP>/eval/runs/claude-ghost-cli-0/repos/\"}",
+    "Bash: {\"command\": \"cd <TMP>/eval/runs/claude-ghost-cli-0/repos/harbor; git rev-parse HEAD; git branch --show-current; git status --porcelain; git diff; cat notes.txt; rifja --json resume harbor 2>&1 | python3 -c \\\"\\nimport json,sys\\nd=json.load(sys.stdin)['data']\\nfor k in d:\\n  if k not in('worktrees','coverage','project','sessions'):\\n    if k!='items': print(k,json.dumps(d[k])[:600])\\nfor i in d['items']['items']:\\n  print(i['kind'],i['status'],i['category'],i['id'][:12],i['record_id'][:12],i['text'],i.get('resolution_refs'))\\n\\\"\"}"
+  ]
+}

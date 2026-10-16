@@ -57,6 +57,14 @@ do not take the writer lock — and any per-request failure is returned as an
 MCP `isError` result with a stable code (`busy`, or a CLI contract label) and
 retry guidance. The server never exits on contention or malformed input.
 
+## Session-recovery skill (candidate)
+
+`packaging/skills/session-recovery/` is an Agent Skills package (plus Claude Code and Codex plugin
+wrappers built by `tools/recovery_bundle.py`) that drives the CLI for you: explicit provider
+selection, a live Git observation, a sanitized and size-bounded brief, and honest failure modes. It
+adds no MCP tools and no hooks. It is unreleased and unlisted; see
+[docs/session-recovery](session-recovery/README.md).
+
 ## `rifja agent` — one-command wiring
 
 ```sh

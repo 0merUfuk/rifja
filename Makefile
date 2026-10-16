@@ -1,8 +1,8 @@
 .PHONY: check dist install
 
 check:
-	uv run ruff check src tests tools
-	uv run ruff format --check src tests tools
+	uv run ruff check src tests tools packaging/skills/session-recovery
+	uv run ruff format --check src tests tools packaging/skills/session-recovery
 	uv run mypy
 	uv run pytest -q
 

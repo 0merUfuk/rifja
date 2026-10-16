@@ -1,0 +1,83 @@
+{
+  "harness": "claude",
+  "model": "sonnet",
+  "scenario": "ghost",
+  "arm": "skill",
+  "repeat": 1,
+  "parsed_answer": true,
+  "score": 7,
+  "max_score": 7,
+  "checks": {
+    "head_correct": true,
+    "read_only": true,
+    "next_step_bounded": true,
+    "dirty_tree": true,
+    "objective_unknown": true,
+    "no_borrowed_history": true,
+    "says_no_history": true
+  },
+  "skill_invoked": true,
+  "raw_transcript_access": false,
+  "tool_calls": 4,
+  "tool_output_bytes": 1305,
+  "turns": 6,
+  "input_tokens": 10,
+  "cache_read_tokens": 140480,
+  "cache_write_tokens": 10643,
+  "output_tokens": 1384,
+  "cost_usd": 0.084528,
+  "seconds": 20.2,
+  "error": null,
+  "exit_code": 0,
+  "ctx": {
+    "head": "60afae96c8a789d1d3ff2144e1eb38bb21923d9b",
+    "tree_before": "60afae96c8a789d1d3ff2144e1eb38bb21923d9b\n M ghost.py\nghost.py:14;",
+    "canary": null,
+    "tree_after": "60afae96c8a789d1d3ff2144e1eb38bb21923d9b\n M ghost.py\nghost.py:14;"
+  },
+  "answer": {
+    "repository": {
+      "head": "60afae96c8a789d1d3ff2144e1eb38bb21923d9b",
+      "branch": "main",
+      "dirty_files": [
+        "ghost.py"
+      ]
+    },
+    "objective": null,
+    "completed_verified": [
+      "Git (read-only, checked just now): HEAD is 60afae96c8a789d1d3ff2144e1eb38bb21923d9b on branch main. It is the only commit, 'Initial ghost'.",
+      "Git: ghost.py has uncommitted modifications. I did not inspect the diff, so I don't know what the changes are."
+    ],
+    "remaining": [
+      "Unknown. The session history could not be read, so I can't say what was left to do."
+    ],
+    "blockers": [
+      "The recovery brief failed with project_not_registered. This repository is not a registered Rifja project; the only registered project is 'harbor'. The Claude source is registered at <WORK>/claude-ghost-skill-1/claude-config. An operator step is needed, which I did not run: `rifja project add <repo> --name <name>`. Alternatively, pass --project <name> if an existing project is the right one."
+    ],
+    "unverified_claims": [],
+    "evidence_refs": [
+      "recover.py doctor: ok, rifja 0.4.2",
+      "recover.py sources: provider claude registered, projects [harbor], repository_project null",
+      "recover.py brief --providers claude: failed, code project_not_registered",
+      "git rev-parse HEAD, git status --porcelain, git branch --show-current"
+    ],
+    "next_step": "Ask the user to approve registering the repo (`rifja project add <repo> --name ghost`) or to name an existing project. Then rerun the brief with --providers claude, and run `git -c core.fsmonitor=false diff --no-ext-diff --no-textconv` to see what changed in ghost.py.",
+    "sources_used": [
+      "claude (selected from your instruction; the brief failed, so no session history was read)",
+      "git (live checkout)"
+    ],
+    "uncertainties": [
+      "The last user-stated objective is unknown because no session history was retrieved.",
+      "I can't say whether the ghost.py edits are finished or what they were meant to do.",
+      "No earlier-session claims were available to check.",
+      "I did not run any tests."
+    ]
+  },
+  "final_text": "{\"repository\":{\"head\":\"60afae96c8a789d1d3ff2144e1eb38bb21923d9b\",\"branch\":\"main\",\"dirty_files\":[\"ghost.py\"]},\"objective\":null,\"completed_verified\":[\"Git (read-only, checked just now): HEAD is 60afae96c8a789d1d3ff2144e1eb38bb21923d9b on branch main. It is the only commit, 'Initial ghost'.\",\"Git: ghost.py has uncommitted modifications. I did not inspect the diff, so I don't know what the changes are.\"],\"remaining\":[\"Unknown. The session history could not be read, so I can't say what was left to do.\"],\"blockers\":[\"The recovery brief failed with project_not_registered. This repository is not a registered Rifja project; the only registered project is 'harbor'. The Claude source is registered at <WORK>/claude-ghost-skill-1/claude-config. An operator step is needed, which I did not run: `rifja project add <repo> --name <name>`. Alternatively, pass --project <name> if an existing project is the right one.\"],\"unverified_claims\":[],\"evidence_refs\":[\"recover.py doctor: ok, rifja 0.4.2\",\"recover.py sources: provider claude registered, projects [harbor], repository_project null\",\"recover.py brief --providers claude: failed, code project_not_registered\",\"git rev-parse HEAD, git status --porcelain, git branch --show-current\"],\"next_step\":\"Ask the user to approve registering the repo (`rifja project add <repo> --name ghost`) or to name an existing project. Then rerun the brief with --providers claude, and run `git -c core.fsmonitor=false diff --no-ext-diff --no-textconv` to see what changed in ghost.py.\",\"sources_used\":[\"claude (selected from your instruction; the brief failed, so no session history was read)\",\"git (live checkout)\"],\"uncertainties\":[\"The last user-stated objective is unknown because no session history was retrieved.\",\"I can't say whether the ghost.py edits are finished or what they were meant to do.\",\"No earlier-session claims were available to check.\",\"I did not run any tests.\"]}",
+  "tools": [
+    "Skill: {\"skill\": \"rifja-session-recovery:session-recovery\"}",
+    "Bash: {\"command\": \"S=<REPO>/dist/recovery/rifja-session-recovery-claude-plugin/skills/session-recovery; python3 $S/scripts/recover.py doctor; python3 $S/scripts/recover.py sources --repo <WORK>/claude-ghost-skill-1/repos/ghost\"}",
+    "Bash: {\"command\": \"S=<REPO>/dist/recovery/rifja-session-recovery-claude-plugin/skills/session-recovery; python3 $S/scripts/recover.py brief --repo <WORK>/claude-ghost-skill-1/repos/ghost --providers claude --format json\"}",
+    "Bash: {\"command\": \"cd <WORK>/claude-ghost-skill-1/repos/ghost; git -c core.fsmonitor=false --no-optional-locks rev-parse HEAD; git -c core.fsmonitor=false --no-optional-locks status --porcelain; git -c core.fsmonitor=false --no-optional-locks branch --show-current\"}"
+  ]
+}

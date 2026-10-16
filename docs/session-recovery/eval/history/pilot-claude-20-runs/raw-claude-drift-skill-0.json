@@ -1,0 +1,99 @@
+{
+  "harness": "claude",
+  "model": "sonnet",
+  "scenario": "drift",
+  "arm": "skill",
+  "repeat": 0,
+  "parsed_answer": true,
+  "score": 7,
+  "max_score": 7,
+  "checks": {
+    "head_correct": true,
+    "read_only": true,
+    "next_step_bounded": true,
+    "objective": true,
+    "false_claim_flagged": true,
+    "flags_later_commit": true,
+    "no_false_completion": true
+  },
+  "skill_invoked": true,
+  "raw_transcript_access": false,
+  "tool_calls": 3,
+  "tool_output_bytes": 5956,
+  "turns": 5,
+  "input_tokens": 8,
+  "cache_read_tokens": 108879,
+  "cache_write_tokens": 11953,
+  "output_tokens": 1414,
+  "cost_usd": 0.08374380000000001,
+  "seconds": 20.5,
+  "error": null,
+  "exit_code": 0,
+  "answer": {
+    "repository": {
+      "head": "e135b8752dd7feb89584454373ff148c983a2799",
+      "branch": "main",
+      "dirty_files": [
+        "app.py (modified, 1 file changed, 4 insertions, 1 deletion vs HEAD)",
+        "notes.txt (untracked)"
+      ]
+    },
+    "objective": "Add a bounded retry with exponential backoff to fetch() in app.py. Do not touch net.py. (User-stated on 2026-03-01, so it may be stale and needs reconfirming.)",
+    "completed_verified": [
+      "Git shows branch main at HEAD e135b87 'Teammate: raise default timeout'. That commit and 6233ff5 'Add retry skeleton' both came after the last recorded session activity.",
+      "Git shows uncommitted changes in app.py and an untracked notes.txt. There are no conflicts and no stash entries.",
+      "I did not run the tests, so the retry work is not verified as complete."
+    ],
+    "remaining": [
+      "Fix test_retry_backoff (agent's proposal, unverified)",
+      "Update docs/usage.md (agent's proposal, unverified)",
+      "Check what the uncommitted app.py diff actually contains"
+    ],
+    "blockers": [
+      "Agent claim, unverified: the backoff sleep is not injectable, so the test cannot run fast."
+    ],
+    "unverified_claims": [
+      {
+        "claim": "'I added the retry and all tests pass.'",
+        "status": "contradicted"
+      },
+      {
+        "claim": "Decision: use exponential backoff capped at 3 attempts.",
+        "status": "unverified"
+      },
+      {
+        "claim": "Blocker: the backoff sleep is not injectable.",
+        "status": "unverified"
+      },
+      {
+        "claim": "Remaining work: fix test_retry_backoff, then update docs/usage.md.",
+        "status": "unverified"
+      }
+    ],
+    "evidence_refs": [
+      "r:029ad1d09991",
+      "r:a3111530a127",
+      "r:72d83a171bd8",
+      "r:d0749719e8e0",
+      "r:1bd2a014ad08",
+      "session claude:099c1f9f2c0b"
+    ],
+    "next_step": "Run `git diff` on app.py and re-run the project's own test command, found in its docs or CI config. Compare the result with the recorded test_retry_backoff failure (expected 3 attempts, got 1). Then confirm the objective with the user before editing.",
+    "sources_used": [
+      "claude (session 099c1f9f2c0b, 8 records), plus a direct Git read of the repository"
+    ],
+    "uncertainties": [
+      "The only session is from 2026-03-01 and the objective may be stale.",
+      "The last recorded test failure (exit 1) is historical and says nothing about the current tree.",
+      "The contradiction rests on the nearest recorded test result. Commits 6233ff5 and e135b87 came after the session, so the current test state is unknown.",
+      "I did not inspect the app.py diff or the contents of notes.txt.",
+      "Only the Claude provider was used, as requested. Other agents' history was not considered."
+    ]
+  },
+  "final_text": "{\"repository\":{\"head\":\"e135b8752dd7feb89584454373ff148c983a2799\",\"branch\":\"main\",\"dirty_files\":[\"app.py (modified, 1 file changed, 4 insertions, 1 deletion vs HEAD)\",\"notes.txt (untracked)\"]},\"objective\":\"Add a bounded retry with exponential backoff to fetch() in app.py. Do not touch net.py. (User-stated on 2026-03-01, so it may be stale and needs reconfirming.)\",\"completed_verified\":[\"Git shows branch main at HEAD e135b87 'Teammate: raise default timeout'. That commit and 6233ff5 'Add retry skeleton' both came after the last recorded session activity.\",\"Git shows uncommitted changes in app.py and an untracked notes.txt. There are no conflicts and no stash entries.\",\"I did not run the tests, so the retry work is not verified as complete.\"],\"remaining\":[\"Fix test_retry_backoff (agent's proposal, unverified)\",\"Update docs/usage.md (agent's proposal, unverified)\",\"Check what the uncommitted app.py diff actually contains\"],\"blockers\":[\"Agent claim, unverified: the backoff sleep is not injectable, so the test cannot run fast.\"],\"unverified_claims\":[{\"claim\":\"'I added the retry and all tests pass.'\",\"status\":\"contradicted\"},{\"claim\":\"Decision: use exponential backoff capped at 3 attempts.\",\"status\":\"unverified\"},{\"claim\":\"Blocker: the backoff sleep is not injectable.\",\"status\":\"unverified\"},{\"claim\":\"Remaining work: fix test_retry_backoff, then update docs/usage.md.\",\"status\":\"unverified\"}],\"evidence_refs\":[\"r:029ad1d09991\",\"r:a3111530a127\",\"r:72d83a171bd8\",\"r:d0749719e8e0\",\"r:1bd2a014ad08\",\"session claude:099c1f9f2c0b\"],\"next_step\":\"Run `git diff` on app.py and re-run the project's own test command, found in its docs or CI config. Compare the result with the recorded test_retry_backoff failure (expected 3 attempts, got 1). Then confirm the objective with the user before editing.\",\"sources_used\":[\"claude (session 099c1f9f2c0b, 8 records), plus a direct Git read of the repository\"],\"uncertainties\":[\"The only session is from 2026-03-01 and the objective may be stale.\",\"The last recorded test failure (exit 1) is historical and says nothing about the current tree.\",\"The contradiction rests on the nearest recorded test result. Commits 6233ff5 and e135b87 came after the session, so the current test state is unknown.\",\"I did not inspect the app.py diff or the contents of notes.txt.\",\"Only the Claude provider was used, as requested. Other agents' history was not considered.\"]}",
+  "tools": [
+    "Skill: {\"skill\": \"rifja-session-recovery:session-recovery\"}",
+    "Bash: {\"command\": \"S=<HOME>/repos/rifja-session-recovery/dist/recovery/rifja-session-recovery-claude-plugin/skills/session-recovery; python3 \\\"$S/scripts/recover.py\\\" doctor; python3 \\\"$S/scripts/recover.py\\\" sources --repo <TMP>/eval/runs/claude-drift-skill-0/repos/harbor\"}",
+    "Bash: {\"command\": \"S=<HOME>/repos/rifja-session-recovery/dist/recovery/rifja-session-recovery-claude-plugin/skills/session-recovery; python3 \\\"$S/scripts/recover.py\\\" brief --repo <TMP>/eval/runs/claude-drift-skill-0/repos/harbor --providers claude --format json\"}"
+  ]
+}

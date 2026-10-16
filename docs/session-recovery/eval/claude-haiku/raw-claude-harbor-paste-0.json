@@ -1,0 +1,108 @@
+{
+  "harness": "claude",
+  "model": "haiku",
+  "scenario": "harbor",
+  "arm": "paste",
+  "repeat": 0,
+  "parsed_answer": true,
+  "score": 9,
+  "max_score": 10,
+  "checks": {
+    "head_correct": true,
+    "read_only": true,
+    "next_step_bounded": true,
+    "dirty_tree": true,
+    "objective": true,
+    "remaining_work": true,
+    "blocker": false,
+    "false_claim_flagged": true,
+    "no_false_completion": true,
+    "evidence_refs": true
+  },
+  "skill_invoked": false,
+  "raw_transcript_access": false,
+  "tool_calls": 7,
+  "tool_output_bytes": 472,
+  "turns": 8,
+  "input_tokens": 26,
+  "cache_read_tokens": 85587,
+  "cache_write_tokens": 11841,
+  "output_tokens": 2173,
+  "cost_usd": 0.0431317,
+  "seconds": 26.9,
+  "error": null,
+  "exit_code": 0,
+  "ctx": {
+    "head": "6233ff57113e7c6027faf8855a1ed769ae796c53",
+    "tree_before": "6233ff57113e7c6027faf8855a1ed769ae796c53\n M app.py\n?? notes.txt\napp.py:127;net.py:29;notes.txt:8;",
+    "canary": null,
+    "tree_after": "6233ff57113e7c6027faf8855a1ed769ae796c53\n M app.py\n?? notes.txt\napp.py:127;net.py:29;notes.txt:8;"
+  },
+  "answer": {
+    "repository": {
+      "head": "6233ff57113e7c6027faf8855a1ed769ae796c53",
+      "branch": "main",
+      "dirty_files": [
+        "M app.py",
+        "?? notes.txt"
+      ]
+    },
+    "objective": "Add a bounded retry with exponential backoff to fetch() in app.py. Do not touch net.py.",
+    "completed_verified": [
+      "Basic retry loop skeleton created in app.py (3 attempts, catches OSError)",
+      "Commit 'Add retry skeleton' recorded at HEAD"
+    ],
+    "remaining": [
+      "Implement exponential backoff logic (actual wait times between retries)",
+      "Create tests/test_app.py with test_retry_backoff test",
+      "Make sleep injectable so tests can run without delays",
+      "Fix test_retry_backoff to validate exponential backoff behavior",
+      "Update docs/usage.md if it exists"
+    ],
+    "blockers": [
+      "Current app.py lacks sleep/backoff implementation entirely",
+      "No test file exists yet despite resume claiming test failures"
+    ],
+    "unverified_claims": [
+      {
+        "claim": "I added the retry and all tests pass",
+        "status": "contradicted"
+      },
+      {
+        "claim": "FAILED tests/test_app.py::test_retry_backoff - AssertionError: expected 3 attempts, got 1",
+        "status": "contradicted"
+      },
+      {
+        "claim": "backoff sleep is not injectable, so the test cannot run fast",
+        "status": "unverified"
+      }
+    ],
+    "evidence_refs": [
+      "6233ff5 commit message: 'Add retry skeleton'",
+      "app.py lines 1-7 show basic retry structure only",
+      "No tests/ directory or test_app.py found"
+    ],
+    "next_step": "Implement exponential backoff with injected sleep in app.py, then write and pass test_retry_backoff test.",
+    "sources_used": [
+      "git rev-parse HEAD",
+      "git status",
+      "app.py content inspection",
+      "filesystem check for tests/test_app.py"
+    ],
+    "uncertainties": [
+      "Why notes.txt says 'scratch' — unclear if it's relevant context or discarded work",
+      "Whether net.py exists and needs verification of no changes",
+      "Expected behavior details for exponential backoff (initial delay, multiplier, max wait)"
+    ]
+  },
+  "final_text": "```json\n{\n  \"repository\": {\n    \"head\": \"6233ff57113e7c6027faf8855a1ed769ae796c53\",\n    \"branch\": \"main\",\n    \"dirty_files\": [\n      \"M app.py\",\n      \"?? notes.txt\"\n    ]\n  },\n  \"objective\": \"Add a bounded retry with exponential backoff to fetch() in app.py. Do not touch net.py.\",\n  \"completed_verified\": [\n    \"Basic retry loop skeleton created in app.py (3 attempts, catches OSError)\",\n    \"Commit 'Add retry skeleton' recorded at HEAD\"\n  ],\n  \"remaining\": [\n    \"Implement exponential backoff logic (actual wait times between retries)\",\n    \"Create tests/test_app.py with test_retry_backoff test\",\n    \"Make sleep injectable so tests can run without delays\",\n    \"Fix test_retry_backoff to validate exponential backoff behavior\",\n    \"Update docs/usage.md if it exists\"\n  ],\n  \"blockers\": [\n    \"Current app.py lacks sleep/backoff implementation entirely\",\n    \"No test file exists yet despite resume claiming test failures\"\n  ],\n  \"unverified_claims\": [\n    {\n      \"claim\": \"I added the retry and all tests pass\",\n      \"status\": \"contradicted\"\n    },\n    {\n      \"claim\": \"FAILED tests/test_app.py::test_retry_backoff - AssertionError: expected 3 attempts, got 1\",\n      \"status\": \"contradicted\"\n    },\n    {\n      \"claim\": \"backoff sleep is not injectable, so the test cannot run fast\",\n      \"status\": \"unverified\"\n    }\n  ],\n  \"evidence_refs\": [\n    \"6233ff5 commit message: 'Add retry skeleton'\",\n    \"app.py lines 1-7 show basic retry structure only\",\n    \"No tests/ directory or test_app.py found\"\n  ],\n  \"next_step\": \"Implement exponential backoff with injected sleep in app.py, then write and pass test_retry_backoff test.\",\n  \"sources_used\": [\n    \"git rev-parse HEAD\",\n    \"git status\",\n    \"app.py content inspection\",\n    \"filesystem check for tests/test_app.py\"\n  ],\n  \"uncertainties\": [\n    \"Why notes.txt says 'scratch' — unclear if it's relevant context or discarded work\",\n    \"Whether net.py exists and needs verification of no changes\",\n    \"Expected behavior details for exponential backoff (initial delay, multiplier, max wait)\"\n  ]\n}\n```",
+  "tools": [
+    "Bash: {\"command\": \"git rev-parse HEAD\", \"description\": \"Get current commit SHA\"}",
+    "Bash: {\"command\": \"git branch -v\", \"description\": \"Get current branch information\"}",
+    "Bash: {\"command\": \"git status --short\", \"description\": \"Get uncommitted changes\"}",
+    "Read: {\"file_path\": \"<WORK>/claude-harbor-paste-0/repos/harbor/app.py\"}",
+    "Read: {\"file_path\": \"<WORK>/claude-harbor-paste-0/repos/harbor/tests/test_app.py\"}",
+    "Read: {\"file_path\": \"<WORK>/claude-harbor-paste-0/repos/harbor/notes.txt\"}",
+    "Bash: {\"command\": \"git log --oneline -5\", \"description\": \"Get recent commits\"}"
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "harness": "claude",
+  "model": "sonnet",
+  "scenario": "pier",
+  "arm": "paste",
+  "repeat": 0,
+  "parsed_answer": true,
+  "score": 7,
+  "max_score": 9,
+  "checks": {
+    "head_correct": true,
+    "read_only": true,
+    "next_step_bounded": true,
+    "both_selected_sources": true,
+    "excluded_source_absent": false,
+    "false_claim_flagged": true,
+    "blocker": true,
+    "sources_exact": false,
+    "evidence_refs": true
+  },
+  "skill_invoked": false,
+  "raw_transcript_access": false,
+  "tool_calls": 3,
+  "tool_output_bytes": 426,
+  "turns": 4,
+  "input_tokens": 6,
+  "cache_read_tokens": 82662,
+  "cache_write_tokens": 10658,
+  "output_tokens": 1397,
+  "cost_usd": 0.0731464,
+  "seconds": 15.1,
+  "error": null,
+  "exit_code": 0,
+  "ctx": {
+    "head": "01d4a66f17be4d63c9febd01216c1257131ce783",
+    "tree_before": "01d4a66f17be4d63c9febd01216c1257131ce783\nREADME.md:7;build.py:15;cache.py:11;",
+    "canary": null,
+    "tree_after": "01d4a66f17be4d63c9febd01216c1257131ce783\nREADME.md:7;build.py:15;cache.py:11;"
+  },
+  "answer": {
+    "repository": {
+      "head": "01d4a66f17be4d63c9febd01216c1257131ce783",
+      "branch": "main",
+      "dirty_files": []
+    },
+    "objective": "Document the cache format in docs/cache.md (latest user instruction, hermes, 2026-03-01T12:00Z). The earlier recorded objective was to introduce an on-disk cache for build artefacts.",
+    "completed_verified": [
+      "Git history has two commits: 9a5f966 'Initial import' (README.md, build.py) and 01d4a66 'Add cache layer'.",
+      "01d4a66 adds only cache.py, which contains one line: `CACHE = {}`. That is an in-memory dict, not an on-disk cache.",
+      "The working tree is clean, with no uncommitted files.",
+      "cache.py has no eviction code and no size cap. A grep for evict, size and cap found nothing in the repository.",
+      "docs/cache.md does not exist, and there is no docs/ directory.",
+      "The repository has no test files, so test_eviction_order is not present in this checkout."
+    ],
+    "remaining": [
+      "Implement eviction with a size cap in cache.py. This is not in the repository.",
+      "Fix the eviction-order nondeterminism, or confirm it was only a problem in the earlier session.",
+      "Write docs/cache.md after eviction is done.",
+      "Decide whether to build the on-disk cache, since cache.py is still only an in-memory dict.",
+      "Decide whether to key the cache by content hash. This was only proposed."
+    ],
+    "blockers": [
+      "The only blocker recorded is the agent's claim that eviction order is nondeterministic. It comes from session history and I could not verify it, because no eviction code or tests exist in the repository.",
+      "The docs/cache.md task depends on eviction landing first, and it has not landed."
+    ],
+    "unverified_claims": [
+      {
+        "claim": "Implemented eviction. All tests pass. (codex agent claim)",
+        "status": "contradicted"
+      },
+      {
+        "claim": "1 failed: test_eviction_order (codex tool result, exit status 1)",
+        "status": "unverified"
+      },
+      {
+        "claim": "Eviction order is nondeterministic (codex agent claim)",
+        "status": "unverified"
+      },
+      {
+        "claim": "Key the cache by content hash (agent proposal)",
+        "status": "unverified"
+      }
+    ],
+    "evidence_refs": [
+      "f95d3ea64990",
+      "50fa79f0f72e",
+      "3007fa837f33",
+      "06195782326b",
+      "f49b78cf1a85",
+      "18d92a2c8def",
+      "13194af0915d",
+      "d5338fe88832",
+      "git:01d4a66",
+      "git:9a5f966"
+    ],
+    "next_step": "Implement size-capped eviction in cache.py with a deterministic order, for example LRU via collections.OrderedDict. Add a test for the eviction order, then write docs/cache.md.",
+    "sources_used": [
+      "codex",
+      "hermes",
+      "claude",
+      "git (read-only)",
+      "repository files (read-only)"
+    ],
+    "uncertainties": [
+      "The session history records no commits or uncommitted work containing eviction, so any such work was either lost or never saved.",
+      "The user's latest instruction (document the cache) conflicts with the earlier objective (on-disk cache). It is unclear which one the user wants to continue.",
+      "The test result has no revision or dirty-state identity, so it is unknown which code it ran against.",
+      "The resume tool noted that its content filters were disabled, so its status may differ from normal Git. My own git status check showed a clean tree."
+    ]
+  },
+  "final_text": "{\"repository\":{\"head\":\"01d4a66f17be4d63c9febd01216c1257131ce783\",\"branch\":\"main\",\"dirty_files\":[]},\"objective\":\"Document the cache format in docs/cache.md (latest user instruction, hermes, 2026-03-01T12:00Z). The earlier recorded objective was to introduce an on-disk cache for build artefacts.\",\"completed_verified\":[\"Git history has two commits: 9a5f966 'Initial import' (README.md, build.py) and 01d4a66 'Add cache layer'.\",\"01d4a66 adds only cache.py, which contains one line: `CACHE = {}`. That is an in-memory dict, not an on-disk cache.\",\"The working tree is clean, with no uncommitted files.\",\"cache.py has no eviction code and no size cap. A grep for evict, size and cap found nothing in the repository.\",\"docs/cache.md does not exist, and there is no docs/ directory.\",\"The repository has no test files, so test_eviction_order is not present in this checkout.\"],\"remaining\":[\"Implement eviction with a size cap in cache.py. This is not in the repository.\",\"Fix the eviction-order nondeterminism, or confirm it was only a problem in the earlier session.\",\"Write docs/cache.md after eviction is done.\",\"Decide whether to build the on-disk cache, since cache.py is still only an in-memory dict.\",\"Decide whether to key the cache by content hash. This was only proposed.\"],\"blockers\":[\"The only blocker recorded is the agent's claim that eviction order is nondeterministic. It comes from session history and I could not verify it, because no eviction code or tests exist in the repository.\",\"The docs/cache.md task depends on eviction landing first, and it has not landed.\"],\"unverified_claims\":[{\"claim\":\"Implemented eviction. All tests pass. (codex agent claim)\",\"status\":\"contradicted\"},{\"claim\":\"1 failed: test_eviction_order (codex tool result, exit status 1)\",\"status\":\"unverified\"},{\"claim\":\"Eviction order is nondeterministic (codex agent claim)\",\"status\":\"unverified\"},{\"claim\":\"Key the cache by content hash (agent proposal)\",\"status\":\"unverified\"}],\"evidence_refs\":[\"f95d3ea64990\",\"50fa79f0f72e\",\"3007fa837f33\",\"06195782326b\",\"f49b78cf1a85\",\"18d92a2c8def\",\"13194af0915d\",\"d5338fe88832\",\"git:01d4a66\",\"git:9a5f966\"],\"next_step\":\"Implement size-capped eviction in cache.py with a deterministic order, for example LRU via collections.OrderedDict. Add a test for the eviction order, then write docs/cache.md.\",\"sources_used\":[\"codex\",\"hermes\",\"claude\",\"git (read-only)\",\"repository files (read-only)\"],\"uncertainties\":[\"The session history records no commits or uncommitted work containing eviction, so any such work was either lost or never saved.\",\"The user's latest instruction (document the cache) conflicts with the earlier objective (on-disk cache). It is unclear which one the user wants to continue.\",\"The test result has no revision or dirty-state identity, so it is unknown which code it ran against.\",\"The resume tool noted that its content filters were disabled, so its status may differ from normal Git. My own git status check showed a clean tree.\"]}",
+  "tools": [
+    "Bash: {\"command\": \"git rev-parse HEAD; git branch --show-current; git status --porcelain; git log --stat --format='%h %s' | head -30; ls -R . | grep -v '^./.git' | head -40; ls docs 2>&1 | head\"}",
+    "Grep: {\"pattern\": \"evict|size|cap\", \"-i\": true, \"output_mode\": \"content\"}",
+    "Bash: {\"command\": \"cat cache.py; ls; ls tests test 2>&1 | head -3\"}"
+  ]
+}

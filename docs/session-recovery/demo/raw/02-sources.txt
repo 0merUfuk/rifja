@@ -1,0 +1,24 @@
+{
+  "schema": "rifja-recovery/1/sources",
+  "rifja_version": "0.4.2",
+  "repository_project": "harbor",
+  "projects": [
+    "harbor"
+  ],
+  "configured_sources": [
+    {
+      "provider": "claude",
+      "path": "/tmp/rifja-demo/act1/claude-config"
+    }
+  ],
+  "select_with": "--providers <comma list of the providers above> (or --all-registered)",
+  "note": "Nothing was imported or refreshed. Ask the user which providers to include.",
+  "project_sessions": [
+    {
+      "provider": "claude",
+      "ref": "099c1f9f2c0b",
+      "last_event": "2026-03-01T10:11:00Z",
+      "records": 8
+    }
+  ]
+}

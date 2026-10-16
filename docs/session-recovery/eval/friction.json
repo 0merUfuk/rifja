@@ -1,0 +1,29 @@
+{
+  "claude_code_plugin": {
+    "commands": 2,
+    "seconds": 1.02,
+    "exit_codes": [
+      0,
+      0
+    ]
+  },
+  "codex_plugin": {
+    "commands": 2,
+    "seconds": 0.15,
+    "exit_codes": [
+      0,
+      0
+    ]
+  },
+  "standalone_skill_copy": {
+    "commands": 1,
+    "seconds": 0.01,
+    "exit_codes": [
+      0
+    ]
+  },
+  "prerequisite_check_doctor": {
+    "seconds": 0.18,
+    "exit_code": 0
+  }
+}

@@ -1,0 +1,4 @@
+# Session recovery FAILED [source_not_selected]
+No session source was selected. This tool never reads history implicitly.
+Next (for the human operator): Run `recover.py sources`, ask the user which providers to include, then pass --providers claude,codex (or --all-registered if the user said all).
+No continuation context was produced. Do not reconstruct one from memory or from raw transcripts.

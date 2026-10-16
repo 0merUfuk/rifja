@@ -1,0 +1,21 @@
+claude harbor cli   #0: 10/10 calls=4 cost=0.12778760000000003 t=31.3s err=None
+claude harbor skill #0: 10/10 calls=4 cost=0.0759936 t=19.7s err=None
+claude harbor skill #1: 10/10 calls=3 cost=0.0842732 t=26.6s err=None
+claude harbor cli   #1: 10/10 calls=5 cost=0.1392014 t=24.6s err=None
+claude pier   cli   #0: 7/9 calls=6 cost=0.16112120000000002 t=37.7s err=None
+claude pier   skill #0: 9/9 calls=4 cost=0.09321180000000001 t=24.4s err=None
+claude pier   skill #1: 9/9 calls=3 cost=0.0821178 t=18.2s err=None
+claude pier   cli   #1: 7/9 calls=5 cost=0.11978280000000001 t=29.8s err=None
+claude dock   cli   #0: 5/8 calls=6 cost=0.1488602 t=36.4s err=None
+claude dock   skill #0: 5/8 calls=3 cost=0.0877002 t=20.5s err=None
+claude dock   skill #1: 5/8 calls=3 cost=0.0869604 t=20.9s err=None
+claude dock   cli   #1: 5/8 calls=6 cost=0.1751236 t=41.4s err=None
+claude ghost  cli   #0: 6/7 calls=6 cost=0.1319814 t=34.6s err=None
+claude ghost  skill #0: 6/7 calls=4 cost=0.081671 t=19.8s err=None
+claude ghost  skill #1: 6/7 calls=4 cost=0.0802294 t=18.6s err=None
+claude ghost  cli   #1: 6/7 calls=6 cost=0.1013208 t=25.4s err=None
+claude drift  cli   #0: 7/7 calls=6 cost=0.1573658 t=28.6s err=None
+claude drift  skill #0: 7/7 calls=3 cost=0.08374380000000001 t=20.5s err=None
+claude drift  skill #1: 7/7 calls=3 cost=0.0825202 t=21.2s err=None
+claude drift  cli   #1: 7/7 calls=4 cost=0.1374724 t=24.6s err=None
+done

@@ -1,0 +1,120 @@
+{
+  "harness": "claude",
+  "model": "sonnet",
+  "scenario": "pier",
+  "arm": "paste",
+  "repeat": 1,
+  "parsed_answer": true,
+  "score": 7,
+  "max_score": 9,
+  "checks": {
+    "head_correct": true,
+    "read_only": true,
+    "next_step_bounded": true,
+    "both_selected_sources": true,
+    "excluded_source_absent": false,
+    "false_claim_flagged": true,
+    "blocker": true,
+    "sources_exact": false,
+    "evidence_refs": true
+  },
+  "skill_invoked": false,
+  "raw_transcript_access": false,
+  "tool_calls": 2,
+  "tool_output_bytes": 676,
+  "turns": 3,
+  "input_tokens": 6,
+  "cache_read_tokens": 82777,
+  "cache_write_tokens": 10810,
+  "output_tokens": 1563,
+  "cost_usd": 0.0754374,
+  "seconds": 16.4,
+  "error": null,
+  "exit_code": 0,
+  "ctx": {
+    "head": "01d4a66f17be4d63c9febd01216c1257131ce783",
+    "tree_before": "01d4a66f17be4d63c9febd01216c1257131ce783\nREADME.md:7;build.py:15;cache.py:11;",
+    "canary": null,
+    "tree_after": "01d4a66f17be4d63c9febd01216c1257131ce783\nREADME.md:7;build.py:15;cache.py:11;"
+  },
+  "answer": {
+    "repository": {
+      "head": "01d4a66f17be4d63c9febd01216c1257131ce783",
+      "branch": "main",
+      "dirty_files": []
+    },
+    "objective": "Document the cache format in docs/cache.md (latest user instruction, hermes, ref bae3fd2a4a36). The broader recorded intent is to introduce an on-disk cache for build artefacts (ref 53de76541a28).",
+    "completed_verified": [
+      "Git shows two commits: 9a5f966 'Initial import' (README.md, build.py) and 01d4a66 'Add cache layer' (cache.py, 1 line).",
+      "The working tree is clean on main. `git status` shows no modified or untracked files.",
+      "cache.py contains only `CACHE = {}`. This is an in-memory dict, not an on-disk cache. It has no eviction logic, no size cap and no content-hash keying.",
+      "docs/ does not exist, so docs/cache.md has not been written.",
+      "The tracked files are README.md, build.py (prints 'build') and cache.py. There are no test files in the repository."
+    ],
+    "remaining": [
+      "Add eviction with a size cap to cache.py. It is not in the repo.",
+      "Make the eviction order deterministic.",
+      "Implement the on-disk cache for build artefacts.",
+      "Decide whether to key the cache by content hash. This was only proposed.",
+      "Write docs/cache.md after eviction lands.",
+      "Add tests. No test_eviction_order exists in the repo."
+    ],
+    "blockers": [
+      "Recorded agent claim, unverified: eviction order is nondeterministic (codex, ref a687c9141fca).",
+      "A recorded failing result, 'test_eviction_order' (1 failed), exists with no revision identity. The repo has no tests, so it cannot be reproduced here."
+    ],
+    "unverified_claims": [
+      {
+        "claim": "Implemented eviction. All tests pass. (codex, ref 71869b5beea2)",
+        "status": "contradicted"
+      },
+      {
+        "claim": "Key the cache by content hash (claude proposal, ref 85c6b61696b2)",
+        "status": "unverified"
+      },
+      {
+        "claim": "test_eviction_order failed with exit status 1 (ref f8d98107c5ca)",
+        "status": "unverified"
+      },
+      {
+        "claim": "Eviction order is nondeterministic (ref a687c9141fca)",
+        "status": "unverified"
+      },
+      {
+        "claim": "Next: draft docs/cache.md after eviction lands (hermes, ref 73101a4e8c84)",
+        "status": "supported"
+      }
+    ],
+    "evidence_refs": [
+      "bae3fd2a4a36",
+      "b97f57e34532",
+      "53de76541a28",
+      "71869b5beea2",
+      "f8d98107c5ca",
+      "a687c9141fca",
+      "85c6b61696b2",
+      "73101a4e8c84",
+      "git:01d4a66f17be4d63c9febd01216c1257131ce783",
+      "git:9a5f966"
+    ],
+    "next_step": "Implement size-capped eviction in cache.py with a deterministic order, for example insertion-ordered or LRU. Add a test for it before writing docs/cache.md.",
+    "sources_used": [
+      "codex",
+      "hermes",
+      "claude",
+      "git (read-only: rev-parse, status, log, ls-files)",
+      "working-tree file reads"
+    ],
+    "uncertainties": [
+      "The recorded history says eviction was implemented, but the repo has no eviction code. It may have been lost, uncommitted and discarded, or never written.",
+      "The `rifja resume` output notes that its content filters were disabled, so I re-checked git status myself. It was clean.",
+      "The 'last user-stated objective' differs by source. The latest instruction is the docs task, from hermes at 2026-03-01T12:00Z, and the eviction task is from codex at 11:00Z. The on-disk cache is the original intent from claude at 10:00Z.",
+      "I read the session transcripts only through the `rifja resume` output you pasted. I did not open the raw session files."
+    ]
+  },
+  "final_text": "{\"repository\":{\"head\":\"01d4a66f17be4d63c9febd01216c1257131ce783\",\"branch\":\"main\",\"dirty_files\":[]},\"objective\":\"Document the cache format in docs/cache.md (latest user instruction, hermes, ref bae3fd2a4a36). The broader recorded intent is to introduce an on-disk cache for build artefacts (ref 53de76541a28).\",\"completed_verified\":[\"Git shows two commits: 9a5f966 'Initial import' (README.md, build.py) and 01d4a66 'Add cache layer' (cache.py, 1 line).\",\"The working tree is clean on main. `git status` shows no modified or untracked files.\",\"cache.py contains only `CACHE = {}`. This is an in-memory dict, not an on-disk cache. It has no eviction logic, no size cap and no content-hash keying.\",\"docs/ does not exist, so docs/cache.md has not been written.\",\"The tracked files are README.md, build.py (prints 'build') and cache.py. There are no test files in the repository.\"],\"remaining\":[\"Add eviction with a size cap to cache.py. It is not in the repo.\",\"Make the eviction order deterministic.\",\"Implement the on-disk cache for build artefacts.\",\"Decide whether to key the cache by content hash. This was only proposed.\",\"Write docs/cache.md after eviction lands.\",\"Add tests. No test_eviction_order exists in the repo.\"],\"blockers\":[\"Recorded agent claim, unverified: eviction order is nondeterministic (codex, ref a687c9141fca).\",\"A recorded failing result, 'test_eviction_order' (1 failed), exists with no revision identity. The repo has no tests, so it cannot be reproduced here.\"],\"unverified_claims\":[{\"claim\":\"Implemented eviction. All tests pass. (codex, ref 71869b5beea2)\",\"status\":\"contradicted\"},{\"claim\":\"Key the cache by content hash (claude proposal, ref 85c6b61696b2)\",\"status\":\"unverified\"},{\"claim\":\"test_eviction_order failed with exit status 1 (ref f8d98107c5ca)\",\"status\":\"unverified\"},{\"claim\":\"Eviction order is nondeterministic (ref a687c9141fca)\",\"status\":\"unverified\"},{\"claim\":\"Next: draft docs/cache.md after eviction lands (hermes, ref 73101a4e8c84)\",\"status\":\"supported\"}],\"evidence_refs\":[\"bae3fd2a4a36\",\"b97f57e34532\",\"53de76541a28\",\"71869b5beea2\",\"f8d98107c5ca\",\"a687c9141fca\",\"85c6b61696b2\",\"73101a4e8c84\",\"git:01d4a66f17be4d63c9febd01216c1257131ce783\",\"git:9a5f966\"],\"next_step\":\"Implement size-capped eviction in cache.py with a deterministic order, for example insertion-ordered or LRU. Add a test for it before writing docs/cache.md.\",\"sources_used\":[\"codex\",\"hermes\",\"claude\",\"git (read-only: rev-parse, status, log, ls-files)\",\"working-tree file reads\"],\"uncertainties\":[\"The recorded history says eviction was implemented, but the repo has no eviction code. It may have been lost, uncommitted and discarded, or never written.\",\"The `rifja resume` output notes that its content filters were disabled, so I re-checked git status myself. It was clean.\",\"The 'last user-stated objective' differs by source. The latest instruction is the docs task, from hermes at 2026-03-01T12:00Z, and the eviction task is from codex at 11:00Z. The on-disk cache is the original intent from claude at 10:00Z.\",\"I read the session transcripts only through the `rifja resume` output you pasted. I did not open the raw session files.\"]}",
+  "tools": [
+    "Bash: {\"command\": \"git rev-parse HEAD && git branch --show-current && git status --porcelain=v1 --untracked-files=all && git log --stat --format='%h %s' && ls -la && ls docs 2>&1 | head; grep -n \\\"evict\\\\|def \\\\|size\\\" cache.py 2>&1 | head -30\"}",
+    "Bash: {\"command\": \"cat cache.py; echo ---; cat build.py; echo ---; git ls-files\"}"
+  ]
+}
